@@ -1,25 +1,13 @@
 
-function [epochs, channels, events] = tde_getData(compute, inputDir, outputDir, subjectList, sessionList, epochLength)
+%% function [epochs, channels, events] = tde_getData(compute)
 
-% Description: 
-%
 % function [epochs, channels, events] = tde_getData(compute, [inputDir], [outputDir], [subjectList], [sessionList], [epochLength])
-%
-% Input
-% - inputDir
-% - outputDir
-% - subjectslist? 
-% - sessionList?
+
+% make inputs as well??
+% - subjectslist? sessionList?
 % - epochLength
-%
-% Output
-%
-% Example
- 
-% <compute>
-if ~exist('compute', 'var') || isempty(compute)
-	error('please specify whether to compute or load the data');
-end  
+% - inputDir
+% - saveDir
 
 % <inputDir>
 if ~exist('inputDir', 'var') || isempty(inputDir)
@@ -93,12 +81,12 @@ for ii = 1 : length(subjectList)
         % sessions) that has
         % - epoched data
         % - reduced channel table, but with visual area matches
-        % - events table (reduced?)
+        % - events table or just list of trial numbers/names?
     end
     
-    % Concatenate epochs, channels, events across subjects?
-    % Add subject index to event table?
-
+    % Concatenate epochs, channels, events, add subject index to 
+    
+    
 end
 
 
