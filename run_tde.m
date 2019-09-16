@@ -1,9 +1,9 @@
 % script 
 
-[epochs, channels, events] = tde_getData(recomputeflag 0/1);
+% load (1) or compute (0)
+[epochs, channels, events] = tde_getData(0);
 
-
-% next step, tde_prepElectrodes
+% next step, tde_selectElectrodes
 % input: epochs, channels, events, taskstouse/trialstouse, inclusion criteria 
 
 % next step, tde_fitModel
