@@ -1,9 +1,9 @@
 
-function [epochs, channels, events] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochLength)
+function [epochs, channels, events, t] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochLength)
 
 % Description: 
 %
-% function [epochs, channels, events] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochLength])
+% function [epochs, channels, events, t] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochLength])
 %
 % Input
 % - inputDir
@@ -53,7 +53,7 @@ end
 
 % <epochLength>
 if ~exist('epochLength', 'var') || isempty(epochLength)
-    epochlength = [-0.5 2];
+    epochLength = [-0.5 2];
 end
 
 % <tasks> (fixed for TDE project)
@@ -71,7 +71,7 @@ for ii = 1 : length(subjectList)
     if loadPrecomputed
         
         %load from outputDir
-        [epochs, channels, events] = load(fullfile(outputDir, sprintf('%s_data.mat', subject)));
+        [epochs, channels, events, t] = load(fullfile(outputDir, sprintf('%s_data.mat', subject)));
         fprintf('[%s] Loading data from subject \n',mfilename, subject);
     
     else
@@ -102,15 +102,29 @@ for ii = 1 : length(subjectList)
         data = data(chan_idx,:);
         channels = channels(chan_idx,:);
         
-        % STEP 3: EPOCH THE DATA
-
-        % should segment the trials according to specific epoch length.
-        % input: event onsets (samples?) 
-
-        % [epocheddata, events, chans] = ecog_make_epochs() % WRITE NEW
-        % FUNCTION THAT DOES EPOCHING MORE EFFICIENTLY (cf.
-        % [ts, conditions] = meg_make_epochs(raw_ts, trigger, epoch_time, fs)
-        [ts, conditions] = meg_make_epochs(data', events.onset, epochLength, json.SamplingFrequency);  
+        % STEP 3: EPOCH THE DATA      
+        [epochs, t] = ecog_makeEpochs(data, events.event_sample, epochLength, json.SamplingFrequency);  
+        
+        % Checks (Temporary)
+%         trials = [];
+%         trials.broadband = epochs;
+%         trials.events = events;
+%         trials.bb_bands = [50 200];
+%         trials.time = t;
+%         trials.channels = channels;
+%         trials.viselec = visualelectrodes;
+%         whichElectrodes = {'MO01', 'MO02', 'MO03', 'MO04'};
+%         trialType = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
+%         %trialType = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
+%         specs.baselineType = 'selectedtrials';
+%         specs.dataTypes = {'broadband'};
+%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs)
+%         
+        % STEP 4 COMPUTE A BASELINE CORRECTION per trial per run
+        
+        % STEP 5 CHECK FOR OUTLIERS EPOCHS/CHANNELS
+        % compute sum over time for each epoch?
+        
     end
 
     % Save out a single preproc file for each subject that has
