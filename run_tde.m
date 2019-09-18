@@ -1,8 +1,9 @@
 % script 
 
 % load (1) or compute (0)
-[epochs, channels, events] = tde_getData(0);
-
+tic
+[data] = tde_getData(1);
+toc
 % next step, tde_selectElectrodes
 % input: epochs, channels, events, taskstouse/trialstouse, inclusion criteria 
 
