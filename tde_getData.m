@@ -1,21 +1,25 @@
 
-function [out] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochTime, baselineTime)
+function [out] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochTime)
 
 % Description: 
 %
-% function [epochs, channels, events, t] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime], [baselineTime])
+% function [out] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime])
 %
 % Input (use varargin?)
 % - inputDir
 % - outputDir
-% - subjectslist? 
-% - sessionList?
+% - subjectslist
+% - sessionList
 % - epochTime
-% - baselineTime
 %
 % Output
+% a cell array with for each cell a struct with the following fields:
+% - name
+% - epochs
+% - channels
+% - events
+% - t
 %
-% Example
 
 %% Define inputs 
 
@@ -76,6 +80,8 @@ for ii = 1 : length(subjectList)
     subject = subjectList{ii};
     out{ii}.name = subject;
     
+    % Determine if we're loading or computing the data
+    
     if loadPrecomputed
         
         % load from outputDir    
@@ -125,51 +131,24 @@ for ii = 1 : length(subjectList)
         
         fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
             mfilename, size(epochs,3), length(unique(events.run_name)), length(unique(events.session_name)));
-       
-        %% STEP 4 CHECK FOR OUTLIERS EPOCHS/CHANNELS
-        % fprintf('[%s] Checking for bad epochs ...\n',mfilename);
-
-        % compute sum over time for each epoch?
-        % remove epochs that have 20x the average
-        % if more than X epochs for a channel, remove entire channel
-        % output a description of how many trials were removed (write to
-        % file?)
         
-        %% STEP 5 convert to percent signal change
-        fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
-
-        % Provide run index to perform separately for each run and session
-        [~,~,ses_idx]= unique(events.session_name);
-        [~,~,run_idx] = unique(events.run_name);
-        idx = (ses_idx*100)+run_idx;
+        %% STEP 4: Save out a single preproc file for each subject 
         
-        [epochs] = ecog_normalizeEpochs(epochs, t, baselineTime, 'percentsignalchange', idx);
-        
-        % Remove onsets from events (does not apply to epochs)
+        % Remove irrelevant columns from channels and events tables 
         events = removevars(events,{'onset','event_sample'});
-    
-        % Checks (Temporary; TO write simpler function e.g. bidsEcogPlotEpochs)
-%         trials = [];
-%         trials.broadband = epochs;
-%         trials.events = events;
-%         trials.bb_bands = [50 200];
-%         trials.time = t;
-%         trials.channels = channels;
-%         trials.viselec = visualelectrodes;
-%         whichElectrodes = channels.name;
-%         specs.baselineType = 'selectedtrials';
-%         specs.dataTypes = {'broadband'};
-%         trialType = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
-%         trialType = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
-%         trialType = {'CRF-1', 'CRF-2', 'CRF-3', 'CRF-4', 'CRF-5'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
+        channels = removevars(channels,'notch');
+        if isfield(summary(events),'stim_file'), removevars(events,'stim_file');end
+        if isfield(summary(channels),'description'), removevars(channels,'description');end
         
-        %% STEP 6 Save out a single preproc file for each subject that has
+        % Add a subject index column to both:
+        events.subject_name = repmat({subject}, [height(events),1]);
+        channels.subject_name = repmat({subject}, [height(channels),1]);
+        
+        % Save out the data
         fprintf('[%s] Saving data for subject %s to %s \n',mfilename, subject, outputDir);
         save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't')
-            
+        
+        % Collect into an output struct
         out{ii}.epochs   = epochs;
         out{ii}.channels = channels;
         out{ii}.events   = events;

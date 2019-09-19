@@ -2,10 +2,16 @@
 
 % load (1) or compute (0)
 tic
-[data] = tde_getData(1);
+[data] = tde_getData(0);
 toc
-% next step, tde_selectElectrodes
-% input: epochs, channels, events, taskstouse/trialstouse, inclusion criteria 
+
+% select electrodes, select epochs (or split up in separate scripts?)
+stimNames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
+'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
+'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
+
+[data] = tde_selectData(data, stimNames, baselineTime);
+
 
 % next step, tde_generateStimulusTimecourses
 % input: events
