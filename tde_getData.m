@@ -19,7 +19,9 @@ function [out] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, 
 % - channels
 % - events
 % - t
-%
+
+% To add: exception for umcu data: downsample and shift
+
 
 %% Define inputs 
 
@@ -56,7 +58,7 @@ if ~exist('epochTime', 'var') || isempty(epochTime)
 end
 
 % <tasks> (fixed for TDE project)
-tasks = {'spatialpattern', 'temporalpattern', 'bairspatialpattern', 'bairtemporalpattern','soc'};
+tasks = {'spatialpattern', 'temporalpattern', 'bairspatialpattern', 'bairtemporalpattern', 'soc'};
 
 % <preprocessing data type> (fixed for TDE project)
 description = 'broadband';
@@ -137,6 +139,7 @@ for ii = 1 : length(subjectList)
         save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't')
         
         % Collect into an output struct
+        out{ii}.name     = subject;
         out{ii}.epochs   = epochs;
         out{ii}.channels = channels;
         out{ii}.events   = events;

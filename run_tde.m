@@ -1,16 +1,22 @@
 % script 
 
+% note: sub-beilen not included at the moment because of inconsistencies in
+% the formatting of the events.tsv files, need to sync with Gio.
+
 % load (1) or compute (0)
 tic
 [data] = tde_getData(0);
 toc
 
-% select electrodes, select epochs (or split up in separate scripts?)
-stimNames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
-'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
-'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 
-[data] = tde_selectData(data, stimNames, baselineTime);
+% select electrodes, select epochs (or split up in separate scripts?)
+tic
+[data2] = tde_selectData(data);
+toc
+
+% tde_averageEpochs/concatData
+
+
 
 
 % next step, tde_generateStimulusTimecourses
