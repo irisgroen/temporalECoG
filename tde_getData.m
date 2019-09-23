@@ -40,16 +40,9 @@ end
 
 % <subjectList>
 if ~exist('subjectList', 'var') || isempty(subjectList)
-    subjectList = {'chaam';
-                   'beilen';
-                   'som648'; 
-                   'som661'; 
-                   'som674'; 
-                   'som692'; 
-                   'som708'; 
-                   'som718';
-                   'som723';
-                   };
+    subjectList_fname = fullfile(tde_RootPath, 'subjectList.tsv');
+    T = readtable(subjectList_fname, 'FileType', 'text');
+    subjectList = T.participant_id;
 end
 
 % <sessionList>
@@ -59,12 +52,7 @@ end
 
 % <epochTime>
 if ~exist('epochTime', 'var') || isempty(epochTime)
-    epochTime = [-0.5 2];
-end
-
-% <baselineTime>
-if ~exist('baselineTime', 'var') || isempty(baselineTime)
-    baselineTime = [-0.2 0];
+    epochTime = [-0.5 1.5];
 end
 
 % <tasks> (fixed for TDE project)
@@ -102,7 +90,7 @@ for ii = 1 : length(subjectList)
  
         %% STEP 1: GET THE DATA
 
-        [data, channels, events] = bidsEcogGetPreprocData(inputDir, subjectList{ii}, sessionList, tasks, [], description);
+        [data, channels, events] = bidsEcogGetPreprocData(inputDir, subject, sessionList, tasks, [], description);
 
         %% STEP 2: SELECT A SUBSET OF CHANNELS 
 
