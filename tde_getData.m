@@ -113,10 +113,27 @@ for ii = 1 : length(subjectList)
         
         fprintf('[%s] Found %d channels with visual matches out of %d ecog channels \n', ...
             mfilename, length(chan_idx), length(find(contains(lower(channels.type), {'ecog', 'seeg'}))));
-                
+               
         %% STEP 3: EPOCH THE DATA 
         fprintf('[%s] Epoching data...\n',mfilename);
         
+        % Resample and SHIFT the UMCU data 
+        if contains(subject, 'chaam')
+            fprintf('[%s] This is a umcu patient: resampling and shifting the onsets\n',mfilename);
+            
+            % Resample data; assuming desired sample rate of 512
+            data = downsample(data', channels.sampling_frequency(1)/512)';
+            events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/512));
+            channels.sampling_frequency(:) = 512;
+            
+            % Shift onsets
+            shiftInSeconds = 0.062; % 62 ms
+            shiftInSamples = round(shiftInSeconds*channels.sampling_frequency(1)); 
+            events.onset = events.onset + shiftInSeconds;
+            events.event_sample = events.event_sample + shiftInSamples; 
+        end
+        
+        % Epoch the data
         [epochs, t] = ecog_makeEpochs(data, events.event_sample, epochTime, channels.sampling_frequency(1));  
         
         fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
@@ -144,7 +161,7 @@ for ii = 1 : length(subjectList)
         out{ii}.channels = channels;
         out{ii}.events   = events;
         out{ii}.t        = t;
-        
+
     end   
 end
 

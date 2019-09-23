@@ -8,14 +8,13 @@ tic
 [data] = tde_getData(0);
 toc
 
-
-% select electrodes, select epochs (or split up in separate scripts?)
+% select epochs and channels 
 tic
-[data2] = tde_selectData(data);
+[data2] = tde_selectData(data,1);
 toc
 
 % tde_averageEpochs/concatData
-
+[data3] = tde_combineData(data2,0);
 
 
 
