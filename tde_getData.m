@@ -1,9 +1,9 @@
 
-function [out] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochTime)
+function [data] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochTime)
 
 % Description: 
 %
-% function [out] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime])
+% function [data] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime])
 %
 % Input (use varargin?)
 % - inputDir
@@ -64,18 +64,19 @@ tasks = {'spatialpattern', 'temporalpattern', 'bairspatialpattern', 'bairtempora
 description = 'broadband';
 
 %% Loop across subjects
+data = cell(length(subjectList),1);
 
 for ii = 1 : length(subjectList)
     
     subject = subjectList{ii};
-    out{ii}.name = subject;
+    data{ii}.name = subject;
     
     % Determine if we're loading or computing the data
     
     if loadPrecomputed
         
         % load from outputDir    
-        out{ii} = load(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)));
+        data{ii} = load(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)));
         fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
     
     else
@@ -92,7 +93,7 @@ for ii = 1 : length(subjectList)
  
         %% STEP 1: GET THE DATA
 
-        [data, channels, events] = bidsEcogGetPreprocData(inputDir, subject, sessionList, tasks, [], description);
+        [subdata, channels, events] = bidsEcogGetPreprocData(inputDir, subject, sessionList, tasks, [], description);
 
         %% STEP 2: SELECT A SUBSET OF CHANNELS 
 
@@ -108,7 +109,7 @@ for ii = 1 : length(subjectList)
         chan_idx2 = find(~contains(channels.bensonarea, 'none'));
         
         chan_idx = unique([chan_idx1; chan_idx2]);
-        data = data(chan_idx,:);
+        subdata = subdata(chan_idx,:);
         channels = channels(chan_idx,:);
         
         fprintf('[%s] Found %d channels with visual matches out of %d ecog channels \n', ...
@@ -122,7 +123,7 @@ for ii = 1 : length(subjectList)
             fprintf('[%s] This is a umcu patient: resampling and shifting the onsets\n',mfilename);
             
             % Resample data; assuming desired sample rate of 512
-            data = downsample(data', channels.sampling_frequency(1)/512)';
+            subdata = downsample(subdata', channels.sampling_frequency(1)/512)';
             events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/512));
             channels.sampling_frequency(:) = 512;
             
@@ -134,7 +135,7 @@ for ii = 1 : length(subjectList)
         end
         
         % Epoch the data
-        [epochs, t] = ecog_makeEpochs(data, events.event_sample, epochTime, channels.sampling_frequency(1));  
+        [epochs, t] = ecog_makeEpochs(subdata, events.event_sample, epochTime, channels.sampling_frequency(1));  
         
         fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
             mfilename, size(epochs,3), length(unique(events.run_name)), length(unique(events.session_name)));
@@ -144,8 +145,9 @@ for ii = 1 : length(subjectList)
         % Remove irrelevant columns from channels and events tables 
         events = removevars(events,{'onset','event_sample'});
         channels = removevars(channels,'notch');
-        if isfield(summary(events),'stim_file'), removevars(events,'stim_file');end
-        if isfield(summary(channels),'description'), removevars(channels,'description');end
+        if isfield(summary(events),'stim_file'), events = removevars(events,'stim_file');end
+        if isfield(summary(channels),'description'), channels = removevars(channels,'description');end
+        if isfield(summary(channels),'status_description'), channels = removevars(channels,'status_description');end
         
         % Add a subject index column to both:
         events.subject_name = repmat({subject}, [height(events),1]);
@@ -156,11 +158,11 @@ for ii = 1 : length(subjectList)
         save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't')
         
         % Collect into an output struct
-        out{ii}.name     = subject;
-        out{ii}.epochs   = epochs;
-        out{ii}.channels = channels;
-        out{ii}.events   = events;
-        out{ii}.t        = t;
+        data{ii}.name     = subject;
+        data{ii}.epochs   = epochs;
+        data{ii}.channels = channels;
+        data{ii}.events   = events;
+        data{ii}.t        = t;
 
     end   
 end

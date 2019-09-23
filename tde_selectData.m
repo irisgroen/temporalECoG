@@ -1,8 +1,8 @@
-function [out] = tde_selectData(data, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
+function [data2fit, allchannels, stimNames, t] = tde_selectData(data_in, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
 
 % Description
 %
-% function [out] = tde_selectData(data, [savePlots], [plotSaveDir], [stimNames], [epochOpts], [elecOpts], [baselineTime])
+% function [out] = tde_selectData(data_in, [savePlots], [plotSaveDir], [stimNames], [epochOpts], [elecOpts], [baselineTime])
 % 
 % Removes bad epochs and channels with many bad epochs (epochOpts)
 % Removes channels that do not match inclusion criteria (elecOpts)
@@ -11,7 +11,7 @@ function [out] = tde_selectData(data, savePlots, plotSaveDir, stimNames, epochOp
 % Makes plots
 
 % <data>
-if ~exist('data', 'var') || isempty(data)
+if ~exist('data_in', 'var') || isempty(data_in)
 	error('Please provide the data struct outputted by tde_getData,m as input');
 end 
 
@@ -58,24 +58,30 @@ end
 
 %% Loop over subjects
 
-out = data;
-for ii = 1:length(data)
+
+data2fit    = [];
+allchannels = [];
     
-    subject  = data{ii}.name;
-    epochs   = data{ii}.epochs;
-    channels = data{ii}.channels;
-    events   = data{ii}.events;
-    t        = data{ii}.t;
+for ii = 1:length(data_in)
+    
+    subject  = data_in{ii}.name;
+    epochs   = data_in{ii}.epochs;
+    channels = data_in{ii}.channels;
+    events   = data_in{ii}.events;
+    t        = data_in{ii}.t;
     
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
 
     %% STEP 1 CHECK FOR OUTLIERS EPOCHS/CHANNELS
     fprintf('[%s] Removing bad epochs ...\n',mfilename);
+    
     % remove epochs that have 20x the average
     % if more than X epochs for a channel, remove entire channel
     % output a description of how many trials were removed (write to
     % file?)
     % update the events file? (means we're removing epoch from all chans)
+    
+    % TO DO include plots of single trials pre and post removal
     
     % Compute sum over time for each epoch
     summed_epochs = squeeze(sum(epochs,3));
@@ -167,33 +173,29 @@ for ii = 1:length(data)
     % Update channels table
     channels = channels(select_idx,:);
     
- %% STEP 4 average across conditions?
- 
- %% STEP 5 plot selection? (single trials, averages?)
- 
-        % Checks (Temporary; TO write simpler function e.g. bidsEcogPlotEpochs)
-%         trials = [];
-%         trials.broadband = epochs;
-%         trials.events = events;
-%         trials.bb_bands = [50 200];
-%         trials.time = t;
-%         trials.channels = channels;
-%         trials.viselec = visualelectrodes;
-%         whichElectrodes = channels.name;
-%         specs.baselineType = 'selectedtrials';
-%         specs.dataTypes = {'broadband'};
-%         trialType = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
-%         trialType = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
-%         trialType = {'CRF-1', 'CRF-2', 'CRF-3', 'CRF-4', 'CRF-5'};
-%         ecog_plotTimecourses(trials, whichElectrodes, trialType, specs);
-
-    %% STEP 6 update channel and event tables, save?
+    %% STEP 4 average across trials, concatenate subjects
     
-	out{ii}.epochs     = epochs;
-    out{ii}.channels   = channels;
-    out{ii}.events     = events;
+%     % temporary hack --> need to fix channel table formatting in broadband
+%     % computation
+%     if ~isnumeric(channels.low_cutoff)
+%         channels.low_cutoff = str2num(cell2mat(channels.low_cutoff));
+%     end
+
+     
+    epochs_averaged = nan(size(epochs,1), length(stimNames), size(epochs,3));
+    for jj = 1:length(stimNames)
+        trial_idx = contains(events.trial_name, stimNames{jj});
+        %epochs_averaged(:,jj,:) = squeeze(mean(epochs(:,trial_idx,:),2));
+        epochs_averaged(:,jj,:) = mean(epochs(:,trial_idx,:),2);
+    end
+    
+    data2fit = cat(1, data2fit, epochs_averaged);    
+    
+    % remove a number of columns from channel table for readability:
+    channels = removevars(channels, {'low_cutoff', 'high_cutoff', 'reference', 'group', 'sampling_frequency', 'bb_method', 'bb_bandwidth', 'status'});
+    allchannels = [allchannels; channels];
+    
+    % to add: plot with final time courses for each sub
     
 end
 fprintf('[%s] Done! \n',mfilename);

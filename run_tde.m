@@ -8,19 +8,13 @@ tic
 [data] = tde_getData(0);
 toc
 
-% select epochs and channels 
+% select epochs and channels, average trials within stimulus condition 
 tic
-[data2] = tde_selectData(data,1);
+[data2fit, channels, stimnames, t] = tde_selectData(data,0);
 toc
 
-% tde_averageEpochs/concatData
-[data3] = tde_combineData(data2,0);
-
-
-
-% next step, tde_generateStimulusTimecourses
-% input: events
-% output: time series per event
+% generate stimulus timecourses
+[stim_ts] = tde_generateStimulusTimecourses(stimnames,t);
 
 % next step, tde_fitModel
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts
