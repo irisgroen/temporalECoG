@@ -1,9 +1,9 @@
 
-function [data] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList, sessionList, epochTime)
+function [data] = tde_getData(compute, inputDir, outputDir, subjectList, sessionList, epochTime)
 
 % Description: 
 %
-% function [data] = tde_getData(loadPrecomputed, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime])
+% function [data] = tde_getData(compute, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime])
 %
 % Input (use varargin?)
 % - inputDir
@@ -26,8 +26,8 @@ function [data] = tde_getData(loadPrecomputed, inputDir, outputDir, subjectList,
 %% Define inputs 
 
 % <compute>
-if ~exist('loadPrecomputed', 'var') || isempty(loadPrecomputed)
-	error('Please specify whether to load the precomputed data (1) or to compute the data anew from the BIDS directory (0)');
+if ~exist('compute', 'var') || isempty(compute)
+	error('Please specify whether to compute the data (1) or to load from disk (0)');
 end  
 
 % <inputDir>
@@ -73,7 +73,7 @@ for ii = 1 : length(subjectList)
     
     % Determine if we're loading or computing the data
     
-    if loadPrecomputed
+    if ~compute
         
         % load from outputDir    
         data{ii} = load(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)));
@@ -155,10 +155,10 @@ for ii = 1 : length(subjectList)
         
         % Save out the data
         fprintf('[%s] Saving data for subject %s to %s \n',mfilename, subject, outputDir);
-        save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't')
+        save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't', 'subject')
         
         % Collect into an output struct
-        data{ii}.name     = subject;
+        data{ii}.subject  = subject;
         data{ii}.epochs   = epochs;
         data{ii}.channels = channels;
         data{ii}.events   = events;
@@ -166,7 +166,7 @@ for ii = 1 : length(subjectList)
 
     end   
 end
-
+fprintf('[%s] Done! \n',mfilename);
 end
 
 

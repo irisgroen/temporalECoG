@@ -2,19 +2,20 @@
 
 % note: sub-beilen not included at the moment because of inconsistencies in
 % the formatting of the events.tsv files, need to sync with Gio.
-
-% load (1) or compute (0)
 tic
-[data] = tde_getData(0);
-toc
+
+% load (0) or compute (1)
+[data] = tde_getData(1);
 
 % select epochs and channels, average trials within stimulus condition 
-tic
-[data2fit, channels, stimnames, t] = tde_selectData(data,0);
-toc
+[data2fit, channels, stimnames, t] = tde_selectData(data, 1);
 
 % generate stimulus timecourses
 [stim_ts] = tde_generateStimulusTimecourses(stimnames,t);
+
+toc
+
+% plot?
 
 % next step, tde_fitModel
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts

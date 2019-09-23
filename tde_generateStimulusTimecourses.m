@@ -1,7 +1,11 @@
 function [stim] = tde_generateStimulusTimecourses(stimNames,t)
+% Generates a timecourse based on stimulus name and epoch duration TO DO
+% make it actually parse the stimName, OR, even better construct afresh
+% from duration and ISI columns in events table (and stimulus mat file for
+% contrasts??)
 
+fprintf('[%s] Generating stimulus timecourses %s \n',mfilename);
 
-% 
 contrasts = [0.0625 0.125 0.25 0.5 1]; 
 durs      = [0.016667, 0.033333, 0.066667, 0.13333, 0.26667, 0.53333];
 

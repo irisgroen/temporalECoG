@@ -1,8 +1,9 @@
-function [data2fit, allchannels, stimNames, t] = tde_selectData(data_in, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
+function [allData, allChannels, stimNames, t] = tde_selectData(data_in, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
 
 % Description
 %
-% function [out] = tde_selectData(data_in, [savePlots], [plotSaveDir], [stimNames], [epochOpts], [elecOpts], [baselineTime])
+% function [allData, allChannels, stimNames, t] = tde_selectData(data_in, ...
+%           [savePlots], [plotSaveDir], [stimNames], [epochOpts], [elecOpts], [baselineTime])
 % 
 % Removes bad epochs and channels with many bad epochs (epochOpts)
 % Removes channels that do not match inclusion criteria (elecOpts)
@@ -14,6 +15,17 @@ function [data2fit, allchannels, stimNames, t] = tde_selectData(data_in, savePlo
 if ~exist('data_in', 'var') || isempty(data_in)
 	error('Please provide the data struct outputted by tde_getData,m as input');
 end 
+
+% <makePlots>
+if ~exist('savePlots', 'var') || isempty(savePlots)
+    savePlots = 1;
+end
+
+% <plotSaveDir>
+if ~exist('plotSaveDir', 'var') || isempty(plotSaveDir)
+    plotSaveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/electrodeselection';
+    if ~exist(plotSaveDir, 'dir'); mkdir(plotSaveDir); end
+end
 
 % <stimNames>
 if ~exist('stimNames', 'var') || isempty(stimNames)
@@ -45,26 +57,15 @@ if ~exist('baselineTime', 'var') || isempty(baselineTime)
     baselineTime = [-0.2 0];
 end
 
-% <makePlots>
-if ~exist('savePlots', 'var') || isempty(savePlots)
-    savePlots = 1;
-end
-
-% <plotSaveDir>
-if ~exist('plotSaveDir', 'var') || isempty(plotSaveDir)
-    plotSaveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/electrodeselection';
-    if ~exist(plotSaveDir, 'dir'); mkdir(plotSaveDir); end
-end
-
 %% Loop over subjects
 
-
-data2fit    = [];
-allchannels = [];
+% Initialize
+allData    = [];
+allChannels = [];
     
 for ii = 1:length(data_in)
     
-    subject  = data_in{ii}.name;
+    subject  = data_in{ii}.subject;
     epochs   = data_in{ii}.epochs;
     channels = data_in{ii}.channels;
     events   = data_in{ii}.events;
@@ -75,13 +76,8 @@ for ii = 1:length(data_in)
     %% STEP 1 CHECK FOR OUTLIERS EPOCHS/CHANNELS
     fprintf('[%s] Removing bad epochs ...\n',mfilename);
     
-    % remove epochs that have 20x the average
-    % if more than X epochs for a channel, remove entire channel
-    % output a description of how many trials were removed (write to
-    % file?)
-    % update the events file? (means we're removing epoch from all chans)
-    
-    % TO DO include plots of single trials pre and post removal
+    % Remove epochs whose summed amplitude is outlier thresh x more or less
+    % than the average across all channels
     
     % Compute sum over time for each epoch
     summed_epochs = squeeze(sum(epochs,3));
@@ -91,13 +87,18 @@ for ii = 1:length(data_in)
     outlier_idx1 = summed_epochs > (epochOpts.outlier_thresh * grand_mean);
     outlier_idx2 = summed_epochs < grand_mean - (epochOpts.outlier_thresh * grand_mean);
     outlier_idx = logical(outlier_idx1+outlier_idx2);
-    %epochs(outlier_idx,:) = nan;
+    % Set all timepoints for outlier trials to nans:
     for jj = 1:size(epochs,1)
         if any(outlier_idx(jj,:))
-            epochs(jj,outlier_idx(jj,:),:) =nan;
+            epochs(jj,outlier_idx(jj,:),:) = nan;
         end      
     end
-           
+    
+    % TO DO include plots of single trials pre and post removal
+    % if more than X epochs for a channel, remove entire channel
+    % output a description of how many trials were removed (write to
+    % file?), also update events file?    
+    
   %% STEP 2 convert to percent signal change 
     fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
@@ -109,7 +110,7 @@ for ii = 1:length(data_in)
     [epochs] = ecog_normalizeEpochs(epochs, t, baselineTime, 'percentsignalchange', idx);
     channels.units = repmat({'%change'}, [height(channels),1]);
     
- %% STEP 3 select electrodes
+  %% STEP 3 select electrodes
     
     fprintf('[%s] Selecting electrodes ...\n',mfilename);
 
@@ -175,27 +176,24 @@ for ii = 1:length(data_in)
     
     %% STEP 4 average across trials, concatenate subjects
     
-%     % temporary hack --> need to fix channel table formatting in broadband
-%     % computation
-%     if ~isnumeric(channels.low_cutoff)
-%         channels.low_cutoff = str2num(cell2mat(channels.low_cutoff));
-%     end
-
-     
+    % Average across trials within stimulus condition
     epochs_averaged = nan(size(epochs,1), length(stimNames), size(epochs,3));
     for jj = 1:length(stimNames)
         trial_idx = contains(events.trial_name, stimNames{jj});
-        %epochs_averaged(:,jj,:) = squeeze(mean(epochs(:,trial_idx,:),2));
-        epochs_averaged(:,jj,:) = mean(epochs(:,trial_idx,:),2);
+        epochs_averaged(:,jj,:) = nanmean(epochs(:,trial_idx,:),2);
     end
+    % Also compute se across trials?
     
-    data2fit = cat(1, data2fit, epochs_averaged);    
+    % Concatenate the data across subjects
+    allData = cat(1, allData, epochs_averaged);    
     
-    % remove a number of columns from channel table for readability:
+    % Remove a number of columns from channel table for readability, and
+    % concatenate across subjects
     channels = removevars(channels, {'low_cutoff', 'high_cutoff', 'reference', 'group', 'sampling_frequency', 'bb_method', 'bb_bandwidth', 'status'});
-    allchannels = [allchannels; channels];
+    allChannels = [allChannels; channels];
     
-    % to add: plot with final time courses for each sub
+    % TO DO: plot with final time courses per condition for each sub?
     
 end
 fprintf('[%s] Done! \n',mfilename);
+end
