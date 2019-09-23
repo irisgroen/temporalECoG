@@ -5,10 +5,10 @@
 tic
 
 % load (0) or compute (1)
-[data] = tde_getData(1);
+[fulldata] = tde_getData(0);
 
 % select epochs and channels, average trials within stimulus condition 
-[data2fit, channels, stimnames, t] = tde_selectData(data, 1);
+[data2fit, channels, stimnames, t] = tde_selectData(fulldata, 0);
 
 % generate stimulus timecourses
 [stim_ts] = tde_generateStimulusTimecourses(stimnames,t);

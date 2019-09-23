@@ -20,9 +20,6 @@ function [data] = tde_getData(compute, inputDir, outputDir, subjectList, session
 % - events
 % - t
 
-% To add: exception for umcu data: downsample and shift
-
-
 %% Define inputs 
 
 % <compute>

@@ -74,7 +74,7 @@ for ii = 1:length(data_in)
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
 
     %% STEP 1 CHECK FOR OUTLIERS EPOCHS/CHANNELS
-    fprintf('[%s] Removing bad epochs ...\n',mfilename);
+    %fprintf('[%s] Removing bad epochs...\n',mfilename);
     
     % Remove epochs whose summed amplitude is outlier thresh x more or less
     % than the average across all channels
@@ -100,7 +100,7 @@ for ii = 1:length(data_in)
     % file?), also update events file?    
     
   %% STEP 2 convert to percent signal change 
-    fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
+    %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
     [~,~,ses_idx]= unique(events.session_name);
@@ -112,7 +112,7 @@ for ii = 1:length(data_in)
     
   %% STEP 3 select electrodes
     
-    fprintf('[%s] Selecting electrodes ...\n',mfilename);
+    %fprintf('[%s] Selecting electrodes...\n',mfilename);
 
     % Restrict selection to relevant stimuli only
     stimsForSelection = contains(events.trial_name, stimNames);

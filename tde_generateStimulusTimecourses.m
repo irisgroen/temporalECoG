@@ -4,7 +4,7 @@ function [stim] = tde_generateStimulusTimecourses(stimNames,t)
 % from duration and ISI columns in events table (and stimulus mat file for
 % contrasts??)
 
-fprintf('[%s] Generating stimulus timecourses %s \n',mfilename);
+fprintf('[%s] Generating stimulus timecourses \n',mfilename);
 
 contrasts = [0.0625 0.125 0.25 0.5 1]; 
 durs      = [0.016667, 0.033333, 0.066667, 0.13333, 0.26667, 0.53333];
@@ -26,5 +26,7 @@ for k = 1 : 6
     t_end   = durs(4) * 2 + durs(k);
     stim(11 + k, t > t_start & t <= t_end) = 1;
 end
+
+fprintf('[%s] Done! \n',mfilename);
 
 end
