@@ -1,4 +1,4 @@
-function [allData, allChannels, stimNames, t] = tde_selectData(data_in, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
+function [allData, allChannels, stimNames, t] = tde_selectData(data, savePlots, plotSaveDir, stimNames, epochOpts, elecOpts, baselineTime)
 
 % Description
 %
@@ -12,7 +12,7 @@ function [allData, allChannels, stimNames, t] = tde_selectData(data_in, savePlot
 % Makes plots
 
 % <data>
-if ~exist('data_in', 'var') || isempty(data_in)
+if ~exist('data', 'var') || isempty(data)
 	error('Please provide the data struct outputted by tde_getData,m as input');
 end 
 
@@ -47,7 +47,7 @@ if ~exist('elecOpts', 'var') || isempty(elecOpts)
     elecOpts = struct(); % a struct specifying criteria for inclusion of electrodes
     elecOpts.max_thresh     = 1; % minimum required maximal response in % signal change
     elecOpts.mean_thresh    = 0; % minimum required mean response during stim_on period in % signal change
-    elecOpts.stim_on        = [0 0.2]; % time period across which to compute mean response
+    elecOpts.stim_on        = [0 0.5]; % time period across which to compute mean response
     elecOpts.exclude_bad    = 1; % boolean
     elecOpts.exclude_depth  = 0; % boolean
 end
@@ -63,13 +63,13 @@ end
 allData    = [];
 allChannels = [];
     
-for ii = 1:length(data_in)
+for ii = 1:length(data)
     
-    subject  = data_in{ii}.subject;
-    epochs   = data_in{ii}.epochs;
-    channels = data_in{ii}.channels;
-    events   = data_in{ii}.events;
-    t        = data_in{ii}.t;
+    subject  = data{ii}.subject;
+    epochs   = data{ii}.epochs;
+    channels = data{ii}.channels;
+    events   = data{ii}.events;
+    t        = data{ii}.t;
     
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
 
@@ -110,8 +110,7 @@ for ii = 1:length(data_in)
     [epochs] = ecog_normalizeEpochs(epochs, t, baselineTime, 'percentsignalchange', idx);
     channels.units = repmat({'%change'}, [height(channels),1]);
     
-  %% STEP 3 select electrodes
-    
+  %% STEP 3 select electrodes   
     %fprintf('[%s] Selecting electrodes...\n',mfilename);
 
     % Restrict selection to relevant stimuli only
@@ -192,7 +191,7 @@ for ii = 1:length(data_in)
     channels = removevars(channels, {'low_cutoff', 'high_cutoff', 'reference', 'group', 'sampling_frequency', 'bb_method', 'bb_bandwidth', 'status'});
     allChannels = [allChannels; channels];
     
-    % TO DO: plot with final time courses per condition for each sub?
+    % TO DO: plot with final time courses per condition for each sub
     
 end
 fprintf('[%s] Done! \n',mfilename);
