@@ -66,7 +66,6 @@ data = cell(length(subjectList),1);
 for ii = 1 : length(subjectList)
     
     subject = subjectList{ii};
-    data{ii}.name = subject;
     
     % Determine if we're loading or computing the data
     
@@ -100,18 +99,16 @@ for ii = 1 : length(subjectList)
         % Make selection on visual only, index into data + channels
         fprintf('[%s] Selecting channels with visual matches...\n',mfilename);
         
-        %chan_idx1 = find(contains(channels.type,'ecog') & ~contains(channels.wangarea, 'none'));
-        %chan_idx2 = find(contains(channels.type,'ecog') & ~contains(channels.bensonarea, 'none'));
         chan_idx1 = find(~contains(channels.wangarea, 'none'));
-        chan_idx2 = find(~contains(channels.bensonarea, 'none'));
-        
+        chan_idx2 = find(~contains(channels.bensonarea, 'none'));        
         chan_idx = unique([chan_idx1; chan_idx2]);
-        subdata = subdata(chan_idx,:);
-        channels = channels(chan_idx,:);
         
         fprintf('[%s] Found %d channels with visual matches out of %d ecog channels \n', ...
             mfilename, length(chan_idx), length(find(contains(lower(channels.type), {'ecog', 'seeg'}))));
-               
+        
+        subdata = subdata(chan_idx,:);
+        channels = channels(chan_idx,:);
+        
         %% STEP 3: EPOCH THE DATA 
         fprintf('[%s] Epoching data...\n',mfilename);
         
@@ -135,7 +132,7 @@ for ii = 1 : length(subjectList)
         [epochs, t] = ecog_makeEpochs(subdata, events.event_sample, epochTime, channels.sampling_frequency(1));  
         
         fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
-            mfilename, size(epochs,3), length(unique(events.run_name)), length(unique(events.session_name)));
+            mfilename, size(epochs,2), length(unique(events.run_name)), length(unique(events.session_name)));
         
         %% STEP 4: Save out a single preproc file for each subject 
         
@@ -152,14 +149,14 @@ for ii = 1 : length(subjectList)
         
         % Save out the data
         fprintf('[%s] Saving data for subject %s to %s \n',mfilename, subject, outputDir);
-        save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)), 'epochs', 'channels', 'events', 't', 'subject')
+        save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)),'subject', 'epochs', 't', 'events', 'channels')
         
         % Collect into an output struct
         data{ii}.subject  = subject;
         data{ii}.epochs   = epochs;
-        data{ii}.channels = channels;
-        data{ii}.events   = events;
         data{ii}.t        = t;
+        data{ii}.events   = events;
+        data{ii}.channels = channels;
 
     end   
 end
