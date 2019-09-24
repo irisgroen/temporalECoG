@@ -5,7 +5,7 @@
 tic
 
 % load (0) or (re)compute (1)
-reComputeFlag = false; 
+reComputeFlag = true; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 

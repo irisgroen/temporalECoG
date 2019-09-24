@@ -48,7 +48,6 @@ if ~exist('elecOpts', 'var') || isempty(elecOpts)
     elecOpts.max_thresh     = 1; % minimum required maximal response in % signal change
     elecOpts.mean_thresh    = 0; % minimum required mean response during stim_on period in % signal change
     elecOpts.stim_on        = [0 0.5]; % time period across which to compute mean response
-    elecOpts.exclude_bad    = 1; % boolean
     elecOpts.exclude_depth  = 0; % boolean
 end
 
@@ -83,9 +82,10 @@ for ii = 1:length(data)
     summed_epochs = squeeze(sum(epochs,1));
     newepochs = epochs;
     for jj = 1:height(channels)
-        outlier_idx1 = summed_epochs(:,jj) > epochOpts.outlier_thresh * median(summed_epochs(:,jj));
-        outlier_idx2 = summed_epochs(:,jj) < summed_epochs(:,jj) - (epochOpts.outlier_thresh * summed_epochs(:,jj));
-        outlier_idx = logical(outlier_idx1+outlier_idx2);
+        outlier_thresh = epochOpts.outlier_thresh * median(summed_epochs(:,jj));
+        outlier_idx = summed_epochs(:,jj) > outlier_thresh;
+        %outlier_idx2 = summed_epochs(:,jj) < median(summed_epochs(:,jj)) - outlier_thresh;
+        %outlier_idx = logical(outlier_idx1+outlier_idx2);
         newepochs(:,outlier_idx, jj) = nan;
         
         outliers = find(outlier_idx);
@@ -95,13 +95,13 @@ for ii = 1:length(data)
             nOutliers = length(outliers);
             dim1 = round((nOutliers+1)/2);
             dim2 = round((nOutliers+1)/dim1);
-            subplot(dim1,dim2,1); hold on; 
-            histogram(summed_epochs(:,jj),100); title(channels.name{jj});
+            subplot(dim2,dim1,1); hold on; title(channels.name{jj});            
+            histogram(summed_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
             for kk = 1:nOutliers
-                subplot(dim1,dim2,kk+1); %plot(t, epochs(:,outliers(kk), jj), 'LineWidth');
-                ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d', outliers(kk)));    
+                subplot(dim2,dim1,kk+1); 
+                ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d %s', outliers(kk), events.trial_name{outliers(kk)}));    
             end
-            set(gcf, 'Position', [150 100 1500 1250]);
+            set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
             saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
         end
     end
@@ -149,21 +149,18 @@ for ii = 1:length(data)
         saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
     end
     
-    select_idx = ones(height(channels),4);
+    select_idx = ones(height(channels),3);
     
     % Exclude channels based on max and mean:
     stim_on_idx = t > elecOpts.stim_on(1) & t <= elecOpts.stim_on(2);  
     select_idx(:,1) = max(mean_resp(stim_on_idx,:),[],1) > elecOpts.max_thresh;
     select_idx(:,2) = mean(mean_resp(stim_on_idx,:),1) > elecOpts.mean_thresh;
 
-    % EXCLUDE CHANNELS LABELED AS BAD
-    if elecOpts.exclude_bad, select_idx(:,3) = contains(channels.status, 'good');end  
-
-    % EXCLUDE DEPTH ELECTRODES
+    % Exclude depth electrodes
     if elecOpts.exclude_depth, select_idx(:,3) = contains(lower(channels.type), 'ecog');end  
 
     % Combine criteria
-    select_idx = sum(select_idx,2) == 4;
+    select_idx = sum(select_idx,2) == 3;
 
     % Plot selection
     if savePlots           

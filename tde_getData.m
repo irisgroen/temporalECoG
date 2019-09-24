@@ -99,8 +99,8 @@ for ii = 1 : length(subjectList)
         % Make selection on visual only, index into data + channels
         fprintf('[%s] Selecting channels with visual matches...\n',mfilename);
         
-        chan_idx1 = find(~contains(channels.wangarea, 'none'));
-        chan_idx2 = find(~contains(channels.bensonarea, 'none'));        
+        chan_idx1 = find(~contains(channels.wangarea, 'none') & contains(channels.status, 'good'));
+        chan_idx2 = find(~contains(channels.bensonarea, 'none') & contains(channels.status, 'good'));        
         chan_idx = unique([chan_idx1; chan_idx2]);
         
         fprintf('[%s] Found %d channels with visual matches out of %d ecog channels \n', ...
@@ -136,9 +136,9 @@ for ii = 1 : length(subjectList)
         
         %% STEP 4: Save out a single preproc file for each subject 
         
-        % Remove irrelevant columns from channels and events tables 
+        % Remove irrelevant/redundant columns from channels and events tables 
         events = removevars(events,{'onset','event_sample'});
-        channels = removevars(channels,'notch');
+        channels = removevars(channels,{'notch', 'status'});
         if isfield(summary(events),'stim_file'), events = removevars(events,'stim_file');end
         if isfield(summary(channels),'description'), channels = removevars(channels,'description');end
         if isfield(summary(channels),'status_description'), channels = removevars(channels,'status_description');end
