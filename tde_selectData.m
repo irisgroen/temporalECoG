@@ -37,7 +37,7 @@ end
 % <epochOpts>
 if ~exist('epochOpts', 'var') || isempty(epochOpts)
     epochOpts = struct(); % a struct specifying criteria for inclusion of epochs
-    epochOpts.outlier_thresh= 10; % x-fold magnitude above which epoch will be labeled as outlier
+    epochOpts.outlier_thresh= 20; % x-fold magnitude above which epoch will be labeled as outlier
     %epochOpts.maxnooutlier  = 50; % number of outlier epochs after which entire channel will be labeled as bad
     %epochOpts.write         = 1; % boolean
 end
@@ -80,20 +80,32 @@ for ii = 1:length(data)
     % than the average across all channels
     
     % Compute sum over time for each epoch
-    summed_epochs = squeeze(sum(epochs,3));
-    %figure;histogram(summed_epochs(1,:),100)
-
-    grand_mean = mean(summed_epochs(:));
-    outlier_idx1 = summed_epochs > (epochOpts.outlier_thresh * grand_mean);
-    outlier_idx2 = summed_epochs < grand_mean - (epochOpts.outlier_thresh * grand_mean);
-    outlier_idx = logical(outlier_idx1+outlier_idx2);
-    % Set all timepoints for outlier trials to nans:
-    for jj = 1:size(epochs,1)
-        if any(outlier_idx(jj,:))
-            epochs(jj,outlier_idx(jj,:),:) = nan;
-        end      
+    summed_epochs = squeeze(sum(epochs,1));
+    newepochs = epochs;
+    for jj = 1:height(channels)
+        outlier_idx1 = summed_epochs(:,jj) > epochOpts.outlier_thresh * median(summed_epochs(:,jj));
+        outlier_idx2 = summed_epochs(:,jj) < summed_epochs(:,jj) - (epochOpts.outlier_thresh * summed_epochs(:,jj));
+        outlier_idx = logical(outlier_idx1+outlier_idx2);
+        newepochs(:,outlier_idx, jj) = nan;
+        
+        outliers = find(outlier_idx);
+        if ~isempty(outliers)
+            figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+            figure('Name', figureName); hold on;
+            nOutliers = length(outliers);
+            dim1 = round((nOutliers+1)/2);
+            dim2 = round((nOutliers+1)/dim1);
+            subplot(dim1,dim2,1); hold on; 
+            histogram(summed_epochs(:,jj),100); title(channels.name{jj});
+            for kk = 1:nOutliers
+                subplot(dim1,dim2,kk+1); %plot(t, epochs(:,outliers(kk), jj), 'LineWidth');
+                ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d', outliers(kk)));    
+            end
+            set(gcf, 'Position', [150 100 1500 1250]);
+            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
+        end
     end
-    
+        
     % TO DO include plots of single trials pre and post removal
     % if more than X epochs for a channel, remove entire channel
     % output a description of how many trials were removed (write to
@@ -103,10 +115,11 @@ for ii = 1:length(data)
     %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
+    [~,~,task_idx]= unique(events.task_name);
     [~,~,ses_idx]= unique(events.session_name);
     [~,~,run_idx] = unique(events.run_name);
-    idx = (ses_idx*100)+run_idx;
-
+    [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
+    idx = [];
     [epochs] = ecog_normalizeEpochs(epochs, t, baselineTime, 'percentsignalchange', idx);
     channels.units = repmat({'%change'}, [height(channels),1]);
     
@@ -116,52 +129,51 @@ for ii = 1:length(data)
     % Restrict selection to relevant stimuli only
     stimsForSelection = contains(events.trial_name, stimNames);
   
-    mean_resp = nanmean(epochs(:,stimsForSelection,:),2);
-    llim = (mean_resp - (nanstd(epochs(:,stimsForSelection,:),0,2)));
-    ulim = (mean_resp + (nanstd(epochs(:,stimsForSelection,:),0,2)));
-    mean_resp_ci = cat(2, llim, ulim);
-    nEl = size(mean_resp,1); 
+    mean_resp = mean(epochs(:,stimsForSelection,:),2, 'omitnan');
+    llim = (mean_resp - (std(epochs(:,stimsForSelection,:),0,2,'omitnan')));
+    ulim = (mean_resp + (std(epochs(:,stimsForSelection,:),0,2,'omitnan')));
+    mean_resp_sd = cat(2, llim, ulim);
 
 	% plot
     if savePlots            
+        nEl = size(mean_resp,3); 
         figureName = sprintf('viselec_%s_all', subject);
-        figure('Name', figureName); nSubPlot = ceil(sqrt(nEl)); 
+        figure('Name', figureName); plotDim1 = round(sqrt(nEl)); plotDim2 = ceil((nEl)/plotDim1);
         for el = 1:nEl
-            subplot(nSubPlot,nSubPlot,el); hold on
+            subplot(plotDim1,plotDim2,el); hold on
             plotTitle = sprintf('%s W:%s B:%s ', channels.name{el}, channels.wangarea{el}, channels.bensonarea{el});        
-            ecog_plotSingleTimeCourse(t, mean_resp(el,:), squeeze(mean_resp_ci(el,:,:)), [], plotTitle);
+            ecog_plotSingleTimeCourse(t, mean_resp(:,:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle);
             %if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
             set(gcf, 'Position', [150 100 1500 1250]);
         end
         saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
     end
     
+    select_idx = ones(height(channels),4);
+    
     % Exclude channels based on max and mean:
     stim_on_idx = t > elecOpts.stim_on(1) & t <= elecOpts.stim_on(2);  
-    select_idx1 = max(mean_resp(:,stim_on_idx),[],2) > elecOpts.max_thresh;
-    select_idx2 = mean(mean_resp(:,stim_on_idx),2) > elecOpts.mean_thresh;
+    select_idx(:,1) = max(mean_resp(stim_on_idx,:),[],1) > elecOpts.max_thresh;
+    select_idx(:,2) = mean(mean_resp(stim_on_idx,:),1) > elecOpts.mean_thresh;
 
     % EXCLUDE CHANNELS LABELED AS BAD
-	select_idx3 = ones(size(select_idx1));
-    if elecOpts.exclude_bad, select_idx3 = contains(channels.status, 'good');end  
+    if elecOpts.exclude_bad, select_idx(:,3) = contains(channels.status, 'good');end  
 
     % EXCLUDE DEPTH ELECTRODES
-    select_idx4 = ones(size(select_idx1));
-    if elecOpts.exclude_depth, select_idx4 = contains(lower(channels.type), 'ecog');end  
+    if elecOpts.exclude_depth, select_idx(:,3) = contains(lower(channels.type), 'ecog');end  
 
     % Combine criteria
-    select_idx = select_idx1 + select_idx2 + select_idx3 + select_idx4;
-    select_idx = (select_idx == 4);
+    select_idx = sum(select_idx,2) == 4;
 
     % Plot selection
     if savePlots           
         figureName = sprintf('viselec_%s_selected', subject);
-        figure('Name', figureName); nSubPlot = ceil(sqrt(nEl)); 
+        figure('Name', figureName); 
         for el = 1:nEl
             if select_idx(el)
-                subplot(nSubPlot,nSubPlot,el); hold on
+                subplot(plotDim1,plotDim2,el); hold on
                 plotTitle = sprintf('%s W:%s B:%s ', channels.name{el}, channels.wangarea{el}, channels.bensonarea{el});
-                ecog_plotSingleTimeCourse(t, mean_resp(el,:), squeeze(mean_resp_ci(el,:,:)), [], plotTitle)    
+                ecog_plotSingleTimeCourse(t, mean_resp(:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle)    
                 set(gcf, 'Position', [150 100 1500 1250]);
             end
         end
@@ -169,7 +181,7 @@ for ii = 1:length(data)
     end
     
     % Select the channels
-    epochs = epochs(select_idx,:,:);
+    epochs = epochs(:,:,select_idx);
     % Update channels table
     channels = channels(select_idx,:);
     
@@ -184,7 +196,7 @@ for ii = 1:length(data)
     % Also compute se across trials?
     
     % Concatenate the data across subjects
-    allData = cat(1, allData, epochs_averaged);    
+    allData = cat(3, allData, epochs_averaged);    
     
     % Remove a number of columns from channel table for readability, and
     % concatenate across subjects
