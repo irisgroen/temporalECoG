@@ -37,7 +37,7 @@ end
 % <epochOpts>
 if ~exist('epochOpts', 'var') || isempty(epochOpts)
     epochOpts = struct(); % a struct specifying criteria for inclusion of epochs
-    epochOpts.outlier_thresh= 20; % x-fold magnitude above which epoch will be labeled as outlier
+    epochOpts.outlier_thresh= 20; % x-fold max magnitude above which epoch will be labeled as outlier
     %epochOpts.maxnooutlier  = 50; % number of outlier epochs after which entire channel will be labeled as bad
     %epochOpts.write         = 1; % boolean
 end
@@ -73,43 +73,35 @@ for ii = 1:length(data)
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
 
     %% STEP 1 CHECK FOR OUTLIERS EPOCHS/CHANNELS
+    
     %fprintf('[%s] Removing bad epochs...\n',mfilename);
     
-    % Remove epochs whose summed amplitude is outlier thresh x more or less
-    % than the average across all channels
+    % Remove epochs whose max response amplitude is outlier thresh x more
+    % or less than the average response in that channel
     
-    % Compute sum over time for each epoch
-    summed_epochs = squeeze(sum(epochs,1));
-    newepochs = epochs;
+    %     Compute max over time for each epoch
+    max_epochs = squeeze(max(epochs,[],1));
     for jj = 1:height(channels)
-        outlier_thresh = epochOpts.outlier_thresh * median(summed_epochs(:,jj));
-        outlier_idx = summed_epochs(:,jj) > outlier_thresh;
-        %outlier_idx2 = summed_epochs(:,jj) < median(summed_epochs(:,jj)) - outlier_thresh;
-        %outlier_idx = logical(outlier_idx1+outlier_idx2);
-        newepochs(:,outlier_idx, jj) = nan;
-        
+        outlier_thresh = epochOpts.outlier_thresh * median(max_epochs(:,jj));
+        outlier_idx = max_epochs(:,jj) > outlier_thresh;             
         outliers = find(outlier_idx);
         if ~isempty(outliers)
-            figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+            figureName = sprintf('maxoutlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
             figure('Name', figureName); hold on;
             nOutliers = length(outliers);
             dim1 = round((nOutliers+1)/2);
             dim2 = round((nOutliers+1)/dim1);
             subplot(dim2,dim1,1); hold on; title(channels.name{jj});            
-            histogram(summed_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
+            histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
             for kk = 1:nOutliers
                 subplot(dim2,dim1,kk+1); 
                 ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d %s', outliers(kk), events.trial_name{outliers(kk)}));    
             end
             set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
+            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); %close;
         end
+        epochs(:,outlier_idx,jj) = nan;
     end
-        
-    % TO DO include plots of single trials pre and post removal
-    % if more than X epochs for a channel, remove entire channel
-    % output a description of how many trials were removed (write to
-    % file?), also update events file?    
     
   %% STEP 2 convert to percent signal change 
     %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
