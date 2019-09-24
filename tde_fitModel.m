@@ -1,4 +1,4 @@
-function [out] = tde_fitModel(data, stims_ts, functionhandle, opts, savePlots)
+function [out] = tde_fitModel(data, stim, functionhandle, opts)
 % Description
 
 	

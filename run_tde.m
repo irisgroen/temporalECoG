@@ -15,12 +15,13 @@ tic
 
 toc
 
-% plot?
+%% 
+
+[out] = tde_fitModel(data2fit, stim_ts, functionhandle, opts);
 
 % next step, tde_fitModel
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts
 % output: model fits
-
 % -- which models?
 % ----- DN (flavors: uniphasic, biphasic, fixed exponent or not)
 % ----- DN cascade?
@@ -28,10 +29,14 @@ toc
 % ----- DN-like models:
 % --------- Heeger 1993
 
-% separate script?: tde_analyzePRF, ecog_analyzePRF?
-% preferably NOT another save step, do on the fly? or add to channel table
-
 % next step, tde_analyzeModelFits
 % input: model fits (can be multiple?)
 % outputs: plots, stats
+
+% function tde_plotModelFits 
+% How about the PRFs --> separate pipeline (like this one), read in fits
+% from file (e.g. add to channel table), prf_getData, prf_selectData,
+% prf_fitModel
+
+
 
