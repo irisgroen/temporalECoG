@@ -4,11 +4,13 @@
 % the formatting of the events.tsv files, need to sync with Gio.
 tic
 
-% load (0) or compute (1)
-[fulldata] = tde_getData(0);
+% load (0) or (re)compute (1)
+reComputeFlag = false; 
+[data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
-[data2fit, channels, stimnames, t] = tde_selectData(fulldata, 0);
+doPlotsFlag = true; 
+[data2fit, channels, stimnames, t] = tde_selectData(data, doPlotsFlag);
 
 % generate stimulus timecourses
 [stim_ts] = tde_generateStimulusTimecourses(stimnames,t);
