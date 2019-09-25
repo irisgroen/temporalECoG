@@ -1,76 +1,115 @@
-function [out] = tde_fitModel(data, stim, functionhandle, opts)
+function [out] = tde_fitModel(functionhandle, data, stim, t, channels, opts)
 % Description
 
-	
+fittedPrm   = [];
+derivedPrm  = [];
+rvals       = [];
 
-fittedPrm = [];
-derivedPrm = [];
-
-    %% scale each electrode to the max (make optional?)
-    normdata = [];
-    for k = 1 : size(data,1)
-        tmp = data(k, :, :);
-        maxRsp(k) = max(tmp(:));
-        normdata(k, :, :) = data(k, :, :)./maxRsp(k);
+%% scale each electrode to its max (make optional?)
+    
+if opts.normalize_data       
+    normdata = data;
+    for ii = 1:size(data,3)
+        tmp = data(:, :, ii);
+        maxRsp(ii) = max(tmp(:));
+        normdata(:, :, ii) = data(:, :, ii)./maxRsp(ii);
     end
+    data = normdata;
+end
     
-    %% average elecs within area (make optional)  
+%% average elecs within area (make optional)
+if opts.average_elecs
+    avdata = nan(size(data,1), size(data,2), 4);
+
     INX = [];
-    INX{1} = contains(elec_info.wang, 'V1') | contains(elec_info.benson, 'V1');
-    INX{2} = contains(elec_info.wang, 'V2') | contains(elec_info.benson, 'V2');
-    INX{3} = contains(elec_info.wang, 'V3') & ~contains(elec_info.wang, {'V3a', 'V3b'}) | contains(elec_info.benson, 'V3') & ~contains(elec_info.benson, {'V3a', 'V3b'});
-    INX{4} = contains(elec_info.wang, {'V3a', 'V3b', 'IPS', 'hV4', 'LO', 'TO'}) | contains(elec_info.benson, {'V3a', 'V3b', 'hV4', 'LO', 'TO'}) ;
+    INX{1} = contains(channels.wangarea, 'V1') | contains(channels.bensonarea, 'V1');
+    INX{2} = contains(channels.wangarea, 'V2') | contains(channels.bensonarea, 'V2');
+    INX{3} = contains(channels.wangarea, 'V3') & ~contains(channels.bensonarea, {'V3a', 'V3b'}) | contains(channels.bensonarea, 'V3') & ~contains(channels.bensonarea, {'V3a', 'V3b'});
+    INX{4} = contains(channels.wangarea, {'V3a', 'V3b', 'IPS', 'hV4', 'LO', 'TO'}) | contains(channels.bensonarea, {'V3a', 'V3b', 'hV4', 'LO', 'TO'}) ;
 
-     switch whichArea
-        case 'V1'
-            data2fit = normdata(INX{1},:,:); % V1 ELECS
-        case 'V2'
-            data2fit = normdata(INX{2},:,:); % V2 ELECS
-        case 'V3'
-            data2fit = normdata(INX{3},:,:); % V3 ELECS
-        case 'Vhigher'
-            data2fit = normdata(INX{4},:,:); % higher ELECS
-     end
+    for ii = 1:size(avdata,3)
+        mdata = mean(data(:,:,INX{ii}),3);
+        % another normalization step from Jings code, necessary?
+        maxmdata = max(mdata(:));
+        mdata    = mdata ./maxmdata;
+        avdata(:,:,ii) = mdata;
+    end
+    data = avdata;
+    elecNames = {'V1', 'V2', 'V3', 'Vhigher'};
+else
+    elecNames = channels.name;
+end
     
-     % or scale only here?
-    mdata    = squeeze(mean(data2fit,1));
-    maxmdata = max(mdata(:));
-    mdata    = mdata ./maxmdata;
+%% FIT THE DN model
+
+% should be getting these from opts?
+
+seed = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
+%seed = [0.1, 0.1, 3, 0.1, 0.06, 1];
+lb   = [0, 0, 0, 0, 0, 0];
+ub   = [1, 1, 10, 1, 1, 1];
+
+for ii = 1:length(elecNames) % loop over channels or channel averages
+
+    fprintf('[%s] Fitting model for %s \n',mfilename, elecNames{ii});
     
-    %% FIT THE DN model
-
-    seed = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
-    %seed = [0.1, 0.1, 3, 0.1, 0.06, 1];
-    lb   = [0, 0, 0, 0, 0, 0];
-    ub   = [1, 1, 10, 1, 1, 1];
-
+    data2fit = data(:,:,ii);
+    
     prm = [];
-    prm = fminsearchbnd(@(x) dn2_fineFitCtrstDur(x, mdata, t, stim), seed, lb, ub);
-    
+    prm = fminsearchbnd(@(x) dn2_fineFitCtrstDur(x, data2fit', t, stim'), seed, lb, ub);
+
     %% GENERATE MODEL PREDICTIONS
 
     prm_tofit = [prm(1), 0, prm(2 : end)];
 
-    pred = dn_DNmodel(prm_tofit, stim, t);
+    %pred = dn_DNmodel(prm_tofit, stim, t);
+    pred = functionhandle(prm_tofit, stim', t);
+
     pred = pred./max(pred(:));
-    
+    pred = pred';
+
     %% EXTRACT SUMMARY METRICS 
-   
-	derived_prm = dn_computeDerivedParams(prm, 'uniphasic');
-    
-    derivedPrm(aa,1) = derived_prm.t2pk;
-    derivedPrm(aa,2) = derived_prm.r_asymp;
-    fittedPrm(aa,:) = prm;
-    
-    
+
+    derived_prm = dn_computeDerivedParams(prm, 'uniphasic');
+
+    derivedPrm(1,ii) = derived_prm.t2pk;
+    derivedPrm(2,ii) = derived_prm.r_asymp;
+    fittedPrm(:,ii) = prm;
+
      %% CALCULATE R2
-    rvals = [];
-    for k = 1:17
-        rvals(k) = corr(pred(k,timeInd)',mdata(k,timeInd)');  
+    r = [];
+    for k = 1:size(data,2) % loop over stimuli
+        r(k) = corr(pred(:,k),data2fit(:,k)).^2;  
     end
-    mean(rvals.^2)
+    disp(mean(r));
+    rvals(:,ii) = r;
+end
+
+out.derivedPrm  = derivedPrm;
+out.fittedPrm   = fittedPrm;
+out.rvals       = rvals;
+
+return    
     
-    %% VARIOUS PLOTS from old code
+    
+    %% VARIOUS PLOTS from old code (need to be updated or moved to separate function)
+    
+    %% VISUALIZE ELECTRODE RESPONSES
+    figure (1); clf;
+    
+    v = find(contains(AreaNames, whichArea));
+    inx = find(INX{v});
+    %colors = jet(length(inx));
+    nSubplot = ceil(sqrt(length(inx))); names = [];
+    for ii  = 1:length(find(inx))
+        %subplot(nSubplot,nSubplot,ii)
+        patientIdx = find(contains(channels.subject_name, elec_info.patientname{inx(ii)}));
+        ecog_plotSingleTimeCourse(t,squeeze(mean(data(inx(ii),:,:),2)), [], colors(patientIdx,:));
+        %names{ii} = sprintf('%s %s %s W:%s B:%s', elec_info.patientname{inx(ii)}, elec_info.sessionname{inx(ii)}, elec_info.elecname{inx(ii)}, elec_info.wang{inx(ii)},elec_info.benson{inx(ii)});
+    end
+    legend(names)
+    title(sprintf('%s (n = %d)', AreaNames{v}, length(find(INX{v}))));
+    set(1, 'Position', [800 800 900 900]);
     
     %% VISUALIZE MODEL FIT
     figure (2), clf

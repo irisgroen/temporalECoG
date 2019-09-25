@@ -5,11 +5,11 @@
 tic
 
 % load (0) or (re)compute (1)
-reComputeFlag = true; 
+reComputeFlag = false; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
-doPlotsFlag = true; 
+doPlotsFlag = false; 
 [data2fit, channels, stimnames, t] = tde_selectData(data, doPlotsFlag);
 
 % generate stimulus timecourses
@@ -19,7 +19,11 @@ toc
 
 %% 
 
-[out] = tde_fitModel(data2fit, stim_ts, functionhandle, opts);
+opts = [];
+opts.normalize_data  = true;
+opts.average_elecs   = true;
+
+[out] = tde_fitModel(@dn_DNmodel, data2fit, stim_ts, t, channels, opts);
 
 % next step, tde_fitModel
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts

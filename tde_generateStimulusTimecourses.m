@@ -27,6 +27,7 @@ for k = 1 : 6
     stim(11 + k, t > t_start & t <= t_end) = 1;
 end
 
+stim = stim'; % put time dimension first
 fprintf('[%s] Done! \n',mfilename);
 
 end
