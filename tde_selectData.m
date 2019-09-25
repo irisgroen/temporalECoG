@@ -90,26 +90,29 @@ for ii = 1:length(data)
         outlier_thresh = epochOpts.outlier_thresh * median(max_epochs(:,jj));
         outlier_idx = max_epochs(:,jj) > outlier_thresh;             
         outliers = find(outlier_idx);
-        if ~isempty(outliers)
-            figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
-            figure('Name', figureName); hold on;
-            nOutliers = length(outliers);
-            dim1 = round((nOutliers+1)/2);
-            dim2 = round((nOutliers+1)/dim1);
-            subplot(dim2,dim1,1); hold on; title(channels.name{jj});            
-            histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
-            for kk = 1:nOutliers
-                subplot(dim2,dim1,kk+1); 
-                ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d %s', outliers(kk), events.trial_name{outliers(kk)}));    
+        if savePlots            
+            if ~isempty(outliers)
+                figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+                figure('Name', figureName); hold on;
+                nOutliers = length(outliers);
+                dim1 = round((nOutliers+1)/2);
+                dim2 = round((nOutliers+1)/dim1);
+                subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
+                histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
+                set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
+                for kk = 1:nOutliers
+                    subplot(dim2,dim1,kk+1); 
+                    ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d %s', outliers(kk), events.trial_name{outliers(kk)}));    
+                end
+                set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
+                saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
             end
-            set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
         end
         epochs(:,outlier_idx,jj) = nan;
     end
     
   %% STEP 2 convert to percent signal change 
-    fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
+    %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
 %     [~,~,task_idx]= unique(events.task_name);
@@ -121,7 +124,7 @@ for ii = 1:length(data)
     channels.units = repmat({'%change'}, [height(channels),1]);
     
   %% STEP 3 select electrodes   
-    fprintf('[%s] Selecting electrodes...\n',mfilename);
+    %fprintf('[%s] Selecting electrodes...\n',mfilename);
 
     mean_resp = mean(epochs,2, 'omitnan');
     llim = (mean_resp - (std(epochs,0,2,'omitnan')));
