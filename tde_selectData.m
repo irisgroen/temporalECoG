@@ -71,7 +71,12 @@ for ii = 1:length(data)
     t        = data{ii}.t;
     
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
-
+          
+    % Restrict selection to relevant stimuli only
+    stimsForSelection = contains(events.trial_name, stimNames);
+    epochs = epochs(:, stimsForSelection, :);
+    events = events(stimsForSelection, :);
+    
     %% STEP 1 CHECK FOR OUTLIERS EPOCHS/CHANNELS
     
     %fprintf('[%s] Removing bad epochs...\n',mfilename);
@@ -86,7 +91,7 @@ for ii = 1:length(data)
         outlier_idx = max_epochs(:,jj) > outlier_thresh;             
         outliers = find(outlier_idx);
         if ~isempty(outliers)
-            figureName = sprintf('maxoutlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+            figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
             figure('Name', figureName); hold on;
             nOutliers = length(outliers);
             dim1 = round((nOutliers+1)/2);
@@ -98,32 +103,29 @@ for ii = 1:length(data)
                 ecog_plotSingleTimeCourse(t, epochs(:,outliers(kk),jj), [], [], sprintf('epoch %d %s', outliers(kk), events.trial_name{outliers(kk)}));    
             end
             set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); %close;
+            saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
         end
         epochs(:,outlier_idx,jj) = nan;
     end
     
   %% STEP 2 convert to percent signal change 
-    %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
+    fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
-    [~,~,task_idx]= unique(events.task_name);
-    [~,~,ses_idx]= unique(events.session_name);
-    [~,~,run_idx] = unique(events.run_name);
-    [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
+%     [~,~,task_idx]= unique(events.task_name);
+%     [~,~,ses_idx]= unique(events.session_name);
+%     [~,~,run_idx] = unique(events.run_name);
+%     [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
     idx = [];
     [epochs] = ecog_normalizeEpochs(epochs, t, baselineTime, 'percentsignalchange', idx);
     channels.units = repmat({'%change'}, [height(channels),1]);
     
   %% STEP 3 select electrodes   
-    %fprintf('[%s] Selecting electrodes...\n',mfilename);
+    fprintf('[%s] Selecting electrodes...\n',mfilename);
 
-    % Restrict selection to relevant stimuli only
-    stimsForSelection = contains(events.trial_name, stimNames);
-  
-    mean_resp = mean(epochs(:,stimsForSelection,:),2, 'omitnan');
-    llim = (mean_resp - (std(epochs(:,stimsForSelection,:),0,2,'omitnan')));
-    ulim = (mean_resp + (std(epochs(:,stimsForSelection,:),0,2,'omitnan')));
+    mean_resp = mean(epochs,2, 'omitnan');
+    llim = (mean_resp - (std(epochs,0,2,'omitnan')));
+    ulim = (mean_resp + (std(epochs,0,2,'omitnan')));
     mean_resp_sd = cat(2, llim, ulim);
 
 	% plot
