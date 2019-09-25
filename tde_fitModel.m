@@ -1,11 +1,11 @@
-function [out] = tde_fitModel(functionhandle, data, stim, t, channels, opts)
+function [out] = tde_fitModel(objFunction, data, stim, t, channels, opts)
 % Description
 
 fittedPrm   = [];
 derivedPrm  = [];
 rvals       = [];
 
-%% scale each electrode to its max (make optional?)
+%% scale each electrode to its max
     
 if opts.normalize_data       
     normdata = data;
@@ -17,7 +17,7 @@ if opts.normalize_data
     data = normdata;
 end
     
-%% average elecs within area (make optional)
+%% average elecs within area
 if opts.average_elecs
     avdata = nan(size(data,1), size(data,2), 4);
 
@@ -56,14 +56,14 @@ for ii = 1:length(elecNames) % loop over channels or channel averages
     data2fit = data(:,:,ii);
     
     prm = [];
-    prm = fminsearchbnd(@(x) dn2_fineFitCtrstDur(x, data2fit', t, stim'), seed, lb, ub);
+    prm = fminsearchbnd(@(x) objFunction(x, data2fit', t, stim'), seed, lb, ub);
 
     %% GENERATE MODEL PREDICTIONS
 
     prm_tofit = [prm(1), 0, prm(2 : end)];
 
     %pred = dn_DNmodel(prm_tofit, stim, t);
-    pred = functionhandle(prm_tofit, stim', t);
+    pred = objFunction(prm_tofit, stim', t);
 
     pred = pred./max(pred(:));
     pred = pred';
