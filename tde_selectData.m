@@ -63,7 +63,6 @@ if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
     opts.plotsavedir         = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/electrodeselection';
 end
 
-%% 
 savePlots   = opts.doplots;
 plotSaveDir = opts.plotsavedir;
 if ~exist(plotSaveDir, 'dir'); mkdir(plotSaveDir); end
@@ -220,7 +219,7 @@ end
 data     = allData;
 channels = allChannels;
 
-%% scale each electrode to its max
+%% scale each electrode to its max?
     
 if opts.normalize_data       
     normdata = data;
@@ -232,7 +231,7 @@ if opts.normalize_data
     data = normdata;
 end
     
-%% average elecs within area
+%% average elecs within area?
 if opts.average_elecs
     avdata = nan(size(data,1), size(data,2), 4);
 
@@ -244,9 +243,13 @@ if opts.average_elecs
 
     for ii = 1:size(avdata,3)
         mdata = mean(data(:,:,INX{ii}),3);
-        % another normalization step from Jings code, necessary?
-        maxmdata = max(mdata(:));
-        mdata    = mdata ./maxmdata;
+        
+        if opts.normalize_data     
+            % another normalization step from Jings code, necessary?
+            maxmdata = max(mdata(:));
+            mdata    = mdata ./maxmdata;
+        end
+        
         avdata(:,:,ii) = mdata;
     end
     data = avdata;
