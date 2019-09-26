@@ -1,55 +1,23 @@
-function [out] = tde_fitModel(objFunction, data, stim, t, channels, opts)
+function [out] = tde_fitModel(objFunction, data, stim, t, opts)
 % Description
 
 fittedPrm   = [];
 derivedPrm  = [];
 rvals       = [];
-
-%% scale each electrode to its max
-    
-if opts.normalize_data       
-    normdata = data;
-    for ii = 1:size(data,3)
-        tmp = data(:, :, ii);
-        maxRsp(ii) = max(tmp(:));
-        normdata(:, :, ii) = data(:, :, ii)./maxRsp(ii);
-    end
-    data = normdata;
-end
-    
-%% average elecs within area
-if opts.average_elecs
-    avdata = nan(size(data,1), size(data,2), 4);
-
-    INX = [];
-    INX{1} = contains(channels.wangarea, 'V1') | contains(channels.bensonarea, 'V1');
-    INX{2} = contains(channels.wangarea, 'V2') | contains(channels.bensonarea, 'V2');
-    INX{3} = contains(channels.wangarea, 'V3') & ~contains(channels.bensonarea, {'V3a', 'V3b'}) | contains(channels.bensonarea, 'V3') & ~contains(channels.bensonarea, {'V3a', 'V3b'});
-    INX{4} = contains(channels.wangarea, {'V3a', 'V3b', 'IPS', 'hV4', 'LO', 'TO'}) | contains(channels.bensonarea, {'V3a', 'V3b', 'hV4', 'LO', 'TO'}) ;
-
-    for ii = 1:size(avdata,3)
-        mdata = mean(data(:,:,INX{ii}),3);
-        % another normalization step from Jings code, necessary?
-        maxmdata = max(mdata(:));
-        mdata    = mdata ./maxmdata;
-        avdata(:,:,ii) = mdata;
-    end
-    data = avdata;
-    elecNames = {'V1', 'V2', 'V3', 'Vhigher'};
-else
-    elecNames = channels.name;
-end
-    
+ 
 %% FIT THE DN model
 
 % should be getting these from opts?
+seed = opts.seed;
+lb   = opts.lb;
+ub   = opts.ub;
 
 seed = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
 %seed = [0.1, 0.1, 3, 0.1, 0.06, 1];
 lb   = [0, 0, 0, 0, 0, 0];
 ub   = [1, 1, 10, 1, 1, 1];
 
-for ii = 1:length(elecNames) % loop over channels or channel averages
+for ii = 1:size(data,3) % loop over channels or channel averages
 
     fprintf('[%s] Fitting model for %s \n',mfilename, elecNames{ii});
     
