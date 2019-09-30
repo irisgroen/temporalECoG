@@ -18,13 +18,27 @@ opts.average_elecs   = false;
 % generate stimulus timecourses
 [stim_ts] = tde_generateStimulusTimecourses(stimnames,t);
 
+srate = 1/median(diff(t)); % samples per second
 toc
 
 %% 
+% To call fitting function, we need:
+%   1. the objective function (model form and type of error)
+%   2. data
+%   3. stimuli
+%   4. starting values and bounds for parameters (there should be defaults
+%               for each type of model)
+%   5. sample rate of the data
 
 ele = 50; 
 smallData = data2fit(:,:,ele);
-[results] = tde_fitModel(@dn_DNmodel, smallData, stim_ts, t, channels(ele,:), opts);
+
+opts.srate = srate;
+opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 1];
+opts.lb   = [0, 0, 0, 0, 0, 0, 0];
+opts.ub   = [1, 1, 1, 10, 1, 1, 1];
+
+[results] = tde_fitModel(@dn_DNmodel, smallData, stim_ts, opts);
 
 [results] = tde_fitModel(@dn_DNmodel, data2fit, stim_ts, t, channels, opts);
 

@@ -1,4 +1,4 @@
-function [out] = tde_fitModel(objFunction, data, stim, t, opts)
+function [out] = tde_fitModel(objFunction, data, stim, opts)
 % Description
 
 fittedPrm   = [];
@@ -7,31 +7,26 @@ rvals       = [];
  
 %% FIT THE DN model
 
-% should be getting these from opts?
-seed = opts.seed;
-lb   = opts.lb;
-ub   = opts.ub;
+% model start point and bounds
+x0 = opts.x0;
+lb = opts.lb;
+ub = opts.ub;
 
-seed = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
-%seed = [0.1, 0.1, 3, 0.1, 0.06, 1];
-lb   = [0, 0, 0, 0, 0, 0];
-ub   = [1, 1, 10, 1, 1, 1];
+% sample rate (Hz)
+srate = opts.srate;
 
 for ii = 1:size(data,3) % loop over channels or channel averages
 
-    fprintf('[%s] Fitting model for %s \n',mfilename, elecNames{ii});
+    fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
     
     data2fit = data(:,:,ii);
     
-    prm = [];
-    prm = fminsearchbnd(@(x) objFunction(x, data2fit', t, stim'), seed, lb, ub);
+    prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub);
 
     %% GENERATE MODEL PREDICTIONS
 
-    prm_tofit = [prm(1), 0, prm(2 : end)];
-
     %pred = dn_DNmodel(prm_tofit, stim, t);
-    pred = objFunction(prm_tofit, stim', t);
+    [~, pred] = objFunction(prm, [], stim, srate);
 
     pred = pred./max(pred(:));
     pred = pred';
