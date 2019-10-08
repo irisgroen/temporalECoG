@@ -30,17 +30,23 @@ toc
 %               for each type of model)
 %   5. sample rate of the data
 
-ele = 50; 
+ele = 54; 
 smallData = data2fit(:,:,ele);
 
+opts = [];
 opts.srate = srate;
-opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 1];
-opts.lb   = [0, 0, 0, 0, 0, 0, 0];
-opts.ub   = [1, 1, 1, 10, 1, 1, 1];
+% biphasic
+% opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 1];
+% opts.lb   = [0, 0, 0, 0, 0, 0, 0];
+% opts.ub   = [1, 1, 1, 10, 1, 1, 1];
+% uniphasic
+opts.x0   = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
+opts.lb   = [0, 0, 0, 0, 0, 0];
+opts.ub   = [1, 1, 10, 1, 1, 1];
 
-[results] = tde_fitModel(@dn_DNmodel, smallData, stim_ts, opts);
+[results] = tde_fitModel(@DNmodel, smallData, stim_ts, opts);
 
-[results] = tde_fitModel(@dn_DNmodel, data2fit, stim_ts, t, channels, opts);
+[results] = tde_fitModel(@DNmodel, data2fit, stim_ts, t, channels, opts);
 
 % next step, tde_fitModel
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts

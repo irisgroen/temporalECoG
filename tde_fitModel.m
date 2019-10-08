@@ -1,11 +1,8 @@
-function [out] = tde_fitModel(objFunction, data, stim, opts)
+function [results] = tde_fitModel(objFunction, data, stim, opts)
 % Description
 
-fittedPrm   = [];
-derivedPrm  = [];
-rvals       = [];
  
-%% FIT THE DN model
+%% FIT THE temporal model
 
 % model start point and bounds
 x0 = opts.x0;
@@ -15,7 +12,16 @@ ub = opts.ub;
 % sample rate (Hz)
 srate = opts.srate;
 
-for ii = 1:size(data,3) % loop over channels or channel averages
+% initialize
+nParams     = length(x0);
+nDatasets   = size(data,3);
+nStim       = size(stim,2);
+
+fittedPrm   = nan(nParams,nDatasets);
+derivedPrm  = nan(2,nDatasets);
+rSq         = nan(nStim,nDatasets);
+
+for ii = 1:nDatasets % loop over channels or channel averages
 
     fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
     
@@ -25,32 +31,31 @@ for ii = 1:size(data,3) % loop over channels or channel averages
 
     %% GENERATE MODEL PREDICTIONS
 
-    %pred = dn_DNmodel(prm_tofit, stim, t);
     [~, pred] = objFunction(prm, [], stim, srate);
 
     pred = pred./max(pred(:));
-    pred = pred';
 
     %% EXTRACT SUMMARY METRICS 
 
-    derived_prm = dn_computeDerivedParams(prm, 'uniphasic');
+    derived_prm = tde_computeDerivedParams(objFunction, prm);
 
     derivedPrm(1,ii) = derived_prm.t2pk;
     derivedPrm(2,ii) = derived_prm.r_asymp;
     fittedPrm(:,ii) = prm;
 
-     %% CALCULATE R2
-    r = [];
-    for k = 1:size(data,2) % loop over stimuli
-        r(k) = corr(pred(:,k),data2fit(:,k)).^2;  
+    %% CALCULATE R2
+    r = nan(nStim,1);
+    for jj = 1:nStim % loop over stimuli
+        mdl = fitlm(pred(:,jj), data2fit(:,jj));
+        r(jj) = mdl.Rsquared.Ordinary;
     end
     disp(mean(r));
-    rvals(:,ii) = r;
+    rSq(:,ii) = r;
 end
 
-out.derivedPrm  = derivedPrm;
-out.fittedPrm   = fittedPrm;
-out.rvals       = rvals;
+results.derivedPrm  = derivedPrm;
+results.fittedPrm   = fittedPrm;
+results.rSquare     = rSq;
 
 return    
     

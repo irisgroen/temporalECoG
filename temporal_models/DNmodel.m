@@ -1,4 +1,4 @@
-function [err, pred] = dn_DNmodel(param, data, stim, srate)
+function [err, pred] = DNmodel(param, data, stim, srate)
 %
 % function [err, pred] = dn_DNmodel(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
@@ -17,7 +17,7 @@ function [err, pred] = dn_DNmodel(param, data, stim, srate)
 %
 % stim :   matrix, samples x trial 
 %
-% srate :  samle rate in Hz
+% srate :  sample rate in Hz
 %
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
@@ -25,6 +25,7 @@ function [err, pred] = dn_DNmodel(param, data, stim, srate)
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
+param = [param(1), 0, param(2 : end)]; % only uniphasic for now
 
 x       = []; % a struct of model parameteres
 
