@@ -10,10 +10,10 @@ t    = 0.001 : 0.001 : 10;
 stim = ones(length(t),1);
 srate = 1/median(diff(t)); % samples per second
 
-%prm(end) = 1;
+%prm(end) = 1; % Jing's code appears to fix the gain to 1, do we want this?
 [~, pred] = objFunction(prm, [], stim, srate);
 
-derivedPrm.t2pk = find(pred == max(pred));
+derivedPrm.t2pk = t(pred == max(pred));
 derivedPrm.r_asymp = pred(end);
 
 % % compute model responses
