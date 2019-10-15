@@ -209,7 +209,7 @@ for ii = 1:length(data)
     
     % Remove a number of columns from channel table for readability, and
     % concatenate across subjects
-    channels = removevars(channels, {'low_cutoff', 'high_cutoff', 'reference', 'group', 'sampling_frequency', 'bb_method', 'bb_bandwidth'});
+    channels = removevars(channels, {'low_cutoff', 'high_cutoff', 'reference', 'group', 'bb_method', 'bb_bandwidth'});
     allChannels = [allChannels; channels];
     
 end
