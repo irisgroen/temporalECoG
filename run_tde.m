@@ -5,12 +5,12 @@
 tic
 
 % load (0) or (re)compute (1)
-reComputeFlag = false; 
+reComputeFlag = true; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.doplots         = false;
+opts.doplots         = true;
 opts.normalize_data  = true;
 opts.average_elecs   = false;
 [data2fit, channels, stimnames, t] = tde_selectData(data, [], opts);
@@ -21,14 +21,7 @@ opts.average_elecs   = false;
 srate = 1/median(diff(t)); % samples per second
 toc
 
-%% 
-% To call fitting function, we need:
-%   1. the objective function (model form and type of error)
-%   2. data
-%   3. stimuli
-%   4. starting values and bounds for parameters (there should be defaults
-%               for each type of model)
-%   5. sample rate of the data
+%% fitting
 
 ele = 54; 
 smallData = data2fit(:,:,ele);

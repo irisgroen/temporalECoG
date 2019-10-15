@@ -113,7 +113,7 @@ for ii = 1 : length(subjectList)
         fprintf('[%s] Epoching data...\n',mfilename);
         
         % Resample and SHIFT the UMCU data 
-        if contains(subject, 'chaam')
+        if contains(subject, {'chaam', 'beilen'})
             fprintf('[%s] This is a umcu patient: resampling and shifting the onsets\n',mfilename);
             
             % Resample data; assuming desired sample rate of 512

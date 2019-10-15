@@ -1,6 +1,12 @@
 function [results, pred] = tde_fitModel(objFunction, data, stim, opts)
 % Description
-
+% To call fitting function, we need:
+%   1. the objective function (model form and type of error)
+%   2. data
+%   3. stimuli
+%   4. starting values and bounds for parameters (there should be defaults
+%               for each type of model)
+%   5. sample rate of the data
  
 %% FIT THE temporal model
 
