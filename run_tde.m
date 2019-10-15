@@ -32,6 +32,10 @@ toc
 
 ele = 54; 
 smallData = data2fit(:,:,ele);
+figure;
+
+subplot(2,2,1);plot(t,smallData); title('data')
+
 
 opts = [];
 opts.srate = srate;
@@ -42,7 +46,7 @@ opts.ub   = [1, 0, 1, 10, 1, 1, 1];
 tic
 [results1, pred1] = tde_fitModel(@DNmodel, smallData, stim_ts, opts);
 toc
-figure;plot(t,pred1); title('tdefitmodel')
+subplot(2,2,3);plot(t,pred1); title('tdefitmodel')
 
 
 % compare with Jings original code:
@@ -66,7 +70,7 @@ for k = 1:17
 end
 disp(mean(results2.rSquare));
 toc
-figure;plot(t,pred2');title('dn_DNmodel')
+subplot(2,2,4);plot(t,pred2');title('dn_DNmodel')
 
 % input: model: function handle, data, eventCodes, stimulusTimeCourses, opts
 % output: model fits
