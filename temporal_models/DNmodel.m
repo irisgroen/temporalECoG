@@ -2,16 +2,16 @@ function [err, pred] = DNmodel(param, data, stim, srate)
 %
 % function [err, pred] = dn_DNmodel(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
-% params : 6 fields.
-%          tau1 -- irf peak time, in unit of second
-%          weight -- the weight in the biphasic irf function, set weight to
-%          0 if want to use uniphasic irf function.
-%          tau2 -- time window of adaptation, in unit of second
-%          n -- exponent
-%          sigma -- semi-saturation constant
-%          shift -- time between stimulus onset and when the signal reaches
-%          the cortex, in unit of second
-%          scale -- response gain.
+% params : 7 fields.
+%          1. tau1 -- time to peak for positive IRF (seconds)
+%          2. weight -- ratio of negative to positive IRFs (set to 0
+%               for uniphasic irf)
+%          3. tau2 -- time window of adaptation (seconds)
+%          4. n -- exponent
+%          5. sigma -- semi-saturation constant
+%          6. shift -- time between stimulus onset and when the signal reaches
+%               the cortex (seconds)
+%          7. scale -- response gain.
 %
 % data :   matrix, samples x trials
 %

@@ -11,7 +11,7 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots         = false;
-opts.normalize_data  = true;
+opts.normalize_data  = false;
 opts.average_elecs   = false;
 [data2fit, channels, stimnames, t] = tde_selectData(data, [], opts);
 
@@ -27,26 +27,31 @@ ele = 54;
 smallData = data2fit(:,:,ele);
 figure;
 
-subplot(2,2,1);plot(t,smallData); title('data')
+subplot(2,2,1);plot(t,smallData, 'LineWidth', 4); title('data')
 
 
 opts = [];
 opts.srate = srate;
+
+%params:    [t1,   w, t2,   n,   sigma, shift, gain]
 opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 1];
 opts.lb   = [0, 0, 0, 0, 0, 0, 0];
-opts.ub   = [1, 0, 1, 10, 1, 1, 1];
+opts.ub   = [1, 1, 2, 10, 1, 1, inf];
+
+opts.plb   = [.1, 0,.1, 1, .01, .01, .5];
+opts.pub   = [.9, .5, 1, 3, .5, .5, 100];
 
 tic
 [results1, pred1] = tde_fitModel(@DNmodel, smallData, stim_ts, opts);
 toc
-subplot(2,2,3);plot(t,pred1); title('tdefitmodel')
+subplot(2,2,3);plot(t,pred1, 'LineWidth', 4); title('tdefitmodel')
 
 
-% compare with Jings original code:
+%% compare with Jings original code:
 tic
 opts.x0   = [0.03, 0.07, 1.5, 0.15, 0.06, 1];
 opts.lb   = [0, 0, 0, 0, 0, 0];
-opts.ub   = [1, 1, 10, 1, 1, 1];
+opts.ub   = [1, 1, 10, 1, 1, inf];
 fprintf('[%s] Fitting dn_DNmodel \n', mfilename);
 prm = fminsearchbnd(@(x) dn2_fineFitCtrstDur(x, smallData', t, stim_ts'), opts.x0, opts.lb, opts.ub);
 

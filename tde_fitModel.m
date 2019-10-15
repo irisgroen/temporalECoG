@@ -15,6 +15,11 @@ x0 = opts.x0;
 lb = opts.lb;
 ub = opts.ub;
 
+if isfield(opts, 'pub')
+    plb = opts.plb;
+    pub = opts.pub;
+end
+
 % sample rate (Hz)
 srate = opts.srate;
 
@@ -27,19 +32,26 @@ fittedPrm   = nan(nParams,nDatasets);
 derivedPrm  = nan(2,nDatasets);
 rSq         = nan(nStim,nDatasets);
 
+options = optimset('Display','iter');
+
+
 for ii = 1:nDatasets % loop over channels or channel averages
 
     fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
     
     data2fit = data(:,:,ii);
     
-    prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub);
+    %prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
 
+    
+    prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
+                
+    
     %% GENERATE MODEL PREDICTIONS
 
     [~, pred] = objFunction(prm, [], stim, srate);
 
-    pred = pred./max(pred(:));
+    % pred = pred./max(pred(:));
 
     %% EXTRACT SUMMARY METRICS 
 
