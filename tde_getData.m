@@ -55,7 +55,7 @@ if ~exist('epochTime', 'var') || isempty(epochTime)
 end
 
 % <tasks> (fixed for TDE project)
-tasks = {'spatialpattern', 'temporalpattern', 'bairspatialpattern', 'bairtemporalpattern', 'soc'};
+tasks = {'spatialpattern', 'temporalpattern', 'soc'};
 
 % <preprocessing data type> (fixed for TDE project)
 description = 'broadband';
@@ -79,7 +79,7 @@ for ii = 1 : length(subjectList)
         
         fprintf('[%s] Computing data for subject %s \n',mfilename, subject);
 
-        % STEP 0: GET visual area matches for this subject
+        %% STEP 0: GET visual area matches for this subject
         fprintf('[%s] Computing matches with visual atlases...\n',mfilename);
         specs = [];
         specs.pID           = subject; 

@@ -1,4 +1,4 @@
-function [results] = tde_fitModel(objFunction, data, stim, opts)
+function [results, pred] = tde_fitModel(objFunction, data, stim, opts)
 % Description
 
  

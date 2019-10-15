@@ -25,7 +25,6 @@ function [err, pred] = DNmodel(param, data, stim, srate)
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
-param = [param(1), 0, param(2 : end)]; % only uniphasic for now
 
 x       = []; % a struct of model parameteres
 

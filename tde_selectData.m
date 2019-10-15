@@ -18,7 +18,7 @@ function [data, channels, stimNames, t] = tde_selectData(data, stimNames, opts)
 
 % <data>
 if ~exist('data', 'var') || isempty(data)
-	error('Please provide the data struct outputted by tde_getData,m as input');
+	error('Please provide the data struct outputted by tde_getData.m as input');
 end 
 
 % <stimNames>
@@ -214,7 +214,7 @@ for ii = 1:length(data)
     
 end
 
-%% Now that we have the selected trials and electrodes, decide if we are going to normalize and / or average across areas. 
+%% STEP 5 Now that we have the selected trials and electrodes, decide if we are going to normalize and / or average across areas. 
 
 data     = allData;
 channels = allChannels;

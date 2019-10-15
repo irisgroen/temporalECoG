@@ -14,7 +14,6 @@ function diff = dn2_fineFitCtrstDur(prm, data, t, stim)
 
 %% GENERATE DN MODEL PREDICTION
 
-
 prm_tofit = [prm(1), 0, prm(2 : end)];
 
 pred = dn_DNmodel(prm_tofit, stim, t);
