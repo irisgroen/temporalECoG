@@ -39,7 +39,7 @@ end
 
 % <subjectList>
 if ~exist('subjectList', 'var') || isempty(subjectList)
-    subjectList_fname = fullfile(tdeRootPath, 'subjectList.tsv');
+    subjectList_fname = fullfile(tdeRootPath, 'subjectlist.tsv');
     T = readtable(subjectList_fname, 'FileType', 'text');
     subjectList = T.participant_id;
 end
