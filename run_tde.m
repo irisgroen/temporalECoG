@@ -5,12 +5,12 @@
 tic
 
 % load (0) or (re)compute (1)
-reComputeFlag = true; 
+reComputeFlag = false; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.doplots         = true;
+opts.doplots         = false;
 opts.normalize_data  = true;
 opts.average_elecs   = false;
 [data2fit, channels, stimnames, t] = tde_selectData(data, [], opts);
