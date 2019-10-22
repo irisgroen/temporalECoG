@@ -6,7 +6,7 @@ end
 
 stimInfo_fname = fullfile(tdeRootPath, 'stiminfo.tsv');
 
-stimNames = {'CRF-1', ...
+name = {'CRF-1', ...
              'CRF-2', ...
              'CRF-3', ...
              'CRF-4', ...
@@ -78,7 +78,7 @@ contrast = [0.0625, ...
             1, ...
             1]';            
 
-T = table(stimNames, duration, ISI, contrast);            
+T = table(name, duration, ISI, contrast);            
 
 if addComputedContrast    
     % make this subject specific so we can make different contrast
@@ -89,14 +89,14 @@ if addComputedContrast
     imNames = [stimData1.stimulus.categories stimData2.stimulus.categories];
     contrast_rms = contrast; 
     contrast_peak2peak = contrast;
-    for ii = 1:length(stimNames)
-        im_inx = contains(imNames, stimNames{ii});
+    for ii = 1:length(name)
+        im_inx = contains(imNames, name{ii});
         contrast_rms(ii) = rms(double(ims{im_inx}(:))/255-0.5);
         contrast_peak2peak(ii) = peak2peak(double(ims{im_inx}(:))/255-0.5);
     end
     contrast_rms = round(contrast_rms,3);
     contrast_peak2peak = round(contrast_peak2peak,3);
-    T = table(stimNames, duration, ISI, contrast, contrast_rms, contrast_peak2peak);            
+    T = table(name, duration, ISI, contrast, contrast_rms, contrast_peak2peak);            
 end
         
 writetable(T, stimInfo_fname, 'Delimiter','\t', 'FileType', 'text');

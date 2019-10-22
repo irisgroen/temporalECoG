@@ -41,10 +41,9 @@ for ii = 1:nDatasets % loop over channels or channel averages
     
     data2fit = data(:,:,ii);
     
-    %prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
+    prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
 
-    
-    prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
+    %prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
                 
     
     %% GENERATE MODEL PREDICTIONS
