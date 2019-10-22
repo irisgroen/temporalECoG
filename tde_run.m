@@ -4,7 +4,7 @@
 % the formatting of the events.tsv files, need to sync with Gio.
 tic
 
-% load (0) or (re)compute (1)
+% load or (re)compute the processed data
 reComputeFlag = false; 
 [data] = tde_getData(reComputeFlag);
 
@@ -29,12 +29,13 @@ opts = [];
 opts.srate = channels.sampling_frequency(ele);
 
 %params:    [t1,   w, t2,   n,   sigma, shift, gain]
-opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 1];
-opts.lb   = [0, 0, 0, 0, 0, 0, 0];
-opts.ub   = [1, 1, 2, 10, 1, 1, inf];
+opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 2];
 
-opts.plb   = [.1, 0,.1, 1, .01, .01, .5];
-opts.pub   = [.9, .5, 1, 3, .5, .5, 100];
+opts.lb   = [0.01, 0, 0.01, 1,   0,    0,    0.01];
+opts.ub   = [1,    1, 2,    5,   1,    0.1,  200];
+
+opts.plb  = [0.1, 0,   0.1, 1.5, 0.01, 0.01, 0.5];
+opts.pub  = [0.9, 0.5, 1,   3,   0.5,  0.08, 100];
 
 tic
 [results, pred] = tde_fitModel(@DNmodel, smallData, stim_ts, opts);

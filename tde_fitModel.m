@@ -34,6 +34,7 @@ rSq         = nan(nStim,nDatasets);
 
 options = optimset('Display','iter');
 
+% options.MaxFunEvals = 10000;
 
 for ii = 1:nDatasets % loop over channels or channel averages
 
@@ -41,9 +42,12 @@ for ii = 1:nDatasets % loop over channels or channel averages
     
     data2fit = data(:,:,ii);
     
-    prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
-
-    %prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
+%     prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
+%     
+%     % test bads by putting in a good set of initial parameters
+%     x0 = prm;
+    
+    prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
                 
     
     %% GENERATE MODEL PREDICTIONS

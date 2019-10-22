@@ -25,7 +25,6 @@ function [err, pred] = DNmodel(param, data, stim, srate)
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
-
 x       = []; % a struct of model parameteres
 
 numtimepts  = size(stim,1);
