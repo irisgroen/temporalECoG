@@ -1,0 +1,106 @@
+function [err, pred] = TTCmodel(param, data, stim, srate)
+%
+% function [err, pred] = TTCmodel(param, data, stim, srate)
+% INPUTS  -----------------------------------------------------------------
+% params : 3 fields
+%          1. weight - relative weight on transient channel ([0 1]) 
+%          2. shift -- time between stimulus onset and when the signal reaches
+%               the cortex (seconds)
+%          3. scale -- response gain.
+%
+% data :   matrix, samples x trials
+%
+% stim :   matrix, samples x trial 
+%
+% srate :  sample rate in Hz
+%
+% OUTPUTS -----------------------------------------------------------------
+% err:  sum of squared error
+% pred: predicted time series
+
+
+%% PRE-DEFINED /EXTRACTED VARIABLES
+x       = []; % a struct of model parameteres
+
+numtimepts  = size(stim,1);
+numstim     = size(stim,2);
+
+normL2  = @(x) x./norm(x);
+makeIRF = @(A, B, C, t)(t/A).^8 .* exp(-t/A) - 1 / B .* (t/C).^9 .* exp(-t/C);
+
+%% SET UP THE MODEL PARAMETERS
+
+% These values are from Table 1, row 1 (subject DT) in :
+%   McKee and Taylor, JOSA 1984
+% Presumably used by Horiguchi et al 2009
+A = 3.29;
+B = 14;
+C = 3.85;
+
+a = 2.75;
+b = 11;
+c = 3.18;
+
+% sigma = 0.03; % smoothing kernel
+
+fields = {'weight', 'shift', 'scale'};
+x      = toSetField(x, fields, param);
+
+
+%% COMPUTE THE IMPULSE RESPONSE FUNCTION
+
+% make sustained channel impulse response
+t_irf   = 1000 * (1/srate : 1/srate : 0.100); % in milliseconds
+irf_foveal = normL2(makeIRF(A, B, C, t_irf));
+
+% make transient channel impulse response
+irf_peripheral = normL2(makeIRF(a, b, c, t_irf));
+
+w = sum(irf_peripheral) / sum(irf_foveal );
+irf_transient = normL2(irf_peripheral - w*irf_foveal);
+
+w = 0.5;
+irf_sustained = normL2(irf_foveal - w*irf_peripheral);
+
+
+% debug: Compare to figure 7 (inset) in Horiguchi et al, 2009
+% figure, plot(t_irf, irf_sustained, 'b-', ...
+%   t_irf, irf_transient, 'k-', 'LineWidth', 3); xlim([0 .1])
+
+
+% % make smoothing kernel, transform from neuronal to ECoG broadband response
+% s   = -1 : 1/srate : 1;
+% ker = exp(-s.^2./(2 * sigma.^2));
+
+%% COMPUTE THE NORMALIZATION RESPONSE
+
+rsp_transient  = NaN(size(stim));
+rsp_sustained  = NaN(size(stim));
+rsp_combined = NaN(size(stim));
+
+for istim = 1 : numstim
+    % ADD SHIFT TO THE STIMULUS -------------------------------------------
+    sft       = round(x.shift * srate);
+    stimtmp   = padarray(stim(:, istim), [sft, 0], 0, 'pre');
+    stim(:, istim) = stimtmp(1 : size(stim, 1));
+    
+    % COMPUTE THE TRANSIENT RESPONSE ---------------------------------
+    rsp_transient(:, istim)  = convCut(stim(:, istim), irf_transient, numtimepts);
+    rsp_transient(:, istim)  = abs(rsp_transient(:, istim)).^2;
+    
+    % COMPUTE THE SUSTAINED RESPONSE -------------------------------
+    rsp_sustained(:, istim) = convCut(stim(:, istim), irf_sustained, numtimepts);
+    
+    % COMPUTE THE COMBINED RESPONSE
+    rsp_combined(:, istim) = x.scale.*(x.weight*rsp_transient(:, istim) ...
+        + (1-x.weight)*rsp_sustained(:, istim));
+end
+
+pred = rsp_combined;
+
+if isempty(data)
+    err = []; 
+else
+    err = sum((pred(:) - data(:)).^2);
+end
+end

@@ -1,7 +1,5 @@
 % script 
 
-% note: sub-beilen not included at the moment because of inconsistencies in
-% the formatting of the events.tsv files, need to sync with Gio.
 tic
 
 % load or (re)compute the processed data
@@ -28,17 +26,47 @@ smallData = data2fit(:,:,ele);
 opts = [];
 opts.srate = channels.sampling_frequency(ele);
 
-%params:    [t1,   w, t2,   n,   sigma, shift, gain]
-opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 2];
+modelType = 'TTC'; 
 
-opts.lb   = [0.01, 0, 0.01, 1,   0,    0,    0.01];
-opts.ub   = [1,    1, 2,    5,   1,    0.1,  200];
+switch modelType
+    case 'DN'
+        % -------------------------------------------------------------
+        % --- This is model-specific and should move to a JSON file ---
+        % -------------------------------------------------------------
+        
+        %params:    [t1,   w, t2,   n,   sigma, shift, gain]
+        opts.x0   = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 2];
+        
+        opts.lb   = [0.01, 0, 0.01, 1,   0,    0,    0.01];
+        opts.ub   = [1,    1, 2,    5,   1,    0.1,  200];
+        
+        opts.plb  = [0.1, 0,   0.1, 1.5, 0.01, 0.01, 0.5];
+        opts.pub  = [0.9, 0.5, 1,   3,   0.5,  0.08, 100];
+        
+        modelfun = @DNmodel;
+        
+        % -------------------------------------------------------------
+    case 'TTC'
+        % -------------------------------------------------------------
+        % --- This is model-specific and should move to a JSON file ---
+        % -------------------------------------------------------------
+        
+        %params:    [weight, shift, gain]
+        opts.x0   = [0.5,    0.06,  2];
+        
+        opts.lb   = [0,      0,     0.01];
+        opts.ub   = [1,      0.1,   200];
+        
+        opts.plb  = [0.1,    0.01,  0.5];
+        opts.pub  = [0.9,    0.08,  100];
+        
+        
+        modelfun = @TTCmodel;
 
-opts.plb  = [0.1, 0,   0.1, 1.5, 0.01, 0.01, 0.5];
-opts.pub  = [0.9, 0.5, 1,   3,   0.5,  0.08, 100];
+end
 
 tic
-[results, pred] = tde_fitModel(@DNmodel, smallData, stim_ts, opts);
+[results, pred] = tde_fitModel(modelfun, smallData, stim_ts, opts);
 toc
 
 figure;
