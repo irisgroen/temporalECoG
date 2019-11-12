@@ -1,4 +1,4 @@
-function [err, pred] = DNmodel(param, data, stim, srate)
+function [err, pred] = DNCASCADEmodel(param, data, stim, srate)
 %
 % function [err, pred] = DNmodel(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
@@ -55,28 +55,41 @@ irf_norm = normSum(exp(-t/x.tau2));
 
 %% COMPUTE THE NORMALIZATION RESPONSE
 
+
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
 sft       = round(x.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
 
-% COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
-linrsp  = conv2(stim, irf, 'full'); linrsp = linrsp(1:numtimepts,:);
-numrsp  = abs(linrsp).^x.n;
+% COMPUTE LAYER 1 RESPONSE
+rsp1 = dncomputeOneLayer(stim, irf, irf_norm, x);
 
-% COMPUTE THE NORMALIZATION DENOMINATOR -------------------------------
-poolrsp = conv2(linrsp, irf_norm, 'full'); poolrsp = poolrsp(1:numtimepts,:);
-demrsp  = x.sigma.^x.n + abs(poolrsp).^x.n;
+% COMPUTE LAYER 2 RESPONSE
+rsp2 = dncomputeOneLayer(rsp1, irf, irf_norm, x);
 
-% COMPUTE THE NORMALIZATION RESPONSE
-normrsp = x.scale.*(numrsp./demrsp);
-
-
-pred = normrsp;
+pred = rsp2;
 
 if isempty(data)
     err = []; 
 else
     err = sum((pred(:) - data(:)).^2);
 end
+
+end
+
+function rsp = dncomputeOneLayer(stim, irf, irf_norm, x)
+
+n = size(stim,1);
+
+% COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
+linrsp  = conv2(stim, irf, 'full'); linrsp = linrsp(1:n,:);
+numrsp  = abs(linrsp).^x.n;
+
+% COMPUTE THE NORMALIZATION DENOMINATOR -------------------------------
+poolrsp = conv2(linrsp, irf_norm, 'full'); poolrsp = poolrsp(1:n,:);
+demrsp  = x.sigma.^x.n + abs(poolrsp).^x.n;
+
+% COMPUTE THE NORMALIZATION RESPONSE
+rsp = x.scale.*(numrsp./demrsp);
+
 end

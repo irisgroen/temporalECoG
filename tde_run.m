@@ -18,14 +18,21 @@ data_opts.average_elecs   = false;
 
 toc
 
+% debug: check data time series
+% figure, sz = ceil(sqrt(size(data2fit,3)));
+% for ii = 1:size(data2fit,3)
+%     subplot(sz,sz,ii); plot(data2fit(:,17,ii), 'LineWidth', 3); 
+%     title(ii); 
+% end
+
 %% fitting
 
 % define electrode (temporary)
-ele = 54; 
+ele = 54; % 58; % 2;%54; 
 smallData = data2fit(:,:,ele);
 
 % define model
-modelType = 'DN'; 
+modelType = 'DNCASCADE'; 
 
 modelfun = str2func(sprintf('%smodel', modelType));
 
@@ -54,6 +61,7 @@ for ii = 1:length(conditionsOfInterest)
     axis tight   
     set(gca, 'XTick',1:length(t):length(find(inx))*length(t), 'XTickLabel', []);
 end
+
 % -- which models?
 % ----- DN (flavors: uniphasic, biphasic, fixed exponent or not)
 % ----- DN cascade?

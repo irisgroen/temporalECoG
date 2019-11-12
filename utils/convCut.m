@@ -1,5 +1,5 @@
 
-function output = conv_cut (stimulus, impulse, nTerms)
+function output = convCut (stimulus, impulse, nTerms)
 %
 % INPUTS -----------------------------------------------------
 % stimulus : a stimulus time course
@@ -13,9 +13,9 @@ function output = conv_cut (stimulus, impulse, nTerms)
 
 %%
 
-output = conv(squeeze(stimulus), squeeze(impulse), 'full');
+output = conv2(stimulus, impulse, 'full');
 
-output = output(1:nTerms);
+output = output(1:nTerms, :);
 
 
 end
