@@ -1,4 +1,4 @@
-function [data, channels, stimNames, t] = tde_selectData(data, stimNames, opts)
+function [data, channels, stimNames, t, srate] = tde_selectData(data, stimNames, opts)
 
 % Description
 %
@@ -218,6 +218,8 @@ end
 
 data     = allData;
 channels = allChannels;
+assert(length(unique(channels.sampling_frequency))==1);
+srate = channels.sampling_frequency(1);
 
 %% scale each electrode to its max?
     

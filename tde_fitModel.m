@@ -1,4 +1,4 @@
-function [results, pred] = tde_fitModel(objFunction, data, stim, opts)
+function [results, pred] = tde_fitModel(objFunction, data, stim, srate, opts)
 % Description
 % To call fitting function, we need:
 %   1. the objective function (model form and type of error)
@@ -10,18 +10,24 @@ function [results, pred] = tde_fitModel(objFunction, data, stim, opts)
  
 %% FIT THE temporal model
 
+% <opts>
+if ~exist('opts', 'var') || isempty(opts)
+	sprintf('Loading default opts from json');
+    modelName = func2str(objFunction);
+    opts = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', modelName)));
+end 
+
 % model start point and bounds
 x0 = opts.x0;
 lb = opts.lb;
 ub = opts.ub;
 
+useBads = 0;
 if isfield(opts, 'pub')
     plb = opts.plb;
     pub = opts.pub;
+    useBads = 1;
 end
-
-% sample rate (Hz)
-srate = opts.srate;
 
 % initialize
 nParams     = length(x0);
@@ -41,14 +47,14 @@ for ii = 1:nDatasets % loop over channels or channel averages
     fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
     
     data2fit = data(:,:,ii);
-    
-%     prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
-%     
-%     % test bads by putting in a good set of initial parameters
-%     x0 = prm;
-    
-    prm =bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
-                
+         
+    % use bads if plausible upper and lower bounds are defined in opts,
+    % otherwise use fminsearch
+    if useBads
+        prm = bads(@(x) objFunction(x, data2fit, stim, srate),  x0, lb, ub, plb, pub, [], options);
+    else
+        prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim, srate), x0, lb, ub, options);
+    end
     
     %% GENERATE MODEL PREDICTIONS
 

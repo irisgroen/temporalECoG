@@ -1,4 +1,3 @@
-
 function [data] = tde_getData(compute, inputDir, outputDir, subjectList, sessionList, epochTime)
 
 % Description: 
@@ -33,7 +32,7 @@ if ~exist('inputDir', 'var') || isempty(inputDir)
 end  
 
 % <outputDir>
-if ~exist('ouputDir', 'var') || isempty(outputDir)
+if ~exist('outputDir', 'var') || isempty(outputDir)
     outputDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/data';
 end 
 
