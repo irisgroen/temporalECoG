@@ -25,7 +25,7 @@ ele = 54;
 smallData = data2fit(:,:,ele);
 
 % define model
-modelType = 'TTC'; 
+modelType = 'DN'; 
 
 modelfun = str2func(sprintf('%smodel', modelType));
 
@@ -33,10 +33,27 @@ tic
 [results, pred] = tde_fitModel(modelfun, smallData, stim_ts, srate);
 toc
 
+% plotting
+
+% visualization 1
 figure;
 subplot(2,1,1);plot(t,smallData, 'LineWidth', 3); title('data')
-subplot(2,1,2);plot(t,pred, 'LineWidth', 3); title('tdefitmodel')
+subplot(2,1,2);plot(t,pred, 'LineWidth', 3); title('model fit')
 
+% visualization 2
+conditionsOfInterest = {'CRF','ONEPULSE', 'TWOPULSE'};
+nCond = length(conditionsOfInterest);
+figure;
+for ii = 1:length(conditionsOfInterest)
+    inx = contains(stimnames, conditionsOfInterest{ii});
+    subplot(nCond,1,ii); hold on
+    plot(flatten(smallData(:,inx)), 'k', 'LineWidth', 3); 
+    plot(flatten(pred(:,inx)), 'r', 'LineWidth', 3);
+    legend('data', 'model fit'); 
+    title(conditionsOfInterest{ii});
+    axis tight   
+    set(gca, 'XTick',1:length(t):length(find(inx))*length(t), 'XTickLabel', []);
+end
 % -- which models?
 % ----- DN (flavors: uniphasic, biphasic, fixed exponent or not)
 % ----- DN cascade?
