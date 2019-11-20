@@ -30,8 +30,4 @@ opts.pub  = [0.9, 0.5, 1,   3,   0.5,  0.08, 100];
 
 %% write out json
 fname = fullfile(tdeRootPath, 'temporal_models', 'DNmodel.json');
-
-%json_opts.indent = '    '; % this just makes the json file look prettier 
-%jsonwrite(json_fname,opts,json_opts);
-
 opts_json = savejson('',opts,fname);

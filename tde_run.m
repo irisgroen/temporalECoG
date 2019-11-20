@@ -34,9 +34,8 @@ ele = 54; % 58; % 2;%54;
 smallData = data2fit(:,:,ele);
 
 % define model
-modelType = 'DNCASCADE'; 
-
-modelfun = str2func(sprintf('%smodel', modelType));
+modelfuns = tde_modelTypes();
+modelfun = modelfuns{4}; % eg 'DNCASCADE'; 
 
 tic
 [results, pred] = tde_fitModel(modelfun, smallData, stim_ts, srate);

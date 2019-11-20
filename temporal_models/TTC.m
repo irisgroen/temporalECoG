@@ -1,6 +1,7 @@
-function [err, pred] = TTCmodel(param, data, stim, srate)
-%
-% function [err, pred] = TTCmodel(param, data, stim, srate)
+function [err, pred] = TTC(param, data, stim, srate)
+% Implementation of Two Temporal Channels model as implemented in Horiguchi
+% et al, 2009, Neuroimage
+% function [err, pred] = TTC(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 3 fields
 %          1. weight - relative weight on transient channel ([0 1]) 
@@ -17,6 +18,7 @@ function [err, pred] = TTCmodel(param, data, stim, srate)
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
 % pred: predicted time series
+
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
@@ -49,13 +51,15 @@ x      = toSetField(x, fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
 
-% make sustained channel impulse response
-t_irf   = 1000 * (1/srate : 1/srate : 0.100); % in milliseconds
-irf_foveal = normL2(makeIRF(A, B, C, t_irf));
+% make foveal channel impulse response
+t   = 1000 * (1/srate : 1/srate : 0.100)'; % in milliseconds
+irf_foveal = normL2(makeIRF(A, B, C, t));
 
-% make transient channel impulse response
-irf_peripheral = normL2(makeIRF(a, b, c, t_irf));
+% make peripheral channel impulse response
+irf_peripheral = normL2(makeIRF(a, b, c, t));
 
+% make transient and sustained IRFs as weighted sums of foveal and
+%  peripheral IRFs
 w = sum(irf_peripheral) / sum(irf_foveal );
 irf_transient = normL2(irf_peripheral - w*irf_foveal);
 
@@ -64,8 +68,8 @@ irf_sustained = normL2(irf_foveal - w*irf_peripheral);
 
 
 % debug: Compare to figure 7 (inset) in Horiguchi et al, 2009
-% figure, plot(t_irf, irf_sustained, 'b-', ...
-%   t_irf, irf_transient, 'k-', 'LineWidth', 3); xlim([0 .1])
+% figure, plot(t, irf_sustained, 'b-', ...
+%   t, irf_transient, 'k-', 'LineWidth', 3); xlim([0 100])
 
 
 % % make smoothing kernel, transform from neuronal to ECoG broadband response
