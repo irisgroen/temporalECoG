@@ -1,0 +1,29 @@
+function opts_json = tde_writeParamsToJson(modelName)
+% Writes out a json file with parameters for model fitting.%
+
+%% define starting points and bounds on parameters
+
+switch modelName
+    
+    case {'DN', 'DNCASCADE'}
+        
+        opts.params = 't1,w,t2,n,sigma,shift,scale';
+        opts.x0     = [0.03, 0, 0.07, 1.5, 0.15, 0.06, 2];    % starting point
+        opts.lb     = [0.01, 0, 0.01, 1,   0,    0,    0.01]; % lower bounds
+        opts.ub     = [1,    1, 2,    5,   1,    0.1,  200];  % upper bounds
+        opts.plb    = [0.1, 0,   0.1, 1.5, 0.01, 0.01, 0.5];  % plausible lower bound (required for bads search algorithm)
+        opts.pub    = [0.9, 0.5, 1,   3,   0.5,  0.08, 100];  % plausible upper bound (required for bads search algorithm)
+    
+    case {'TTC', 'TTCSTIG'}
+        
+        opts.params = 'weight,shift,gain';
+        opts.x0   = [0.5,    0.06,  2];    % starting point
+        opts.lb   = [0,      0,     0.01]; % lower bounds
+        opts.ub   = [1,      0.1,   200];  % upper bounds
+        opts.plb  = [0.1,    0.01,  0.5];  % plausible lower bound (required for bads search algorithm)
+        opts.pub  = [0.9,    0.08,  100];  % plausible upper bound (required for bads search algorithm)
+end
+
+%% write out json
+fname = fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', modelName));
+opts_json = savejson('',opts,fname);
