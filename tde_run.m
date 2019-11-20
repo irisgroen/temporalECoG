@@ -9,8 +9,10 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 data_opts = [];
 data_opts.doplots         = false;
+data_opts.average_trials  = true;
 data_opts.normalize_data  = false;
 data_opts.average_elecs   = false;
+data_opts.sort_channels   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], data_opts);
 
 % generate stimulus timecourses
@@ -18,10 +20,10 @@ data_opts.average_elecs   = false;
 
 toc
 
-% debug: check data time series
+% % debug: check data time series
 % figure, sz = ceil(sqrt(size(data2fit,3)));
 % for ii = 1:size(data2fit,3)
-%     subplot(sz,sz,ii); plot(data2fit(:,17,ii), 'LineWidth', 3); 
+%     subplot(sz,sz,ii); plot(data2fit(:,:,ii), 'LineWidth', 3); 
 %     title(ii); 
 % end
 
@@ -48,7 +50,7 @@ subplot(2,1,1);plot(t,smallData, 'LineWidth', 3); title('data')
 subplot(2,1,2);plot(t,pred, 'LineWidth', 3); title('model fit')
 
 % visualization 2
-conditionsOfInterest = {'CRF','ONEPULSE', 'TWOPULSE'};
+conditionsOfInterest = {'CRF', 'ONEPULSE', 'TWOPULSE'};
 nCond = length(conditionsOfInterest);
 figure;
 for ii = 1:length(conditionsOfInterest)

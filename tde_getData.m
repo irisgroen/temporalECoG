@@ -50,7 +50,7 @@ end
 
 % <epochTime>
 if ~exist('epochTime', 'var') || isempty(epochTime)
-    epochTime = [-0.2 1.2];
+    epochTime = [-0.2 1];
 end
 
 % <tasks> (fixed for TDE project)
