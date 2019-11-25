@@ -14,7 +14,7 @@ srate = 1/median(diff(t)); % samples per second
 [~, pred] = objFunction(prm, [], stim, srate);
 
 derivedPrm.t2pk = t(pred == max(pred));
-derivedPrm.r_asymp = pred(end);
+derivedPrm.r_asymp = pred(end)/max(pred);
 
 % % compute model responses
 % for k = 1 : size(prm, 1)
