@@ -34,12 +34,12 @@ nParams     = length(x0);
 nDatasets   = size(data,3);
 nStim       = size(stim,2);
 
+pred        = nan(size(data));
 fittedPrm   = nan(nParams,nDatasets);
 derivedPrm  = nan(2,nDatasets);
 rSq         = nan(nStim,nDatasets);
 
 options = optimset('Display','iter');
-
 % options.MaxFunEvals = 10000;
 
 for ii = 1:nDatasets % loop over channels or channel averages
@@ -58,9 +58,9 @@ for ii = 1:nDatasets % loop over channels or channel averages
     
     %% GENERATE MODEL PREDICTIONS
 
-    [~, pred] = objFunction(prm, [], stim, srate);
-
-    % pred = pred./max(pred(:));
+    [~, p] = objFunction(prm, [], stim, srate);
+    % p = p./max(p(:));
+    pred(:,:,ii) = p;
 
     %% EXTRACT SUMMARY METRICS 
 
@@ -73,10 +73,11 @@ for ii = 1:nDatasets % loop over channels or channel averages
     %% CALCULATE R2
     r = nan(nStim,1);
     for jj = 1:nStim % loop over stimuli
-        mdl = fitlm(pred(:,jj), data2fit(:,jj));
+        mdl = fitlm(p(:,jj), data2fit(:,jj));
         r(jj) = mdl.Rsquared.Ordinary;
     end
     disp(mean(r));
+        
     rSq(:,ii) = r;
 end
 
