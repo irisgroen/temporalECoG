@@ -49,8 +49,10 @@ modelfuns = tde_modelTypes();
 modelfun = modelfuns{1}; % eg 'DNCASCADE'; 
 
 tic
-[results, pred] = tde_fitModel(modelfun, data2fit, stim_ts, srate);
+[params, pred] = tde_fitModel(modelfun, data2fit, stim_ts, srate);
 toc
+%% R2 and derived Prms
+[results] = tde_evaluateModelFit(modelfun, params, data2fit, pred);
 
 %% plotting
 

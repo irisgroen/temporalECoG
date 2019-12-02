@@ -16,6 +16,7 @@ srate = 1/median(diff(t)); % samples per second
 derivedPrm.t2pk = t(pred == max(pred));
 derivedPrm.r_asymp = pred(end)/max(pred);
 
+% Jings code:
 % % compute model responses
 % for k = 1 : size(prm, 1)
 %     
