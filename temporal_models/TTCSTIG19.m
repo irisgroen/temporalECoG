@@ -83,11 +83,17 @@ rsp_transient = tch_sigmoid(rsp_transient, prm.lambda, prm.k_on, prm.lambda, prm
 % COMPUTE THE SUSTAINED RESPONSE -------------------------------
 rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
-
-% multiply with adaptation function
+% compute adaptation function
 adapt_exp = exp(-(1:60000) / prm.tau_ae);
-starts = 0; stops = numtimepts *(1/srate);% should be updated with actual start/stop times of stim
-rsp_sustained = code_exp_decay(rsp_sustained, starts, stops, adapt_exp, srate);
+% this should be updated with actual start/stop times of stim:
+% starts = 0; stops = numtimepts * (1/srate); 
+for ii = 1:size(stim,2)
+    starts = find(diff(stim(:,ii))>0) * (1/srate); 
+    %stops = find(diff(stim(:,ii))<0) * (1/srate); 
+    stops = numtimepts * (1/srate) * ones(size(starts)); 
+    % multiple sustained response with adaptation function:
+    rsp_sustained(:,ii) = code_exp_decay(rsp_sustained(:,ii), starts, stops, adapt_exp, srate);
+end
 
 % COMPUTE THE COMBINED RESPONSE
 rsp_combined = prm.scale.*(prm.weight*rsp_transient ...
