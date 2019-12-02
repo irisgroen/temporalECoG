@@ -20,7 +20,7 @@ opts.sort_channels   = true;
 
 toc
 
-% plot final selected data
+% TEMPORARY: plot final selected data
 figure, sz = ceil(sqrt(size(data2fit,3)));
 for ii = 1:size(data2fit,3)
     subplot(sz,sz,ii); plot(t,data2fit(:,:,ii), 'LineWidth', 2);
@@ -46,15 +46,17 @@ set(gcf, 'Position', [400 200 2000 1200]);
 
 % define model
 modelfuns = tde_modelTypes();
-modelfun = modelfuns{1}; % eg 'DNCASCADE'; 
+modelfun = modelfuns{4}; % eg 'DNCASCADE'; 
 
 tic
 [params, pred] = tde_fitModel(modelfun, data2fit, stim_ts, srate);
 toc
-%% R2 and derived Prms
+
+%% evaluation of fits
+
 [results] = tde_evaluateModelFit(modelfun, params, data2fit, pred);
 
-%% plotting
+%% TEMPRARY plotting
 
 % % visualization 1
 % figure;
@@ -83,7 +85,9 @@ for kk = 1:size(data2fit,3)
     end
     set(gcf, 'Position', [400 200 1000 1200]);
 end
+
 %% plot summaries
+
 figure;hold on
 derivedTitles = {'time2peak', 'R_asymp'};
 fittedTitles = {'tau1', 'weight','tau2', 'n', 'sigma'};

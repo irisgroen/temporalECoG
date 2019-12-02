@@ -70,13 +70,13 @@ savePlots   = opts.doplots;
 plotSaveDir = opts.plotsavedir;
 if ~exist(plotSaveDir, 'dir'); mkdir(plotSaveDir); end
 
-%% Loop over subjects
-
 % Initialize
 allEpochs   = [];
 allChannels = [];
-    
-for ii = 1:length(data)
+
+%% Loop over subjects
+
+for ii = 1:length(data) % Loop over subjects
     
     subject     = data{ii}.subject;
     epochs      = data{ii}.epochs;
@@ -189,7 +189,7 @@ for ii = 1:length(data)
     % Update channels table
     channels = channels(select_idx,:);
     
-    %% STEP 4 average across trials, concatenate subjects
+%% STEP 4 average across trials, concatenate subjects
     
     % Average trials
     if opts.average_trials
@@ -307,7 +307,7 @@ function [data, channels] = average_elecs(data, channels)
     end
     data = avdata;
     
-    % create a new channels table:
+    % Create a new channels table:
     name               = {'V1', 'V2', 'V3', 'V3a V3b', 'hV4', 'LO','TO' 'IPS', 'VO PHC'}';
     type               = repmat({'n/a'}, [length(name) 1]);
     units              = repmat(channels.units(1), [length(name) 1]);
