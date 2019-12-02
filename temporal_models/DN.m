@@ -61,18 +61,21 @@ stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
 
 % COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
-linrsp  = conv2(stim, irf, 'full'); linrsp = linrsp(1:numtimepts,:);
-numrsp  = abs(linrsp).^x.n;
+linrsp  = conv2(stim, irf, 'full');         % convolve
+linrsp  = linrsp(1:numtimepts,:);           % cut
+numrsp  = abs(linrsp).^x.n;                 % exponentiate
 
 % COMPUTE THE NORMALIZATION DENOMINATOR -------------------------------
-poolrsp = conv2(linrsp, irf_norm, 'full'); poolrsp = poolrsp(1:numtimepts,:);
-demrsp  = x.sigma.^x.n + abs(poolrsp).^x.n;
+poolrsp = conv2(linrsp, irf_norm, 'full');  % convolve
+poolrsp = poolrsp(1:numtimepts,:);          % cut
+demrsp  = x.sigma.^x.n + abs(poolrsp).^x.n; % exponentiate
 
 % COMPUTE THE NORMALIZATION RESPONSE
-normrsp = x.scale.*(numrsp./demrsp);
-
+normrsp = x.scale.*(numrsp./demrsp);        % divide and scale
 
 pred = normrsp;
+
+%% COMPUTE ERROR
 
 if isempty(data)
     err = []; 

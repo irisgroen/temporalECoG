@@ -1,12 +1,17 @@
-function [err, pred] = TTCSTIG(param, data, stim, srate)
+function [err, pred] = TTCSTIG19(param, data, stim, srate)
 %
-% function [err, pred] = TTCSTIG(param, data, stim, srate)
+% function [err, pred] = TTCSTIG19(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 3 fields
-%          1. weight - relative weight on transient channel ([0 1]) 
+%          1. weight -- relative weight on transient channel ([0 1]) 
 %          2. shift -- time between stimulus onset and when the signal reaches
 %               the cortex (seconds)
 %          3. scale -- response gain.
+%          4. tau - time constant for neural IRFs
+%          5. alpha -- adaptation controlling exponential decay of sustained channel
+%          6. k_on -- sigmoid on nonlinearity of transient channel
+%          7. k_off -- sigmoid off nonlinearity of transient channel
+%          8. lambda - scale of transient channel 
 %
 % data :   matrix, samples x trials
 %
@@ -18,6 +23,18 @@ function [err, pred] = TTCSTIG(param, data, stim, srate)
 % err:  sum of squared error
 % pred: predicted time series
 
+
+%%% FROM TCN toolbox
+% % sustained response: (stimulus * sustained IRF) x exponential[tau_ae]
+% conv_snS = @(s, tau_s, tau_ae) cellfun(@(X, Y, ON, OFF) code_exp_decay(X, ON, OFF, Y, fs), ...
+%     cellfun(@(XX, YY) convolve_vecs(XX, YY, 1, 1), s, repmat({nrfS_fun(tau_s)}, nruns, 1), 'uni', false), ...
+%     repmat({adapt_fun(tau_ae)}, nruns, 1), model.onsets, model.offsets, 'uni', false);
+% % transient response: tch_sigmoid(stimulus * transient IRF)
+% conv_snT = @(s, tau_s) cellfun(@(X, Y) convolve_vecs(X, Y, 1, 1), ...
+%     s, repmat({nrfT_fun(tau_s)}, nruns, 1), 'uni', false);
+% conv_snTs = @(s, tau_s, Lp, Kp, Kn) cellfun(@(X, lp, kp, kn) tch_sigmoid(X, lp, kp, lp, kn), ...
+%     conv_snT(s, tau_s), repmat({Lp}, nruns, 1), repmat({Kp}, nruns, 1), repmat({Kn}, nruns, 1), 'uni', false);
+%%%
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 x       = []; % a struct of model parameteres
@@ -84,4 +101,21 @@ if isempty(data)
 else
     err = sum((pred(:) - data(:)).^2);
 end
+
+%% subroutines
+
+function Y = tch_sigmoid(X, lambda_p, kappa_p, lambda_n, kappa_n)
+
+if nargin < 4 || isempty(lambda_n); lambda_n = lambda_p; end
+if nargin < 5 || isempty(kappa_n); kappa_n = kappa_p; end
+X = rectify(X, 'abs', .001);
+X_p = X; X_p(X < 0) = 0;
+X_n = X; X_n(X_n > 0) = 0;
+weibull_p = 1 - exp(-(X_p ./ lambda_p) .^ kappa_p);
+weibull_n = 1 - exp(-(-X_n ./ lambda_n) .^ kappa_n);
+Y = weibull_p + weibull_n;
+
+end
+
+
 end

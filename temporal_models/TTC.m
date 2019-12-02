@@ -78,29 +78,27 @@ irf_sustained = normL2(irf_foveal - w*irf_peripheral);
 
 %% COMPUTE THE NORMALIZATION RESPONSE
 
-rsp_transient  = NaN(size(stim));
-rsp_sustained  = NaN(size(stim));
-rsp_combined = NaN(size(stim));
+% ADD SHIFT TO THE STIMULUS -------------------------------------------
+sft       = round(x.shift * srate);
+stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
+stim = stimtmp(1 : size(stim, 1), :);
 
-for istim = 1 : numstim
-    % ADD SHIFT TO THE STIMULUS -------------------------------------------
-    sft       = round(x.shift * srate);
-    stimtmp   = padarray(stim(:, istim), [sft, 0], 0, 'pre');
-    stim(:, istim) = stimtmp(1 : size(stim, 1));
-    
-    % COMPUTE THE TRANSIENT RESPONSE ---------------------------------
-    rsp_transient(:, istim)  = convCut(stim(:, istim), irf_transient, numtimepts);
-    rsp_transient(:, istim)  = abs(rsp_transient(:, istim)).^2;
-    
-    % COMPUTE THE SUSTAINED RESPONSE -------------------------------
-    rsp_sustained(:, istim) = convCut(stim(:, istim), irf_sustained, numtimepts);
-    
-    % COMPUTE THE COMBINED RESPONSE
-    rsp_combined(:, istim) = x.scale.*(x.weight*rsp_transient(:, istim) ...
-        + (1-x.weight)*rsp_sustained(:, istim));
-end
+% COMPUTE THE TRANSIENT RESPONSE --------------------------------------
+rsp_transient = conv2(stim, irf_transient, 'full'); % convolve
+rsp_transient = rsp_transient(1:numtimepts,:);      % cut
+rsp_transient = abs(rsp_transient).^2;              % square
+
+% COMPUTE THE SUSTAINED RESPONSE -------------------------------
+rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
+rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
+   
+% COMPUTE THE COMBINED RESPONSE
+rsp_combined = x.scale.*(x.weight*rsp_transient ...
+        + (1-x.weight)*rsp_sustained);
 
 pred = rsp_combined;
+
+%% COMPUTE ERROR
 
 if isempty(data)
     err = []; 
