@@ -20,13 +20,10 @@ function [err, pred] = TTC(param, data, stim, srate)
 % pred: predicted time series
 
 
-
 %% PRE-DEFINED /EXTRACTED VARIABLES
-x       = []; % a struct of model parameteres
-
 numtimepts  = size(stim,1);
-numstim     = size(stim,2);
 
+%% USEFUL FUNCTIONS
 normL2  = @(x) x./norm(x);
 makeIRF = @(A, B, C, t)(t/A).^8 .* exp(-t/A) - 1 / B .* (t/C).^9 .* exp(-t/C);
 
@@ -46,8 +43,7 @@ c = 3.18;
 % sigma = 0.03; % smoothing kernel
 
 fields = {'weight', 'shift', 'scale'};
-x      = toSetField(x, fields, param);
-
+prm      = toSetField([], fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
 
@@ -66,11 +62,9 @@ irf_transient = normL2(irf_peripheral - w*irf_foveal);
 w = 0.5;
 irf_sustained = normL2(irf_foveal - w*irf_peripheral);
 
-
 % debug: Compare to figure 7 (inset) in Horiguchi et al, 2009
 % figure, plot(t, irf_sustained, 'b-', ...
 %   t, irf_transient, 'k-', 'LineWidth', 3); xlim([0 100])
-
 
 % % make smoothing kernel, transform from neuronal to ECoG broadband response
 % s   = -1 : 1/srate : 1;
@@ -79,7 +73,7 @@ irf_sustained = normL2(irf_foveal - w*irf_peripheral);
 %% COMPUTE THE NORMALIZATION RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(x.shift * srate);
+sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
 
@@ -93,8 +87,8 @@ rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
    
 % COMPUTE THE COMBINED RESPONSE
-rsp_combined = x.scale.*(x.weight*rsp_transient ...
-        + (1-x.weight)*rsp_sustained);
+rsp_combined = prm.scale.*(prm.weight*rsp_transient ...
+        + (1-prm.weight)*rsp_sustained);
 
 pred = rsp_combined;
 

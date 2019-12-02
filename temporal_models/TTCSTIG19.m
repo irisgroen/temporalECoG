@@ -37,29 +37,23 @@ function [err, pred] = TTCSTIG19(param, data, stim, srate)
 %%%
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
-x       = []; % a struct of model parameteres
-
 numtimepts  = size(stim,1);
-numstim     = size(stim,2);
 
+%% USEFUL FUNCTIONS
 normL2  = @(x) x./norm(x);
-
 h = @(tau, n, t) (tau*factorial(n-1))^-1 * (t/tau).^(n-1) .* exp(-t/tau);
 
 %% SET UP THE MODEL PARAMETERS
-
-
-fields = {'weight', 'shift', 'scale'};
-x      = toSetField(x, fields, param);
-
+fields = {'weight', 'shift', 'scale', 'tau', 'k_on', 'k_off', 'lambda', 'tau_ae'};
+prm      = toSetField([], fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
 t   = 1000 * (1/srate : 1/srate : 0.150)'; % in milliseconds
 
 % make sustained channel impulse response
-tau = 4.94;
-n = 9;
-irf_sustained = h(tau, n, t);
+tau = prm.tau; % tau = 4.94; % fitted here instead of fixed in STIG17
+n1 = 9;
+irf_sustained = h(tau, n1, t);
 
 % make transient channel impulse response
 kappa = 1.33;
@@ -75,22 +69,29 @@ irf_transient = xi*(irf_sustained - h(tau2, n2, t));
 %% COMPUTE THE PREDICTED TWO CHANNEL RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(x.shift * srate);
+sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
   
 % COMPUTE THE TRANSIENT RESPONSE --------------------------------------
 rsp_transient = conv2(stim, irf_transient, 'full'); % convolve
 rsp_transient = rsp_transient(1:numtimepts,:);      % cut
-rsp_transient = abs(rsp_transient).^2;              % square
+%rsp_transient = abs(rsp_transient).^2;              % square
+% instead, multiply with sigmoid:
+rsp_transient = tch_sigmoid(rsp_transient, prm.lambda, prm.k_on, prm.lambda, prm.k_off);
 
 % COMPUTE THE SUSTAINED RESPONSE -------------------------------
 rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
-      
+
+% multiply with adaptation function
+adapt_exp = exp(-(1:60000) / prm.tau_ae);
+starts = 0; stops = numtimepts *(1/srate);% should be updated with actual start/stop times of stim
+rsp_sustained = code_exp_decay(rsp_sustained, starts, stops, adapt_exp, srate);
+
 % COMPUTE THE COMBINED RESPONSE
-rsp_combined = x.scale.*(x.weight*rsp_transient ...
-        + (1-x.weight)*rsp_sustained);
+rsp_combined = prm.scale.*(prm.weight*rsp_transient ...
+        + (1-prm.weight)*rsp_sustained);
 
 %% COMPUTE ERROR
 
@@ -102,7 +103,10 @@ else
     err = sum((pred(:) - data(:)).^2);
 end
 
-%% subroutines
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SUBROUTINES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function Y = tch_sigmoid(X, lambda_p, kappa_p, lambda_n, kappa_n)
 
@@ -117,5 +121,35 @@ Y = weibull_p + weibull_n;
 
 end
 
+function resp_decay = code_exp_decay(resp_in, starts, stops, decay_exp, fs)
 
+    % Helper function for coding stimulus-specific exponential response decay. 
+%
+% INPUTS
+%   1) resp_in: input activity matrix (frames x predictors)
+%   2) starts: beginnings of decay activity windows (seconds)
+%   3) stops: ends of decay activity windows (seconds)
+%   4) decay_exp: exponential function modeling decay of activity
+%   5) fs: temporal sampling rate of resp_in and resp_out (Hz)
+%
+% OUTPUT
+%   resp_decay: output activity matrix with decay (frames x predictors)
+%
+% AS 10/2017
+
+if ~isempty(resp_in)
+    decay_fun = zeros(size(resp_in, 1), 1);
+    for ss = 1:length(starts)
+        start_idx = round(starts(ss) * fs); stop_idx = round(stops(ss) * fs);
+        decay_idxs = start_idx + 1:stop_idx; dl = length(decay_idxs);
+        decay_idxs = decay_idxs(1:min([dl length(decay_exp)]));
+        decay_fun(decay_idxs) = decay_exp(1:min([dl length(decay_exp)]));
+    end
+    resp_decay = resp_in .* repmat(decay_fun, 1, size(resp_in, 2));
+else
+    resp_decay = [];
+end
+
+
+end
 end

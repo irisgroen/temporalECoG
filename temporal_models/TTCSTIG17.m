@@ -20,29 +20,23 @@ function [err, pred] = TTCSTIG(param, data, stim, srate)
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
-x       = []; % a struct of model parameteres
-
 numtimepts  = size(stim,1);
-numstim     = size(stim,2);
 
+%% USEFUL FUNCTIONS
 normL2  = @(x) x./norm(x);
-
 h = @(tau, n, t) (tau*factorial(n-1))^-1 * (t/tau).^(n-1) .* exp(-t/tau);
 
 %% SET UP THE MODEL PARAMETERS
-
-
 fields = {'weight', 'shift', 'scale'};
-x      = toSetField(x, fields, param);
-
+prm      = toSetField([], fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
 t   = 1000 * (1/srate : 1/srate : 0.150)'; % in milliseconds
 
 % make sustained channel impulse response
 tau = 4.94;
-n = 9;
-irf_sustained = h(tau, n, t);
+n1 = 9;
+irf_sustained = h(tau, n1, t);
 
 % make transient channel impulse response
 kappa = 1.33;
@@ -58,7 +52,7 @@ irf_transient = xi*(irf_sustained - h(tau2, n2, t));
 %% COMPUTE THE PREDICTED TWO CHANNEL RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(x.shift * srate);
+sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
   
@@ -72,8 +66,8 @@ rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
       
 % COMPUTE THE COMBINED RESPONSE
-rsp_combined = x.scale.*(x.weight*rsp_transient ...
-        + (1-x.weight)*rsp_sustained);
+rsp_combined = prm.scale.*(prm.weight*rsp_transient ...
+        + (1-prm.weight)*rsp_sustained);
 
 %% COMPUTE ERROR
 
