@@ -238,7 +238,7 @@ channels = addvars(channels, index, 'Before', 'name');
 
 fprintf('[%s] Done! \n',mfilename);
 
-
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% SUBROUTINES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -316,5 +316,4 @@ function [data, channels] = average_elecs(data, channels)
     number_of_elecs    = nelecs';
     channels = table(name, type, units, sampling_frequency, subject_name, number_of_elecs);
     
-end
 end

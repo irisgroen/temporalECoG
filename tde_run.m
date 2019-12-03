@@ -1,4 +1,4 @@
-% script 
+%% 1: Load the ECoG data and stimulus description
 
 tic
 
@@ -12,7 +12,7 @@ opts.doplots         = false;
 opts.average_trials  = true;
 opts.normalize_data  = false;
 opts.average_elecs   = false;
-opts.sort_channels   = true;
+opts.sort_channels   = false;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
 % generate stimulus timecourses
@@ -38,7 +38,7 @@ for ii = 1:size(data2fit,3)
 end
 set(gcf, 'Position', [400 200 2000 1200]);
 
-%% fitting
+%% 2. Model fitting
 
 % define electrode (temporary)
 ele = 59; % 58; % 2;%54; 
