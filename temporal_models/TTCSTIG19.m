@@ -25,6 +25,10 @@ function [err, pred] = TTCSTIG19(param, data, stim, srate)
 
 
 %%% FROM TCN toolbox
+% % generate IRFs/filters for optimization
+% nrfS_fun = @(tau_s) tch_irfs('S', tau_s);
+% nrfT_fun = @(tau_s) tch_irfs('T', tau_s);
+% adapt_fun = @(tau_ae) exp(-(1:60000) / (tau_ae * 10000));
 % % sustained response: (stimulus * sustained IRF) x exponential[tau_ae]
 % conv_snS = @(s, tau_s, tau_ae) cellfun(@(X, Y, ON, OFF) code_exp_decay(X, ON, OFF, Y, fs), ...
 %     cellfun(@(XX, YY) convolve_vecs(XX, YY, 1, 1), s, repmat({nrfS_fun(tau_s)}, nruns, 1), 'uni', false), ...
@@ -34,13 +38,37 @@ function [err, pred] = TTCSTIG19(param, data, stim, srate)
 %     s, repmat({nrfT_fun(tau_s)}, nruns, 1), 'uni', false);
 % conv_snTs = @(s, tau_s, Lp, Kp, Kn) cellfun(@(X, lp, kp, kn) tch_sigmoid(X, lp, kp, lp, kn), ...
 %     conv_snT(s, tau_s), repmat({Lp}, nruns, 1), repmat({Kp}, nruns, 1), repmat({Kn}, nruns, 1), 'uni', false);
-%%%
+% % sustained BOLD: sustained response * HRF
+% conv_nbS = @(s, tau_s, tau_ae) cellfun(@(NS) convolve_vecs(NS, irfs.hrf{1}, fs, 1 / tr), ...
+%     conv_snS(s, tau_s, tau_ae), 'uni', false);
+% % transient BOLD: transient response * HRF
+% conv_nbT = @(s, tau_s, Lp, Kp, Kn) cellfun(@(NT) convolve_vecs(NT, irfs.hrf{1}, fs, 1 / tr), ...
+%     conv_snTs(s, tau_s, Lp, Kp, Kn), 'uni', false);
+% % channel predictors: [sustained BOLD, transient BOLD]
+% conv_nb = @(s, tau_s, tau_ae, Lp, Kp, Kn) cellfun(@(S, T) [S T], ...
+%     conv_nbS(s, tau_s, tau_ae), conv_nbT(s, tau_s, Lp, Kp, Kn), 'uni', false);
+% % measured signal: time series - baseline estimates
+% comp_bs = @(m, b0) cellfun(@(M, B0) M - repmat(B0, size(M, 1), 1), ...
+%     m, b0, 'uni', false);
+% % channel weights: channel predictors \ measured signal
+% comp_ws = @(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0) ...
+%     cell2mat(conv_nb(s, tau_s, tau_ae, Lp, Kp, Kn)) \ cell2mat(comp_bs(m, b0));
+% % predicted signal: channel predictors x channel weights
+% pred_bs = @(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0) cellfun(@(P, W) P .* repmat(W, size(P, 1), 1), ...
+%     conv_nb(s, tau_s, tau_ae, Lp, Kp, Kn), repmat({comp_ws(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0)'}, nruns, 1), 'uni', false);
+% % model residuals: (predicted signal - measured signal)^2
+% calc_br = @(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0) cellfun(@(S, M) (sum(S, 2) - M) .^ 2, ...
+%     pred_bs(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0), comp_bs(m, b0), 'uni', false);
+% % model error: summed squared residuals for all run time series
+% calc_me = @(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0) ...
+%     sum(cell2mat(calc_br(s, tau_s, tau_ae, Lp, Kp, Kn, m, b0)));
+% obj_fun = @(x) calc_me(stim, x(1), x(2), x(3), x(4), x(5), run_avgs, baseline);
+
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);
 
-%% USEFUL FUNCTIONS
-normL2  = @(x) x./norm(x);
+%% FUNCTIONS
 h = @(tau, n, t) (tau*factorial(n-1))^-1 * (t/tau).^(n-1) .* exp(-t/tau);
 
 %% SET UP THE MODEL PARAMETERS
@@ -85,13 +113,12 @@ rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
 % compute adaptation function
 adapt_exp = exp(-(1:60000) / prm.tau_ae);
-% this should be updated with actual start/stop times of stim:
 % starts = 0; stops = numtimepts * (1/srate); 
 for ii = 1:size(stim,2)
-    starts = find(diff(stim(:,ii))>0) * (1/srate); 
-    %stops = find(diff(stim(:,ii))<0) * (1/srate); 
-    stops = numtimepts * (1/srate) * ones(size(starts)); 
-    % multiple sustained response with adaptation function:
+    starts = find(diff(stim(:,ii))>0) * (1/srate); % stim onsets
+    %stops = find(diff(stim(:,ii))<0) * (1/srate); % stim offsets
+    stops = numtimepts * (1/srate) * ones(size(starts)); % end of epoch
+    % multiply sustained response with adaptation function:
     rsp_sustained(:,ii) = code_exp_decay(rsp_sustained(:,ii), starts, stops, adapt_exp, srate);
 end
 

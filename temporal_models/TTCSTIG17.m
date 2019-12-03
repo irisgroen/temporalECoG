@@ -22,8 +22,7 @@ function [err, pred] = TTCSTIG(param, data, stim, srate)
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);
 
-%% USEFUL FUNCTIONS
-normL2  = @(x) x./norm(x);
+%% FUNCTIONS
 h = @(tau, n, t) (tau*factorial(n-1))^-1 * (t/tau).^(n-1) .* exp(-t/tau);
 
 %% SET UP THE MODEL PARAMETERS

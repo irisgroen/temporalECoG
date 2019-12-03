@@ -26,11 +26,11 @@ switch modelName
     case {'TTCSTIG19'}
         
         opts.params = {'weight','shift','scale','tau', 'k_on','k_off','lambda', 'alpha'};
-        opts.x0   = [0.5,    0.06,  2,    4.93, 3,      3,     0.1,     10000];  % starting point
-        opts.lb   = [0,      0,     0.01, 0,    0.01,   0.01,  0.001,   100];  % lower bounds
-        opts.ub   = [1,      0.1,   200,  100,  10,     10,    10,      100000];  % upper bounds
-        opts.plb  = [0.1,    0.01,  0.5,  1,    0.01,   0.01,  0.001,   100];  % plausible lower bound (required for bads search algorithm)
-        opts.pub  = [0.9,    0.08,  100,  10,   10,     10,    10,      100000];  % plausible upper bound (required for bads search algorithm)
+        opts.x0   = [0.5,    0.06,  2,    4.93, 3,      3,     0.1,     1];  % starting point
+        opts.lb   = [0,      0,     0.01, 0,    0.01,   0.01,  0.001,   1];      % lower bounds
+        opts.ub   = [1,      0.1,   200,  100,  10,     10,    100,     100000]; % upper bounds
+        opts.plb  = [0.1,    0.01,  0.5,  1,    0.01,   0.01,  0.001,   1];      % plausible lower bound (required for bads search algorithm)
+        opts.pub  = [0.9,    0.08,  100,  100,   10,     10,   100,    100000]; % plausible upper bound (required for bads search algorithm)
 end
 
 %% write out json
