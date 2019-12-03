@@ -11,10 +11,10 @@ rSq         = nan(nStim,nDatasets);
 
 for ii = 1:nDatasets % loop over channels or channel averages
 
-    derived_prm = tde_computeDerivedParams(objFunction, params(:,ii));
+    %derived_prm = tde_computeDerivedParams(objFunction, params(:,ii));
 
-    derivedPrm(1,ii) = derived_prm.t2pk;
-    derivedPrm(2,ii) = derived_prm.r_asymp;
+    %derivedPrm(1,ii) = derived_prm.t2pk;
+    %derivedPrm(2,ii) = derived_prm.r_asymp;
     
     r = nan(nStim,1);
     for jj = 1:nStim % loop over stimuli
