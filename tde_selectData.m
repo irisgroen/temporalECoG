@@ -219,7 +219,10 @@ srate = channels.sampling_frequency(1);
 
 % Sort electrodes on visual area (rather than subjectID)?
 if opts.sort_channels
-    [channels] = sort_channels(channels);
+    % sort on benson area
+    [~,I] = sortVisualAreaNames(channels.bensonarea);
+    channels = channels(I,:);
+    epochs = epochs(:,:,I);
 end
 
 % Scale each electrode to its max?
@@ -254,14 +257,7 @@ function [epochs_averaged] = average_trials(epochs, events, stimNames)
     end
     % Also compute se across trials?
 end
-
-% Channel sorting
-function [channels] = sort_channels(channels)   
-    % sort on benson area
-    [~,I] = sortVisualAreaNames(channels.bensonarea);
-    channels = channels(I,:);
-end
-
+  
 % Data normalization
 function [data] = normalize_data(data)
     normdata = data;
