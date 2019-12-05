@@ -103,8 +103,9 @@ for ii = 1:length(data) % Loop over subjects
                 figure('Name', figureName); hold on;
                 outliers_found = find(outliers(:,jj));
                 nOutliers = length(outliers_found);
-                dim1 = round((nOutliers+1)/2);
-                dim2 = round((nOutliers+1)/dim1);
+                dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
+                %dim1 = round((nOutliers+1)/2);
+                %dim2 = round((nOutliers+1)/dim1);
                 subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
                 histogram(max_epochs(:,jj),100); line([opts.epoch_outlier_thresh opts.epoch_outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
                 set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
@@ -163,7 +164,7 @@ for ii = 1:length(data) % Loop over subjects
         figure('Name', figureName); plotDim1 = round(sqrt(nEl)); plotDim2 = ceil((nEl)/plotDim1);
         for el = 1:nEl
             subplot(plotDim1,plotDim2,el); hold on
-            plotTitle = sprintf('%s W:%s B:%s ', channels.name{el}, channels.wangarea{el}, channels.bensonarea{el});        
+            plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
             ecog_plotSingleTimeCourse(t, mean_resp(:,:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle);
             %if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
             set(gcf, 'Position', [150 100 1500 1250]);
@@ -175,7 +176,7 @@ for ii = 1:length(data) % Loop over subjects
         for el = 1:nEl
             if select_idx(el)
                 subplot(plotDim1,plotDim2,el); hold on
-                plotTitle = sprintf('%s W:%s B:%s ', channels.name{el}, channels.wangarea{el}, channels.bensonarea{el});
+                plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
                 ecog_plotSingleTimeCourse(t, mean_resp(:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle)    
                 set(gcf, 'Position', [150 100 1500 1250]);
             end
@@ -232,7 +233,7 @@ end
 
 % Average elecs within area?
 if opts.average_elecs
-    [epochs, channels] = average_elecs(epochs, channels);
+    [epochs, channels] = average_elecs(epochs, channels, opts);
 end
 
 % Add an index column to channels
@@ -271,7 +272,7 @@ function [data] = normalize_data(data)
 end
 
 % Data averaging
-function [data, channels] = average_elecs(data, channels)
+function [data, channels] = average_elecs(data, channels, opts)
     
     avdata = nan(size(data,1), size(data,2), 4);
     subjects = {}; nelecs = {};
@@ -285,7 +286,7 @@ function [data, channels] = average_elecs(data, channels)
     INX{6} = contains(channels.wangarea, {'LO1', 'LO2'}) | contains(channels.bensonarea, {'LO1', 'LO2'});
     INX{7} = contains(channels.wangarea, {'TO1', 'TO2'}) | contains(channels.bensonarea, {'TO1', 'TO2'});
     INX{8} = contains(channels.wangarea, {'IPS0', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5'});
-    INX{9} = contains(channels.wangarea, {'VO1','VO2', 'PHC1', 'PHC2'}) | contains(channels.bensonarea, {'VO1', 'VO2'});
+    %INX{9} = contains(channels.wangarea, {'VO1','VO2', 'PHC1', 'PHC2'}) | contains(channels.bensonarea, {'VO1', 'VO2'});
 
     for ii = 1:length(INX)
         mdata = mean(data(:,:,INX{ii}),3);
@@ -304,7 +305,7 @@ function [data, channels] = average_elecs(data, channels)
     data = avdata;
     
     % Create a new channels table:
-    name               = {'V1', 'V2', 'V3', 'V3a V3b', 'hV4', 'LO','TO' 'IPS', 'VO PHC'}';
+    name               = {'V1', 'V2', 'V3', 'V3a V3b', 'hV4', 'LO','TO' 'IPS'}';
     type               = repmat({'n/a'}, [length(name) 1]);
     units              = repmat(channels.units(1), [length(name) 1]);
     sampling_frequency = repmat(channels.sampling_frequency(1), [length(name) 1]);
