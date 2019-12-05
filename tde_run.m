@@ -1,7 +1,5 @@
 %% 1: Load the ECoG data and stimulus description
 
-tic
-
 % load or (re)compute the processed data
 reComputeFlag = false; 
 [data] = tde_getData(reComputeFlag);
@@ -11,39 +9,21 @@ opts = [];
 opts.doplots         = false;
 opts.average_trials  = true;
 opts.normalize_data  = false;
-opts.average_elecs   = false;
-opts.sort_channels   = false;
+opts.average_elecs   = true;
+opts.sort_channels   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
 % generate stimulus timecourses
 [stim_ts] = tde_generateStimulusTimecourses(stimnames,t);
 
-toc
-
-% TEMPORARY: plot final selected data
-figure, sz = ceil(sqrt(size(data2fit,3)));
-for ii = 1:size(data2fit,3)
-    subplot(sz,sz,ii); plot(t,data2fit(:,:,ii), 'LineWidth', 2);
-    if opts.average_elecs
-        title(sprintf('%s (n = %d)', ...
-            channels.name{ii}, channels.number_of_elecs{ii})); 
-    else
-        title(sprintf('%s %s %s %s', ...
-            channels.bensonarea{ii}, channels.wangarea{ii}, channels.subject_name{ii}, channels.name{ii})); 
-    end
-    yaxlims = get(gca, 'YLim');
-    line([0 0], [0 yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
-    %line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
-    set(gca, 'YLim', [0 yaxlims(2)]);
-end
-set(gcf, 'Position', [400 200 2000 1200]);
+tde_plotData(data2fit, channels, t, opts)
 
 %% 2. Model fitting
 
 % define electrode (temporary)
 ele = 59; % 58; % 2;%54; 
-smallData = data2fit(:,:,ele);
-
+%smallData = data2fit(:,:,ele);
+smallData = data2fit;
 % define model
 modelfuns = tde_modelTypes();
 
@@ -59,6 +39,7 @@ toc
 
 [results1] = tde_evaluateModelFit(modelfun, params1, smallData, pred1);
 [results2] = tde_evaluateModelFit(modelfun, params2, smallData, pred2);
+[results] = tde_evaluateModelFit(modelfun, params2, smallData, pred2);
 
 %% TEMPORARY plotting
 
