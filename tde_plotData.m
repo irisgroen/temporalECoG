@@ -14,9 +14,10 @@ for ii = 1:size(data,3)
             channels.bensonarea{ii}, channels.wangarea{ii}, channels.subject_name{ii}, channels.name{ii})); 
     end
     yaxlims = get(gca, 'YLim');
-    line([0 0], [0 yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
-    %line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
-    set(gca, 'YLim', [0 yaxlims(2)]);
+    set(gca, 'YLim', [-0.5 ceil(yaxlims(2)+ (0.1 * yaxlims(2)))]);
+    yaxlims = get(gca, 'YLim');
+    line([0 0], [yaxlims(1) yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
+    line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
 end
 set(gcf, 'Position', [400 200 2000 1200]);
 end
