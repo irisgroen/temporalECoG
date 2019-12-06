@@ -116,6 +116,9 @@ adapt_exp = exp(-(1:60000) / prm.tau_ae);
 % starts = 0; stops = numtimepts * (1/srate); 
 for ii = 1:size(stim,2)
     starts = find(diff(stim(:,ii))>0) * (1/srate); % stim onsets
+    if isempty(starts) % if there is no stim onset, assume decay starts at sample 1 of stim
+        starts = 1;
+    end
     %stops = find(diff(stim(:,ii))<0) * (1/srate); % stim offsets
     stops = numtimepts * (1/srate) * ones(size(starts)); % end of epoch
     % multiply sustained response with adaptation function:
