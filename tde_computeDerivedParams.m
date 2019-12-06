@@ -1,4 +1,4 @@
-function derivedPrm = tde_computeDerivedParams(objFunction, prm)
+function [derivedPrm, pred, t] = tde_computeDerivedParams(objFunction, prm)
 % Simulate model response to a long sustained stimulus
 % Extract two summary statistics:
 % - t2pk = time to peak 
@@ -13,7 +13,8 @@ srate = 1/median(diff(t)); % samples per second
 %prm(end) = 1; % Jing's code appears to fix the gain to 1, do we want this?
 [~, pred] = objFunction(prm, [], stim, srate);
 
-derivedPrm.t2pk = t(pred == max(pred));
+[~,x] = max(pred);
+derivedPrm.t2pk    = t(x);
 derivedPrm.r_asymp = pred(end)/max(pred);
 
 % Jings code:
