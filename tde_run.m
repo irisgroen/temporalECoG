@@ -22,7 +22,7 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary)
-tmpdata = data2fit(:,:,1);
+tmpdata = data2fit;%(:,:,1);
 
 % define model
 modelfuns = tde_modelTypes();
@@ -52,7 +52,7 @@ end
 %% plots
 
 tde_plotDataAndFits(results, tmpdata, channels, stim_ts, stim_info, t)
-tde_plotFittedAndDerivedParams(results, channels)
+[results2] = tde_plotFittedAndDerivedParams(results, channels);
 
 %%
 % -- which models?

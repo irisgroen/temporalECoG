@@ -21,7 +21,7 @@ for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 % Loop over channels or channel averages
 for ii = 1:nDatasets
     
-    figure('Name', sprintf('%s %s', channels.name{ii}, 'data and predictions'));
+    figure('Name', sprintf('%s %s', 'Predictions', channels.name{ii}));
     
     d = data(:,:,ii);
     maxresp = max(d(:)); % scale stimulus to max across dataset
@@ -44,7 +44,7 @@ for ii = 1:nDatasets
             titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), mean(results(kk).rSquareStim(inx,ii)));
         end
         % add title
-        title(sprintf('%s: %s', conditionsOfInterest{ii}, [titlestr{:}]));
+        title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
         
         % set axes
         axis tight   
