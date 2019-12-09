@@ -111,14 +111,14 @@ rsp_transient = tch_sigmoid(rsp_transient, prm.lambda, prm.k_on, prm.lambda, prm
 % COMPUTE THE SUSTAINED RESPONSE -------------------------------
 rsp_sustained = conv2(stim, irf_sustained, 'full'); % convolve
 rsp_sustained = rsp_sustained(1:numtimepts,:);      % cut
+
 % compute adaptation function
 adapt_exp = exp(-(1:60000) / prm.tau_ae);
-% starts = 0; stops = numtimepts * (1/srate); 
+
+% determine start and stop points of adaptation
 for ii = 1:size(stim,2)
     starts = find(diff(stim(:,ii))>0) * (1/srate); % stim onsets
-    if isempty(starts) % if there is no stim onset, assume decay starts at sample 1 of stim
-        starts = 1;
-    end
+    if isempty(starts), starts = 1; end % if there is no stim onset, assume decay starts at sample 1 of stim
     %stops = find(diff(stim(:,ii))<0) * (1/srate); % stim offsets
     stops = numtimepts * (1/srate) * ones(size(starts)); % end of epoch
     % multiply sustained response with adaptation function:
@@ -139,12 +139,17 @@ else
     err = sum((pred(:) - data(:)).^2);
 end
 
+end
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SUBROUTINES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function Y = tch_sigmoid(X, lambda_p, kappa_p, lambda_n, kappa_n)
+
+% Function that applies sigmoid rectification to input X
+% Function copied from the code used in Stigliani et al., 2019, PLOS CB
+% https://github.com/VPNL/TemporalChannels
 
 if nargin < 4 || isempty(lambda_n); lambda_n = lambda_p; end
 if nargin < 5 || isempty(kappa_n); kappa_n = kappa_p; end
@@ -159,7 +164,7 @@ end
 
 function resp_decay = code_exp_decay(resp_in, starts, stops, decay_exp, fs)
 
-    % Helper function for coding stimulus-specific exponential response decay. 
+% Helper function for coding stimulus-specific exponential response decay. 
 %
 % INPUTS
 %   1) resp_in: input activity matrix (frames x predictors)
@@ -186,6 +191,4 @@ else
     resp_decay = [];
 end
 
-
-end
 end

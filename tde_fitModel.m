@@ -105,7 +105,6 @@ for ii = 1:nDatasets % loop over channels or channel averages
         data2fit = dset(:,fit_inx);
         stim2predict = stim(:,pred_inx);
         
-        % use bads if plausible upper and lower bounds are defined, otherwise use fminsearch
         switch options.algorithm
             case 'bads'
                 prm(:,jj) = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
