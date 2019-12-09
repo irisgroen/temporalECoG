@@ -1,4 +1,4 @@
-function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
+function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir)
 
 % function [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
@@ -17,10 +17,12 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
 %                   out stimulus
 %     'none' : (default)
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
+% <saveDir> directory to save parameters and fits, default
 %
 % NOTES
-% TO DO add option to xvalidate on 'electrodes': train on all electrodes but 1, test on left out electrode? 
-% requires function to know which electrodes belong to a group, so more inputs
+% TO DO add option to xvalidate on 'electrodes'? (train on all electrodes but 1, test on left out electrode) 
+% This requires the function to know which electrodes belong to a xval set, so
+% more inputs; or we should assume that the input always belongs to 1 set
  
 %% FIT THE temporal model
 
@@ -29,8 +31,9 @@ if ~exist('options', 'var') || isempty(options)
     options = struct();
 end
 if ~isfield(options,'startprm') || isempty(options.startprm)
-	fprintf('[%s] Loading default starting values and bounds from json \n', mfilename);
-    options.startprm = loadParamsFromJson(objFunction);
+	fprintf('[%s] Loading default starting values and bounds for model %s \n', mfilename, func2str(objFunction));
+    %options.startprm = loadParamsFromJson(objFunction);
+    options.startprm = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(objFunction))));
 end
 if ~isfield(options,'algorithm') || isempty(options.algorithm)
     options.algorithm = 'bads';
@@ -41,13 +44,18 @@ end
 if ~isfield(options,'display') || isempty(options.display)
     options.display   = 'iter';
 end
+if ~exist('saveDir', 'var') || isempty(saveDir)
+    saveDir = [];
+end
 
-% model start point and bounds
+% <setup>
+
+% Model start point and bounds
 x0 = options.startprm.x0;
 lb = options.startprm.lb;
 ub = options.startprm.ub;
 
-% check if plausible bounds are defined
+% Check if plausible bounds are defined
 switch options.algorithm
     case 'bads'
         if isfield(options.startprm, 'pub') 
@@ -59,11 +67,13 @@ switch options.algorithm
         end
 end
 
-% initialize
+% Initialize
+nTimepts    = size(data,1);
 nStim       = size(data,2);
 nDatasets   = size(data,3);
-pred        = nan(size(data));
-params      = nan(size(x0,2),nDatasets);
+nParams     = size(x0,2);
+pred        = nan(nTimepts, nStim, nDatasets);
+params      = nan(nParams,nDatasets);
 
 searchopts = optimset('Display',options.display);
 %searchopts.MaxFunEvals = options.maxiter;
@@ -90,21 +100,23 @@ for ii = 1:nDatasets % loop over channels or channel averages
        
     %% FIT MODEL
     fprintf('[%s] Defined %d folds for fitting \n',mfilename, nFolds);
-    prm = nan(size(x0,2),nFolds);
-    prd = nan(size(dset));
+    prm = nan(nParams,nFolds);
+    prd = nan(nTimepts,nStim);
     
     for jj = 1:nFolds
         
         fit_inx = foldIndices(jj,:);
         pred_inx = setdiff(1:nFolds, fit_inx);
-        fprintf('[%s] Fitting model for fold %d on stimuli %s \n',mfilename, jj, num2str(fit_inx));
-
         if isempty(pred_inx), pred_inx = fit_inx; end
         
         stim2fit = stim(:,fit_inx);
         data2fit = dset(:,fit_inx);
         stim2predict = stim(:,pred_inx);
         
+        fprintf('[%s] Fold %d: Fitting model on stimulus %s \n', mfilename, jj, num2str(fit_inx)) 
+        fprintf('[%s] Fold %d: Predicting response for stimulus %s \n', mfilename, jj, num2str(pred_inx));
+        
+        % SEARCH FOR BEST-FITTING PARAMETERS
         switch options.algorithm
             case 'bads'
                 prm(:,jj) = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
@@ -119,21 +131,24 @@ for ii = 1:nDatasets % loop over channels or channel averages
     %% COLLECT FITTED PARAMETERS AND PREDICTIONS
     
     pred(:,:,ii) = prd;
-    params(:,ii) = mean(prm,2);
+    params(:,ii) = mean(prm,2); % should this be mean or median? 
 
 end
-end
 
-%%% SUBROUTINES %%%
-
-function options = loadParamsFromJson(objFunction)
-    modelName = func2str(objFunction);
-    default_opts = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', modelName)));
-    options.x0 = default_opts.x0;
-    options.lb = default_opts.lb;
-    options.ub = default_opts.ub;
-    if isfield(default_opts, 'pub')
-        options.plb = default_opts.plb;
-        options.pub = default_opts.pub;
+%% SAVE RESULTS
+if ~isempty(saveDir)
+    
+    saveName = fullfile(saveDir, sprintf('%s_results', func2str(objFunction)));
+    fprintf('[%s] Saving results to %s \n', mfilename, saveName);
+      
+    if exist(sprintf('%s.mat',saveName),'file')
+        warning('[%s] Results file already exists! Writing new file with date-time stamp.',mfilename);
+        saveName = sprintf('%s_%s', saveName, datestr(now,30));
+        fprintf('[%s] Saving results to %s \n', mfilename, saveName);
     end
+    save(saveName, 'pred', 'params');  
+end
+
+fprintf('[%s] Done!\n',mfilename);
+
 end
