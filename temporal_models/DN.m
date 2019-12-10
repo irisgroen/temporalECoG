@@ -53,14 +53,14 @@ irf_norm = normSum(exp(-t/prm.tau2));
 %% COMPUTE THE NORMALIZATION RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(prm.shift * srate);
-stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
-stim = stimtmp(1 : size(stim, 1), :);
+sft     = round(prm.shift * srate);
+stimtmp = padarray(stim, [sft, 0], 0, 'pre');
+stim    = stimtmp(1 : size(stim, 1), :);
 
 % COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
-numrsp  = abs(linrsp).^prm.n;                 % exponentiate
+numrsp  = abs(linrsp).^prm.n;               % exponentiate
 
 % COMPUTE THE NORMALIZATION DENOMINATOR -------------------------------
 poolrsp = conv2(linrsp, irf_norm, 'full');  % convolve
