@@ -19,7 +19,7 @@ results = [];
 
 % Loop over models
 for kk = 1:nModels
-    
+    fprintf('[%s] Evaluating model %s\n', mfilename, func2str(objFunction{kk}))
     
     % Loop over channels or channel averages
     for ii = 1:nDatasets
