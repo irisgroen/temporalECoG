@@ -3,7 +3,8 @@ function tde_plotData(data, channels, t, opts)
 % Data should be time x trials x channels
 
 % Plot final selected data
-figure, sz = ceil(sqrt(size(data,3)));
+figure('Name', 'Selected data'); 
+sz = ceil(sqrt(size(data,3)));
 for ii = 1:size(data,3)
     subplot(sz,sz,ii); plot(t,data(:,:,ii), 'LineWidth', 2);
     if opts.average_elecs
