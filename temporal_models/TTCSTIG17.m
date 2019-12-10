@@ -1,6 +1,6 @@
-function [err, pred] = TTCSTIG(param, data, stim, srate)
+function [err, pred] = TTCSTIG17(param, data, stim, srate)
 %
-% function [err, pred] = TTCSTIG(param, data, stim, srate)
+% function [err, pred] = TTCSTIG17(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 3 fields
 %          1. weight - relative weight on transient channel ([0 1]) 
