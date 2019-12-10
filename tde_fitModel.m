@@ -13,9 +13,8 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 %           provided, defaults are read in from a json file)
 %   <algorithm>  search algorithm, either 'fminsearch' or 'bads' (default)
 %   <xvalmode> method for cross validation (string), options are
-%     'stimuli' : train on all stimulus conditions but 1, test on the left
-%                   out stimulus
-%     'none' : (default)
+%     0 : no cross-validation (default)
+%     1 : train on all stimulus conditions but 1, test on the left out 
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
 % <saveDir> directory to save parameters and fits, default
 %
@@ -38,7 +37,7 @@ if ~isfield(options,'algorithm') || isempty(options.algorithm)
     options.algorithm = 'bads';
 end
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode)
-    options.xvalmode  = 'none';
+    options.xvalmode  = 0;
 end
 if ~isfield(options,'display') || isempty(options.display)
     options.display   = 'iter';
@@ -86,14 +85,14 @@ for ii = 1:nDatasets % loop over channels or channel averages
 
     %% SET UP CROSS VALIDATION
     switch options.xvalmode
-       case 'stimuli'
-           nFolds = nStim; % number of stimulus conditions
-           foldIndices = nan(nStim, nStim-1);
-           for jj = 1:nFolds 
-               foldIndices(jj,:) = setdiff(1:nFolds,jj);
-           end
-       case 'none'
+        case 0
             nFolds = 1; foldIndices = 1:nStim;
+        case 1
+            nFolds = nStim; % number of stimulus conditions
+            foldIndices = nan(nStim, nStim-1);
+            for jj = 1:nFolds 
+                foldIndices(jj,:) = setdiff(1:nFolds,jj);
+            end
         otherwise
             fprintf('[%s] Do not recognize this xvalmode, exiting \n',mfilename); return
     end
@@ -138,7 +137,7 @@ end
 %% SAVE RESULTS
 if ~isempty(saveDir)
     
-    saveName = fullfile(saveDir, sprintf('%s_results', func2str(objFunction)));
+    saveName = fullfile(saveDir, sprintf('%s_results_xvalmode%d', func2str(objFunction), options.xvalmode));
     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
       
     if exist(sprintf('%s.mat',saveName),'file')
