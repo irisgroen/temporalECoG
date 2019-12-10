@@ -24,16 +24,14 @@ tde_plotData(data2fit, channels, t, opts);
 % define subset of data (temporary)
 tmpdata = data2fit;%(:,:,1);
 
-% define model
+% define model(s)
 modelfuns = tde_modelTypes();
-modelfun = [];
-modelfun{1} = modelfuns{1}; % DN 
-modelfun{2} = modelfuns{5}; % TTCSTIG19
+modelfun = modelfuns([1 3]); 
 
 % define model fitting options
 options = struct();
-options.xvalmode = 'none';  % 'none' 'stimuli' 
-options.display  = 'final'; % 'iter' 'final' 'off
+options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
+options.display  = 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
 saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results';
@@ -45,14 +43,16 @@ for ii = 1:size(modelfun,2)
     toc
 end
         
-%% evaluation of fits
+%% 3. Model fit evaluation
 
+% compute R2 and derived parameters
 [results] = tde_evaluateModelFit(tmpdata, modelfun, params, pred);
 
-%% plots
-
+% plot timecourses and fits
 tde_plotDataAndFits(results, tmpdata, channels, stim_ts, stim_info, t)
-[results2] = tde_plotFittedAndDerivedParams(results, channels);
+
+% plot r2, derived params and fitted params
+tde_plotFittedAndDerivedParams(results, channels);
 
 %%
 % -- which models?
