@@ -24,9 +24,8 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 % This requires the function to know which electrodes belong to a xval set, so
 % more inputs; or we should assume that the input always belongs to 1 set
  
-%% FIT THE temporal model
+%% PARSE OPTIONS
 
-% <options>
 if ~exist('options', 'var') || isempty(options)
     options = struct();
 end
@@ -48,8 +47,6 @@ if ~exist('saveDir', 'var') || isempty(saveDir)
     saveDir = [];
 end
 
-% <setup>
-
 % Model start point and bounds
 x0 = options.startprm.x0;
 lb = options.startprm.lb;
@@ -67,6 +64,12 @@ switch options.algorithm
         end
 end
 
+% Set optimization options
+searchopts = optimset('Display',options.display);
+%searchopts.MaxFunEvals = options.maxiter;
+
+%% FIT THE temporal model
+
 % Initialize
 nTimepts    = size(data,1);
 nStim       = size(data,2);
@@ -74,9 +77,6 @@ nDatasets   = size(data,3);
 nParams     = size(x0,2);
 pred        = nan(nTimepts, nStim, nDatasets);
 params      = nan(nParams,nDatasets);
-
-searchopts = optimset('Display',options.display);
-%searchopts.MaxFunEvals = options.maxiter;
 
 for ii = 1:nDatasets % loop over channels or channel averages
 
