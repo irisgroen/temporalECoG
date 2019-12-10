@@ -31,6 +31,16 @@ switch modelName
         opts.ub   = [1,      0.1,   200,  100,  10,     10,    100,     100000]; % upper bounds
         opts.plb  = [0.1,    0.01,  0.5,  1,    0.01,   0.01,  0.001,   1];      % plausible lower bound (required for bads search algorithm)
         opts.pub  = [0.9,    0.08,  100,  100,   10,     10,   100,    100000]; % plausible upper bound (required for bads search algorithm)
+        
+     case {'HEEGER92'}
+        
+        opts.params = 'tau1,shift,sigma,alpha,n';
+        opts.x0   = [0.5,   0.06, 0.1, 0.01,  1    ];  % starting point
+        opts.lb   = [0.01,  0,    0,   0,     0    ];  % lower bounds
+        opts.ub   = [1,     0.1,  2,   1,     10   ];  % upper bounds
+        opts.plb  = [0.1,   0.01, 0.01,0,     0.01 ];  % plausible lower bound (required for bads search algorithm)
+        opts.pub  = [0.9,   0.08, 2,   1,     2    ];  % plausible upper bound (required for bads search algorithm)
+       
 end
 
 %% write out json
