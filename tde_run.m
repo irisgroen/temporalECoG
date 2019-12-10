@@ -23,19 +23,20 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary)
-tmpdata = data2fit; %(:,:,1);
+data2fit = data2fit(:,:,1);
+channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 3]); 
+modelfun = modelfuns([4]); 
 
 % define model fitting options
 options = struct();
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'iter'; % 'iter' 'final' 'off
+options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
-saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results';
+saveDir = tempdir; '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results';
 LOADFITS = 0;
 
 %% FIT or LOAD model(s)
@@ -50,7 +51,7 @@ for ii = 1:size(modelfun,2)
     
     else        
         tic
-        [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, tmpdata, srate, options, saveDir);
+        [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, data2fit, srate, options, saveDir);
         toc
     end
 end
