@@ -11,6 +11,7 @@ opts.average_trials  = true;
 opts.normalize_data  = false;
 opts.average_elecs   = true;
 opts.sort_channels   = true;
+opts.elec_max_thresh = 1;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
 % generate stimulus timecourses
@@ -22,7 +23,7 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary)
-tmpdata = data2fit;%(:,:,1);
+tmpdata = data2fit; %(:,:,1);
 
 % define model(s)
 modelfuns = tde_modelTypes();
@@ -30,29 +31,48 @@ modelfun = modelfuns([1 3]);
 
 % define model fitting options
 options = struct();
-options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
 saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results';
+LOADFITS = 0;
 
-% fit model(s)
+%% FIT or LOAD model(s)
+params = []; pred = [];
+
 for ii = 1:size(modelfun,2)
-    tic
-    [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, tmpdata, srate, options, saveDir);
-    toc
+    
+    if LOADFITS
+        a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d.mat', func2str(modelfun{ii}), options.xvalmode)));
+        params{ii} = a.params;
+        pred{ii} = a.pred;
+    
+    else        
+        tic
+        [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, tmpdata, srate, options, saveDir);
+        toc
+    end
 end
-        
+
 %% 3. Model fit evaluation
 
-% compute R2 and derived parameters
-[results] = tde_evaluateModelFit(tmpdata, modelfun, params, pred);
+% Compute R2 and derived parameters
+[results] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
 
-% plot timecourses and fits
-tde_plotDataAndFits(results, tmpdata, channels, stim_ts, stim_info, t)
+%% 4. Plot timecourses and fits
 
-% plot r2, derived params and fitted params
-tde_plotFittedAndDerivedParams(results, channels);
+% Provide a directory so save figures (optional)
+saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/modelfits';
+% Plot
+tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
+
+%% 5. Plot derived params and fitted params
+
+% Provide a directory so save figures (optional)
+saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/modelparams';
+% Plot
+tde_plotFittedAndDerivedParams(results, channels, saveDir);
 
 %%
 % -- which models?
