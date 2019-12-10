@@ -2,8 +2,8 @@ function [results] = tde_evaluateModelFit(data, objFunction, params, pred)
 
 % Inputs: cell arrays with objFunction ,params, data, pred
 if ~iscell(objFunction), objFunction = {objFunction}; end
-if ~iscell(params), objFunction = {params}; end
-if ~iscell(pred), objFunction = {pred}; end
+if ~iscell(params), params = {params}; end
+if ~iscell(pred), pred = {pred}; end
 % if ~exist(makePlots, 'var') || isempty(makePlots), makePlots = 0; end
 
 nModels     = size(objFunction,2);
