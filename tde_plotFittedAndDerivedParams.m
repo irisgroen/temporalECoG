@@ -26,7 +26,7 @@ if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 colors = {'r', 'b', 'c', 'm'}; 
 
 % Extract timecourses and model names and derived parameters from results
-modelNames = [];
+modelNames = cell(1,nModels);
 m = []; se = []; mp = [];
 for kk = 1:nModels
     if ~dataWasAveraged
@@ -76,12 +76,13 @@ for kk = 1:nModels
     figure('Name', sprintf('%s %s', 'Derived parameters', func2str(results(kk).model))); hold on
     
     % Plot explained variance
-    subplot(1,3,1); 
+    subplot(1,3,1); hold on
     if ~dataWasAveraged
-        [m, se] = averageAcrossAreas(results(kk).rSquareConc, INX);
+        [m, se, dat] = averageAcrossAreas(results(kk).rSquareConc, INX);
     else
         m = results(kk).rSquareConc; se = [];
     end
+    for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
     errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     set(gca, 'Ylim', [0 1]);
@@ -89,12 +90,13 @@ for kk = 1:nModels
 
     % Plot derived parameters
     for p = 1:2
-        subplot(1,3,p+1);
+        subplot(1,3,p+1); hold on
         if ~dataWasAveraged
-            [m, se] = averageAcrossAreas(results(kk).derivedPrm(p,:), INX);
+            [m, se, dat] = averageAcrossAreas(results(kk).derivedPrm(p,:), INX);
         else
             m = results(kk).derivedPrm(p,:); se = [];
         end
+        for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
         errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
@@ -122,12 +124,13 @@ for kk = 1:nModels
        
     % Plot fitted parameters
     for p = 1:nParams
-        subplot(2,ceil(nParams/2),p);
+        subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
-            [m, se] = averageAcrossAreas(results(kk).params(p,:), INX);
+            [m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
         else
             m = results(kk).params(p,:); se = [];
         end
+        for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
         errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         title(paramNames{p}); xlabel('visual area'); ylabel('parameter value');set(gca, 'fontsize', 16);
@@ -148,14 +151,16 @@ end
 % SUBROUTINES
 
 % electrode averaging
-function [m, se] = averageAcrossAreas(data, INX)
+function [m, se, indiv_points] = averageAcrossAreas(data, INX)
     nAreas = length(INX);  
     m = nan(size(data,1), nAreas); 
     se = nan(size(data,1), nAreas);
+    indiv_points = cell(nAreas,1);
     for jj = 1:nAreas
         elec_index = find(INX{jj});
         m(:,jj)    = mean(data(:,elec_index),2);
         se(:,jj)   = std(data(:,elec_index),0,2)/sqrt(length(elec_index));
+        indiv_points{jj} = data(:,elec_index);
     end
 end
 
