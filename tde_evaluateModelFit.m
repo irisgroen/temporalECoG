@@ -37,6 +37,7 @@ for kk = 1:nModels
         % For all stimuli concatenated
         mdl = fitlm(flatten(pred{kk}(:,:,ii)), flatten(data(:,:,ii)));
         rSq_concat(:,ii) = mdl.Rsquared.Ordinary;
+        fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, rSq_concat(:,ii))
     end
 
     %% COMPUTE DERIVED PARAMETERS 
