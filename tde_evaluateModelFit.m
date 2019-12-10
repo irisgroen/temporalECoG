@@ -1,6 +1,6 @@
 function [results] = tde_evaluateModelFit(data, objFunction, params, pred)
 
-% Inputs: cell arrays with objFunction ,params, data, pred
+% Inputs: cell arrays with objFunction, params, data, pred
 if ~iscell(objFunction), objFunction = {objFunction}; end
 if ~iscell(params), params = {params}; end
 if ~iscell(pred), pred = {pred}; end

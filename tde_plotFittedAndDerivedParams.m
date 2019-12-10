@@ -33,7 +33,8 @@ for kk = 1:nModels
         [m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
         [mp(kk,:,:)] = averageAcrossAreas(results(kk).derivedPrm, INX);
     else
-        m(kk,:,:) = results(kk).derivedPred; se = [];
+        m(kk,:,:) = results(kk).derivedPred; 
+        mp(kk,:,:) = results(kk).derivedPrm;
     end
     modelNames{kk} = func2str(results(kk).model);
 end
@@ -44,7 +45,7 @@ for ii = 1:nChans
     subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
     l = cell(1,nModels);
     for kk = 1:nModels
-        if exist('se', 'var')
+        if ~isempty(se)
             h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
             h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
         end
@@ -62,7 +63,7 @@ set(gcf, 'Position', [400 200 2000 1200]);
 
 % Save plot
 if saveFig
-    figName = sprintf('derivedPredictions_model%s', [modelNames{:}]);
+    figName = sprintf('derivedPredictions_%s', [modelNames{:}]);
     savePlot(figName, saveDir, dataWasAveraged)
 end
 
@@ -92,7 +93,7 @@ for kk = 1:nModels
         if ~dataWasAveraged
             [m, se] = averageAcrossAreas(results(kk).derivedPrm(p,:), INX);
         else
-            m = derivedPrm(p,:); se = [];
+            m = results(kk).derivedPrm(p,:); se = [];
         end
         errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
@@ -103,11 +104,10 @@ for kk = 1:nModels
     
     % Save plot
     if saveFig
-        figName = sprintf('derivedParams_model%s', [modelNames{:}]);
+        figName = sprintf('derivedParams_%s', modelNames{kk});
         savePlot(figName, saveDir, dataWasAveraged)
     end
 end
-
 
 %% Plot fitted parameters
 
@@ -136,7 +136,7 @@ for kk = 1:nModels
     
     % Save plot
     if saveFig
-        figName = sprintf('fittedParams_model%s', [modelNames{:}]);
+        figName = sprintf('fittedParams_%s', modelNames{kk});
         savePlot(figName, saveDir, dataWasAveraged)
     end
 end
@@ -166,6 +166,7 @@ function savePlot(figName, saveDir, dataWasAveraged)
     else
         figDir = fullfile(saveDir, 'electrodeaverages');
     end
-    saveas(gcf, fullfile(figDir, figName), 'png'); close;
+    if ~exist(figDir, 'dir'), mkdir(figDir), end
+    saveas(gcf, fullfile(figDir, figName), 'png'); %close;
 end
     
