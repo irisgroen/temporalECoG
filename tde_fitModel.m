@@ -16,7 +16,8 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 %     0 : no cross-validation (default)
 %     1 : train on all stimulus conditions but 1, test on the left out 
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
-% <saveDir> directory to save parameters and fits, default
+% <saveDir> path to save parameters and fits; if empty, results are not
+%   saved (default)
 %
 % NOTES
 % TO DO add option to xvalidate on 'electrodes'? (train on all electrodes but 1, test on left out electrode) 
@@ -25,28 +26,17 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
  
 %% PARSE OPTIONS
 
-if ~exist('options', 'var') || isempty(options)
-    options = struct();
-end
+if ~exist('options', 'var') || isempty(options), options = struct(); end
+if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
+if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
+if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
+if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = [];end
+
+% Get model start points and bounds
 if ~isfield(options,'startprm') || isempty(options.startprm)
 	fprintf('[%s] Loading default starting values and bounds for model %s \n', mfilename, func2str(objFunction));
-    %options.startprm = loadParamsFromJson(objFunction);
     options.startprm = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(objFunction))));
 end
-if ~isfield(options,'algorithm') || isempty(options.algorithm)
-    options.algorithm = 'bads';
-end
-if ~isfield(options,'xvalmode') || isempty(options.xvalmode)
-    options.xvalmode  = 0;
-end
-if ~isfield(options,'display') || isempty(options.display)
-    options.display   = 'iter';
-end
-if ~exist('saveDir', 'var') || isempty(saveDir)
-    saveDir = [];
-end
-
-% Model start point and bounds
 x0 = options.startprm.x0;
 lb = options.startprm.lb;
 ub = options.startprm.ub;

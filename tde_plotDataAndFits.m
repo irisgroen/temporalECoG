@@ -1,10 +1,11 @@
-function tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, conditionsOfInterest)
+function tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, conditionsOfInterest, saveDir)
 
 % potentially change this to tde_generateReport 
 
 if ~exist('conditionsOfInterest', 'var') || isempty(conditionsOfInterest)
     conditionsOfInterest = {'CRF', 'ONEPULSE', 'TWOPULSE'};
 end
+if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 
 nModels     = size(results,2);
 nDatasets   = size(data,3);
@@ -64,6 +65,19 @@ for ii = 1:nDatasets
         if jj == 1, legend(l); end
     end
     set(gcf, 'Position', [400 200 1800 1200]);
+
+    if ~isempty(saveDir)
+        if ~isfield(summary(channels), 'number_of_elecs') % this is non-averaged data
+            figureName = sprintf('%s_%s_%s_%s_model%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
+            figDir = fullfile(saveDir, 'individualelectrodes');
+        else
+            figureName = sprintf('%s_model%s', channels.name{ii}, [l{2:end}]);
+            figDir = fullfile(saveDir, 'electrodeaverages');
+        end
+        if ~exist(figDir, 'dir'), mkdir(figDir), end
+        saveas(gcf, fullfile(figDir, figureName), 'png'); close;
+    end
 end
 
 end
