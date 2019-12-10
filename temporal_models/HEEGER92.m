@@ -26,7 +26,7 @@ function [err, pred] = HEEGER92(param, data, stim, srate)
 numtimepts  = size(stim,1);
 
 %% SET UP THE MODEL PARAMETERS
-fields = {'tau1', 'shift', 'sigma', 'alpha', 'n'};
+fields = {'tau1', 'shift', 'sigma', 'alpha', 'n', 'rmax'};
 prm      = toSetField([], fields, param);
 
 %% Make impulse response function
@@ -37,10 +37,11 @@ irf = gammaPDF(t, prm.tau1, 2);
 
 %% Initialize response
 
-R = zeros(1, length(stim)); % Normalized response
-G = zeros(size(R));         % Feedback signal
-F = zeros(size(R));         % Multiplicative feedback
-K = 1;                      % Determines maximum responses
+R = zeros(1, numtimepts); % Normalized response
+G = zeros(size(R));       % Feedback signal
+F = zeros(size(R));       % Multiplicative feedback
+%K = 1;                   % Determines maximum responses
+K = prm.rmax;               
 
 %% Compute normalization response
 
@@ -68,7 +69,8 @@ for k = 1 : size(stim, 2)
         F(ii) = sqrt(K-G(ii-1)) / prm.sigma;
     end
     
-    pred(:,k) = R./max(R);
+    %pred(:,k) = R./max(R);
+    pred(:,k) = R;
 end
 
 %% COMPUTE ERROR
