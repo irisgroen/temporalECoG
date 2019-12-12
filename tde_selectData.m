@@ -62,8 +62,11 @@ end
 if ~isfield(opts,'doplots') || isempty(opts.doplots)
     opts.doplots             = true; % boolean
 end
+if ~isfield(opts,'sort_channels') || isempty(opts.sort_channels)
+    opts.sort_channels      = true;  % boolean
+end
 if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
-    opts.plotsavedir         = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/electrodeselection';
+    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures', 'electrodeselection');
 end
 
 savePlots   = opts.doplots;
@@ -148,7 +151,7 @@ for ii = 1:length(data) % Loop over subjects
     select_idx(:,2) = mean(mean_resp(stim_on_idx,:),1) > opts.elec_mean_thresh;
 
     % Exclude depth electrodes
-    if opts.elec_exclude_depth, select_idx(:,3) = contains(lower(channels_in.type), 'ecog'); end  
+    if opts.elec_exclude_depth, select_idx(:,3) = contains(lower(channels.type), 'ecog'); end  
 
     % Combine criteria
     select_idx = sum(select_idx,2) == 3;

@@ -18,11 +18,6 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
 % <saveDir> path to save parameters and fits; if empty, results are not
 %   saved (default)
-%
-% NOTES
-% TO DO add option to xvalidate on 'electrodes'? (train on all electrodes but 1, test on left out electrode) 
-% This requires the function to know which electrodes belong to a xval set, so
-% more inputs; or we should assume that the input always belongs to 1 set
  
 %% PARSE OPTIONS
 
@@ -77,19 +72,20 @@ for ii = 1:nDatasets % loop over channels or channel averages
     switch options.xvalmode
         case 0
             nFolds = 1; foldIndices = 1:nStim;
+            fprintf('[%s] Xval mode is 0: generating predictions by fitting all the data \n',mfilename);
         case 1
-            nFolds = nStim; % number of stimulus conditions
+            nFolds = nStim+1; % number of stimulus conditions
             foldIndices = nan(nStim, nStim-1);
             for jj = 1:nFolds 
                 foldIndices(jj,:) = setdiff(1:nFolds,jj);
             end
+            fprintf('[%s] Xval mode is 1: generating predictions for left-out-stimulus across %s folds \n',mfilename, nFolds);
         otherwise
-            fprintf('[%s] Do not recognize this xvalmode, exiting \n',mfilename); return
+            fprintf('[%s] Xval mode not recognized, exiting \n',mfilename); return
     end
        
     %% FIT MODEL
-    fprintf('[%s] Defined %d folds for fitting \n',mfilename, nFolds);
-    prm = nan(nParams,nFolds);
+    %prm = nan(nParams,nFolds);
     prd = nan(nTimepts,nStim);
     
     for jj = 1:nFolds
@@ -108,13 +104,13 @@ for ii = 1:nDatasets % loop over channels or channel averages
         % SEARCH FOR BEST-FITTING PARAMETERS
         switch options.algorithm
             case 'bads'
-                prm(:,jj) = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
+                prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
             case 'fminsearch'
-                prm(:,jj) = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
+                prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
         end
         
         % GENERATE MODEL PREDICTION
-        [~, prd(:,pred_inx)] = objFunction(prm(:,jj), [], stim2predict, srate);      
+        [~, prd(:,pred_inx)] = objFunction(prm, [], stim2predict, srate);      
     end
     
     %% COLLECT FITTED PARAMETERS AND PREDICTIONS
@@ -127,6 +123,8 @@ end
 %% SAVE RESULTS
 if ~isempty(saveDir)
     
+    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+
     saveName = fullfile(saveDir, sprintf('%s_results_xvalmode%d', func2str(objFunction), options.xvalmode));
     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
       

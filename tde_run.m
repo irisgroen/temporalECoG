@@ -6,29 +6,27 @@ reComputeFlag = false;
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.doplots         = false;
-opts.average_trials  = true;
-opts.normalize_data  = false;
-opts.average_elecs   = true;
-opts.sort_channels   = true;
-opts.elec_max_thresh = 1;
+opts.doplots              = false;
+opts.average_elecs        = false;
+opts.elec_max_thresh      = 0.5;
+opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
-
-% generate stimulus timecourses
-[stim_ts, stim_info] = tde_generateStimulusTimecourses(stimnames,t);
 
 % plot average response per stimulus for selected data
 tde_plotData(data2fit, channels, t, opts);
 
+% generate stimulus timecourses
+[stim_ts, stim_info] = tde_generateStimulusTimecourses(stimnames,t);
+
 %% 2. Model fitting
 
 % define subset of data (temporary)
-data2fit = data2fit(:,:,1);
-channels = channels(1,:);
+%data2fit = data2fit(:,:,1);
+%channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([4]); 
+modelfun = modelfuns([1]); 
 
 % define model fitting options
 options = struct();
@@ -36,7 +34,7 @@ options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
-saveDir = tempdir; '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results';
+saveDir = fullfile(analysisRootPath, 'results');
 LOADFITS = 0;
 
 %% FIT or LOAD model(s)
@@ -64,15 +62,15 @@ end
 %% 4. Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
-saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/modelfits';
-% Plot
+saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+
 tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
 %% 5. Plot derived params and fitted params
 
 % Provide a directory so save figures (optional)
-saveDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/figures/modelparams';
-% Plot
+saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
+
 tde_plotFittedAndDerivedParams(results, channels, saveDir);
 
 %%

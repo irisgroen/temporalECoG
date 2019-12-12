@@ -28,12 +28,14 @@ end
 
 % <inputDir>
 if ~exist('inputDir', 'var') || isempty(inputDir)
-    inputDir = '/Volumes/server/Projects/BAIR/Data/BIDS/visual/derivatives/ECoGBroadband';
+    %inputDir = '/Volumes/server/Projects/BAIR/Data/BIDS/visual/derivatives/ECoGBroadband';
+    inputDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
 end  
 
 % <outputDir>
 if ~exist('outputDir', 'var') || isempty(outputDir)
-    outputDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/data';
+    %outputDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/data';
+	outputDir = fullfile(analysisRootPath, 'data');
 end 
 
 % <subjectList>
