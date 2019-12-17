@@ -85,7 +85,7 @@ for ii = 1:nDatasets % loop over channels or channel averages
     end
        
     %% FIT MODEL
-    %prm = nan(nParams,nFolds);
+    prm = nan(nParams,nFolds);
     prd = nan(nTimepts,nStim);
     
     for jj = 1:nFolds
@@ -116,7 +116,7 @@ for ii = 1:nDatasets % loop over channels or channel averages
     %% COLLECT FITTED PARAMETERS AND PREDICTIONS
     
     pred(:,:,ii) = prd;
-    params(:,ii) = mean(prm,2); % should this be mean or median? 
+    params(:,ii) = mean(prm,2);
 
 end
 

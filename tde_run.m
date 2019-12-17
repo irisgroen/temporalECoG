@@ -1,13 +1,13 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = false; 
+reComputeFlag = true; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots              = false;
-opts.average_elecs        = false;
+opts.average_elecs        = true;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);

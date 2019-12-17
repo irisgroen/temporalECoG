@@ -54,7 +54,7 @@ if ~isfield(opts,'average_trials') || isempty(opts.average_trials)
     opts.average_trials      = true;  % boolean
 end
 if ~isfield(opts,'normalize_data') || isempty(opts.normalize_data)
-    opts.normalize_data      = true;  % boolean
+    opts.normalize_data      = false;  % boolean
 end
 if ~isfield(opts,'average_elecs') || isempty(opts.average_elecs)
     opts.average_elecs       = false; % boolean
