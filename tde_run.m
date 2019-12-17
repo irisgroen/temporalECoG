@@ -1,7 +1,7 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = true; 
+reComputeFlag = false; 
 [data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
@@ -20,9 +20,9 @@ tde_plotData(data2fit, channels, t, opts);
 
 %% 2. Model fitting
 
-% define subset of data (temporary)
-%data2fit = data2fit(:,:,1);
-%channels = channels(1,:);
+% define subset of data (temporary/testing)
+data2fit = data2fit(:,:,1);
+channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
@@ -30,7 +30,7 @@ modelfun = modelfuns([1]);
 
 % define model fitting options
 options = struct();
-options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
@@ -57,21 +57,21 @@ end
 %% 3. Model fit evaluation
 
 % Compute R2 and derived parameters
-[results] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
+[results2] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
 
 %% 4. Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelfits');
 
-tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
+tde_plotDataAndFits(results2, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
 %% 5. Plot derived params and fitted params
 
 % Provide a directory so save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
 
-tde_plotFittedAndDerivedParams(results, channels, saveDir);
+tde_plotFittedAndDerivedParams(results2, channels, saveDir);
 
 %%
 % -- which models?
