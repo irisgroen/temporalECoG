@@ -114,7 +114,7 @@ for ii = 1 : length(subjectList)
         fprintf('[%s] Epoching data...\n',mfilename);
         
         % Resample and SHIFT the UMCU data 
-        if contains(subject, {'chaam', 'beilen'})
+        if contains(subject, {'chaam', 'beilen'}) % SHOULD BE READ FROM participants.tsv, if site column = umcu
             fprintf('[%s] This is a umcu patient: resampling and shifting the onsets\n',mfilename);
             
             % Resample data; assuming desired sample rate of 512
@@ -127,6 +127,15 @@ for ii = 1 : length(subjectList)
             shiftInSamples = round(shiftInSeconds*channels.sampling_frequency(1)); 
             events.onset = events.onset + shiftInSeconds;
             events.event_sample = events.event_sample + shiftInSamples; 
+            
+            % Remove electrodes identified as epileptic % TEMPORARY UNTIL GIO
+            % FIXES BIDS FORMATTING FOR THIS PATIENT AFTER WHICH THESE
+            % ELECTRODES SHOULD BE INDICATED AS "BAD" IN THE ELECTRODES FILES
+            if contains(subject,'chaam')
+                chan_idx = find(~contains(channels.name, {'Oc12', 'Oc13', 'Oc21', 'Oc22'}));
+                subdata = subdata(chan_idx,:);
+                channels = channels(chan_idx,:);
+            end
         end
         
         % Epoch the data
