@@ -21,11 +21,11 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
  
 %% PARSE OPTIONS
 
-if ~exist('options', 'var') || isempty(options), options = struct(); end
+if ~exist('options', 'var')      || isempty(options), options = struct(); end
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
-if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
-if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
-if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = [];end
+if ~isfield(options,'xvalmode')  || isempty(options.xvalmode), options.xvalmode = 0; end
+if ~isfield(options,'display')   || isempty(options.display), options.display = 'iter'; end
+if ~exist('saveDir', 'var')      || isempty(saveDir), saveDir = []; end
 
 % Get model start points and bounds
 if ~isfield(options,'startprm') || isempty(options.startprm)
@@ -62,46 +62,45 @@ nParams     = size(x0,2);
 pred        = nan(nTimepts, nStim, nDatasets);
 params      = nan(nParams,nDatasets);
 
+%% SET UP CROSS VALIDATION
+switch options.xvalmode
+    case 0
+        nFolds = 1; foldIndices{1} = 1:nStim;
+        fprintf('[%s] Xval mode is 0: generating predictions by fitting the full dataset \n',mfilename);
+    case 1
+        nFolds = nStim+1; % number of stimulus conditions + full
+        foldIndices = cell(nFolds,1); % first fold is full
+        foldIndices{1} = 1:nStim;
+        for jj = 1:nStim, foldIndices{1+jj} = setdiff(1:nStim,jj); end
+        fprintf('[%s] Xval mode is 1: generating predictions for left-out-stimulus across %d folds \n',mfilename, nFolds-1);
+    otherwise
+        fprintf('[%s] Xval mode not recognized, exiting \n',mfilename); return
+end
+
+%% FIT MODEL
+
 for ii = 1:nDatasets % loop over channels or channel averages
 
-    fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
-    
     dset = data(:,:,ii);
-
-    %% SET UP CROSS VALIDATION
-    switch options.xvalmode
-        case 0
-            nFolds = 1; foldIndices = 1:nStim;
-            fprintf('[%s] Xval mode is 0: generating predictions by fitting all the data \n',mfilename);
-        case 1
-            nFolds = nStim+1; % number of stimulus conditions
-            foldIndices = nan(nStim, nStim-1);
-            for jj = 1:nFolds 
-                foldIndices(jj,:) = setdiff(1:nFolds,jj);
-            end
-            fprintf('[%s] Xval mode is 1: generating predictions for left-out-stimulus across %s folds \n',mfilename, nFolds);
-        otherwise
-            fprintf('[%s] Xval mode not recognized, exiting \n',mfilename); return
-    end
-       
-    %% FIT MODEL
-    prm = nan(nParams,nFolds);
-    prd = nan(nTimepts,nStim);
     
+    fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
+       
     for jj = 1:nFolds
         
-        fit_inx = foldIndices(jj,:);
-        pred_inx = setdiff(1:nFolds, fit_inx);
+        fit_inx = foldIndices{jj};
+        pred_inx = setdiff(1:nStim, fit_inx);
         if isempty(pred_inx), pred_inx = fit_inx; end
         
         stim2fit = stim(:,fit_inx);
         data2fit = dset(:,fit_inx);
         stim2predict = stim(:,pred_inx);
         
-        fprintf('[%s] Fold %d: Fitting model on stimulus %s \n', mfilename, jj, num2str(fit_inx)) 
-        fprintf('[%s] Fold %d: Predicting response for stimulus %s \n', mfilename, jj, num2str(pred_inx));
+        if jj > 1
+            fprintf('[%s] Fold %d: Fitting on stimulus %s \n', mfilename, jj-1, num2str(fit_inx)) 
+            fprintf('[%s] Fold %d: Predicting for stimulus %s \n', mfilename, jj-1, num2str(pred_inx));
+        end
         
-        % SEARCH FOR BEST-FITTING PARAMETERS
+        % Search for best-fitting parameters
         switch options.algorithm
             case 'bads'
                 prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
@@ -109,15 +108,12 @@ for ii = 1:nDatasets % loop over channels or channel averages
                 prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
         end
         
-        % GENERATE MODEL PREDICTION
-        [~, prd(:,pred_inx)] = objFunction(prm, [], stim2predict, srate);      
+        % Save params from full model fit
+        if jj == 1, params(:,ii) = prm; end
+        
+        % Generate model prediction
+        [~, pred(:,pred_inx,ii)] = objFunction(prm, [], stim2predict, srate);      
     end
-    
-    %% COLLECT FITTED PARAMETERS AND PREDICTIONS
-    
-    pred(:,:,ii) = prd;
-    params(:,ii) = mean(prm,2);
-
 end
 
 %% SAVE RESULTS
