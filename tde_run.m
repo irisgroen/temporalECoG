@@ -7,7 +7,7 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots              = false;
-opts.average_elecs        = true;
+opts.average_elecs        = false;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
@@ -21,8 +21,8 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary/testing)
-data2fit = data2fit(:,:,1);
-channels = channels(1,:);
+%data2fit = data2fit(:,:,1);
+%channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
@@ -37,7 +37,7 @@ options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 saveDir = fullfile(analysisRootPath, 'results');
 LOADFITS = 0;
 
-%% FIT or LOAD model(s)
+% Fit or load model(s)
 params = []; pred = [];
 
 for ii = 1:size(modelfun,2)
@@ -54,36 +54,23 @@ for ii = 1:size(modelfun,2)
     end
 end
 
-%% 3. Model fit evaluation
+%% 3. Model evaluation
 
 % Compute R2 and derived parameters
-[results2] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
+[results] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
 
-%% 4. Plot timecourses and fits
+% Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
 saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelfits');
 
-tde_plotDataAndFits(results2, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
+tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
-%% 5. Plot derived params and fitted params
+% Plot derived params and fitted params
 
 % Provide a directory so save figures (optional)
-saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
+saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
 
-tde_plotFittedAndDerivedParams(results2, channels, saveDir);
-
-%%
-% -- which models?
-% ----- DN (flavors: uniphasic, biphasic, fixed exponent or not)
-% ----- DN cascade?
-% ----- Two temporal channels (flavors: HH, Stigliani 1, Stigliani 2)
-% ----- DN-like models:
-% --------- Heeger 1993
-
-% How about the PRFs --> separate pipeline (like this one), read in fits
-% from file (e.g. add to channel table), prf_getData, prf_selectData,
-% prf_fitModel
-
+tde_plotFittedAndDerivedParams(results, channels, saveDir);
 
 
