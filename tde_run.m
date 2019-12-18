@@ -7,7 +7,7 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots              = false;
-opts.average_elecs        = false;
+opts.average_elecs        = true;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
@@ -62,7 +62,7 @@ end
 % Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
-saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
 
 tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
