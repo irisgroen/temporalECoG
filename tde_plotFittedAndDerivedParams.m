@@ -30,7 +30,8 @@ modelNames = cell(1,nModels);
 m = []; se = []; mp = [];
 for kk = 1:nModels
     if ~dataWasAveraged
-        [m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
+        %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
+        [m(kk,:,:), se(kk,:,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
         [mp(kk,:,:)] = averageAcrossAreas(results(kk).derivedPrm, INX);
     else
         m(kk,:,:) = results(kk).derivedPred; 
@@ -46,7 +47,8 @@ for ii = 1:nChans
     l = cell(1,nModels);
     for kk = 1:nModels
         if ~isempty(se)
-            h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
+            %h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
+            h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
             h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
         end
         plot(m(kk,:,ii), 'Color', colors{kk}, 'LineWidth', 2);        
@@ -83,7 +85,8 @@ for kk = 1:nModels
     else
         m = results(kk).rSquareConc; se = [];
     end
-    errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+    %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+    errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     set(gca, 'Ylim', [0 1]);
     title('explained variance'); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
@@ -97,7 +100,8 @@ for kk = 1:nModels
         else
             m = results(kk).derivedPrm(p,:); se = [];
         end
-        errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
+        %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
+        errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
         title(derivedTitles{p}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
@@ -131,7 +135,8 @@ for kk = 1:nModels
         else
             m = results(kk).params(p,:); se = [];
         end
-        errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         title(paramNames{p}); xlabel('visual area'); ylabel('parameter value');set(gca, 'fontsize', 16);
     end
@@ -154,12 +159,13 @@ end
 function [m, se, indiv_points] = averageAcrossAreas(data, INX)
     nAreas = length(INX);  
     m = nan(size(data,1), nAreas); 
-    se = nan(size(data,1), nAreas);
+    se = nan(size(data,1), nAreas, 2);
     indiv_points = cell(nAreas,1);
     for jj = 1:nAreas
         elec_index = find(INX{jj});
-        m(:,jj)    = mean(data(:,elec_index),2);
-        se(:,jj)   = std(data(:,elec_index),0,2)/sqrt(length(elec_index));
+        [m(:,jj),se(:,jj,:)] = calcmdsepct(data(:,elec_index),2);
+        %m(:,jj)    = mean(data(:,elec_index),2);
+        %se(:,jj)   = std(data(:,elec_index),0,2)/sqrt(length(elec_index));
         indiv_points{jj} = data(:,elec_index);
     end
 end
@@ -173,5 +179,6 @@ function savePlot(figName, saveDir, dataWasAveraged)
     end
     if ~exist(figDir, 'dir'), mkdir(figDir), end
     saveas(gcf, fullfile(figDir, figName), 'png'); %close;
+    saveas(gcf, fullfile(figDir, figName), 'fig'); %close;
 end
     
