@@ -123,7 +123,7 @@ for ii = 1 : length(subjectList)
             channels.sampling_frequency(:) = 512;
             
             % Shift onsets
-            shiftInSeconds = 0.062; % 62 ms
+            shiftInSeconds = 0.072; % 72 ms
             shiftInSamples = round(shiftInSeconds*channels.sampling_frequency(1)); 
             events.onset = events.onset + shiftInSeconds;
             events.event_sample = events.event_sample + shiftInSamples; 

@@ -1,37 +1,44 @@
 % s_determineOnsetShiftUMCUvsNYU
 
-% Purpose of this script
+% Purpose of this script:
 %
 % Visual comparison of the broadband responses from V1 electrodes in the
-% UMCU patient (sub-chaam) and NYU patients suggested a systematic offset in
-% the onset of the visual response between the two sites. 
+% UMCU patient (sub-chaam) and NYU patients suggested a systematic offset
+% in the onset of the visual response between the two sites.
 %
-% After running several checks we concluded this must be due to a delay in
-% the stimulus presentation relative to the trigger at UMCU. We decide to
-% shift the stimuls onsets for the UMCU data by a fixed amount to bring the
-% two datasets in alignment. 
+% We concluded this is due to a delay in the stimulus presentation relative
+% to the trigger at UMCU due to differences in the experimental setup. We
+% decide to shift the stimulus onsets for the UMCU data by a fixed amount
+% to bring the two datasets in alignment.
 %
 % The shift is determined through cross-correlation of the evoked responses
-% (not broadband) between sub-chaam and sub-....
+% between sub-chaam (UMCU) versus sub-som708 and sub-692 (NYU).
 %
 % We perform the following steps:
 % 1. Loading in the common-averaged referenced data (voltage timecourses)
-%   from the BIDS derivatives folder for sub-chaam and a high SNR NYU
-%   subject with V1 coverage
-% 2. Computing the ERPs (average response across all trials), performing
-%   baseline correction
+%   from the BIDS derivatives folder for each subject.
+% 2. Use the benson atlas to selecting electrodes that are within V1/V2 and
+%   that have a predicted eccentricity of less than 10 degrees.
+% 3. Computing the ERPs (average response across all trials), performing
+%   baseline correction using the prestimulus period.
+% 4. Compute cross correlation between all electrodes of sub-chaam and the
+%   two NYU subjects, separately for V1 and V2. 
+% 5. Compute the average shift that is needed to maximize the correlation
+%   between UMCU and NYU electrodes, separately for V1 and V2.
+% 6. Take the average across V1 and V2 as the estimated onset shift.
 %
-%
+% Iris Groen, Dec 2019, BAIR.
 
 
 %% Set up variables
 
-subjectList = {'chaam', 'som708'}; 
-inputDir = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR'); % where the evoked data are
-tasks = {'spatialpattern', 'temporalpattern', 'soc'};
-description = 'reref';
-epochTime = [-0.1 0.5];
-baselineTime = [-0.1 0];
+subjectList             = {'chaam', 'som708', 'som692'}; 
+inputDir                = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR'); % where the evoked data are
+tasks                   = {'spatialpattern', 'temporalpattern', 'soc'};
+description             = 'reref';
+epochTime               = [-0.1 0.5];
+baselineTime            = [-0.1 0];
+eccentricityThreshold   = 10;
 
 %% Load the data from patients with V1 coverage
 data = cell(length(subjectList),1);
@@ -59,7 +66,7 @@ for ii = 1 : length(subjectList)
     % Add visual area names (W and B) ecc, angle, sigma to channels table
     [channels] = bair_addVisualAtlasNamesToChannelTable(channels,visualelectrodes);
     
-    chan_idx = find(contains(channels.bensonarea, {'V1', 'V2'}) & contains(channels.status, 'good') & channels.bensoneccen < 8.3);                
+    chan_idx = find(contains(channels.bensonarea, {'V1', 'V2'}) & contains(channels.status, 'good') & channels.bensoneccen < eccentricityThreshold);                
     
     subdata = subdata(chan_idx,:);
 	channels = channels(chan_idx,:);
@@ -116,6 +123,7 @@ for ii = 1 : length(subjectList)
         chanInx = find(contains(data{ii}.channels.bensonarea, chanTypes{jj}));
         if ~isempty(chanInx)
             dataToAdd = squeeze(mean(data{ii}.epochs(:,:,chanInx),2));
+            dataToAdd = dataToAdd ./ max(abs(dataToAdd),[],1);
             avData = [avData dataToAdd];
             avChanInfo = [avChanInfo; [data{ii}.channels.name(chanInx,:) data{ii}.channels.bensonarea(chanInx,:) data{ii}.channels.subject_name(chanInx,:)]];
         end
@@ -195,6 +203,7 @@ for ii = 1 : length(chanTypes)
 end
 
 %% Compute shift
+
 shiftInSamples = [];
 shiftInSeconds = [];
 
@@ -209,7 +218,8 @@ shiftInSamples = mean(shiftInSamples);
 shiftInSeconds = shiftInSamples/512;
 fprintf('Mean estimated shift = %d samples, %0.3f seconds \n', round(shiftInSamples), shiftInSeconds);
 
-%% Plot shifted data
+%% Plot shift
+
 figure('Name', 'Selected data - shifted'); 
 set(gcf, 'Position', [800 750 1500 800]);
 colors = jet(length(subjectList));
@@ -230,11 +240,13 @@ for ii = 1 : length(chanTypes)
     l.Annotation.LegendInformation.IconDisplayStyle = 'off';
     l = line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
     l.Annotation.LegendInformation.IconDisplayStyle = 'off';
+    xlabel('Time (ms)'); ylabel('ERP amplitude (normalized)');
+
 end
 
 % Shifted data
 for ii = 1 : length(chanTypes)
-    subplot(2,2,ii+2); title([chanTypes{ii} ' shifted']); hold on;
+    subplot(2,2,ii+2); title([chanTypes{ii} ' shifted by ' sprintf('%2.0f ms', shiftInSeconds*1000)]); hold on;
     set(gca, 'FontSize', 14);
     
     for jj = 1 : length(subjectList)
@@ -255,7 +267,7 @@ for ii = 1 : length(chanTypes)
     l = line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
     l.Annotation.LegendInformation.IconDisplayStyle = 'off';
     set(gca, 'XLim', epochTime);
-
+    xlabel('Time (ms)'); ylabel('ERP amplitude (normalized)');
 end
 
 
