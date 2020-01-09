@@ -1,5 +1,5 @@
 % s_determineOnsetShiftUMCUvsNYU
-
+%
 % Purpose of this script:
 %
 % Visual comparison of the broadband responses from V1 electrodes in the
@@ -18,7 +18,7 @@
 % 1. Loading in the common-averaged referenced data (voltage timecourses)
 %   from the BIDS derivatives folder for each subject.
 % 2. Use the benson atlas to selecting electrodes that are within V1/V2 and
-%   that have a predicted eccentricity of less than 10 degrees.
+%   that have a predicted eccentricity of less than 10 degrees. 
 % 3. Computing the ERPs (average response across all trials), performing
 %   baseline correction using the prestimulus period.
 % 4. Compute cross correlation between all electrodes of sub-chaam and the
@@ -142,6 +142,7 @@ for ii = 1 : size(avData,2)
         avData(:, ii) = -1 * avData(:,ii);
     end
 end
+
 %% Plot the data
 t = data{1}.t;
 
@@ -187,6 +188,7 @@ for ii = 1 : length(chanTypes)
             s1 = abs(avData(:,chanInx1(jj)));
             s2 = abs(avData(:,chanInx2(kk)));
             [acor,lag] = xcorr(s1,s2);
+            % Plot
             plot(lag, acor, 'LineWidth', 2);
             [~,I] = max(abs(acor));
             lagDiff{ii}(c) = lag(I);
@@ -206,7 +208,6 @@ end
 
 shiftInSamples = [];
 shiftInSeconds = [];
-
 for ii = 1 : length(chanTypes)
     shiftInSamples(ii) = median(lagDiff{ii})+1; % Add one to account to the lag difference to account for 1-based indexing in Matlab
     shiftInSeconds(ii) = shiftInSamples(ii)/512;
