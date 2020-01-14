@@ -90,7 +90,7 @@ for kk = 1:nModels
     end
 
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-    set(gca, 'Ylim', [0 1]);
+    %set(gca, 'Ylim', [0 1]);
     title('explained variance'); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
 
     % Plot derived parameters
