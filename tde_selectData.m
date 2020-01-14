@@ -1,4 +1,4 @@
-function [epochs, channels, stimNames, srate] = tde_selectData(data, t, stimNames, opts)
+function [epochs, channels, stimNames, t, srate] = tde_selectData(data, stimNames, opts)
 
 % Description
 %
@@ -19,10 +19,6 @@ function [epochs, channels, stimNames, srate] = tde_selectData(data, t, stimName
 % <data>
 if ~exist('data', 'var') || isempty(data)
 	error('Please provide the data struct outputted by tde_getData.m as input');
-end 
-
-if ~exist('t', 'var') || isempty(t)
-	error('Please provide the epoch time (t) ');
 end 
 
 % <stimNames>
@@ -87,6 +83,7 @@ for ii = 1:length(data) % Loop over subjects
     
     subject     = data{ii}.subject;
     epochs      = data{ii}.epochs;
+	t           = data{ii}.t;
     channels    = data{ii}.channels;
     events      = data{ii}.events;
 
