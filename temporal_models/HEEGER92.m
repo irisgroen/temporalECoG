@@ -3,12 +3,13 @@ function [err, pred] = HEEGER92(param, data, stim, srate)
 % Implementation of Heeger 1992 normalization model
 % function [err, pred] = HEEGER92(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
-% params : 3 fields
-%          1. tau1 -- time constant for linear impulse response
+% params : 5 fields
+%          1. tau1  -- time constant for linear impulse response
 %          2. shift -- time between stimulus onset and when the signal reaches
 %               the cortex (seconds)
-%          3. sigma - semi-saturation constant
-%          4. alpha - weight on feedback (0 = no feedback)
+%          3. sigma -- semi-saturation constant
+%          4. alpha -- weight on feedback (0 = no feedback)
+%          5. rmax  -- maximum response  
 %
 % data :   matrix, samples x trials
 %
@@ -19,10 +20,14 @@ function [err, pred] = HEEGER92(param, data, stim, srate)
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
 % pred: predicted time series
-
+%
+% NOTE: the only difference with the HEEGER93 model is the exponent in the
+% denominator (1 instead of 2).
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);
+numstim     = size(stim,2);
+n           = 1; % exponent               
 
 %% SET UP THE MODEL PARAMETERS
 fields = {'tau1', 'shift', 'sigma', 'alpha',  'rmax'};
@@ -31,16 +36,14 @@ prm      = toSetField([], fields, param);
 %% Make impulse response function
 
 t   = (1:numtimepts)' / srate;
-
 irf = gammaPDF(t, prm.tau1, 2);
 
 %% Initialize response
 
-R = zeros(1, numtimepts); % Normalized response
-G = zeros(size(R));       % Feedback signal
-F = zeros(size(R));       % Multiplicative feedback
-%K = 1;                   % Determines maximum responses
-K = prm.rmax;               
+R = zeros(numtimepts, numstim); % Normalized response
+G = zeros(size(R));             % Feedback signal
+F = zeros(size(R));             % Multiplicative feedback
+K = prm.rmax;                   % Determines maximum response
 
 %% Compute normalization response
 
@@ -53,24 +56,19 @@ stim      = stimtmp(1 : size(stim, 1), :);
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
 
-pred = [];
-for k = 1 : size(stim, 2)
-    %L    = convCut(stim(k, :), irf, length(stim));
-    L = linrsp(:,k);
-    R(1) = max(L(1),0)^1;
-    G(1) = prm.alpha * R(1);
-    F(1) = sqrt(K-G(1))/ prm.sigma;
-    
-    for ii = 2:length(t)
-        R(ii) = max(L(ii) * F(ii-1),0)^1;
-        G(ii) = (1-prm.alpha) * G(ii-1) + prm.alpha * R(ii);
-        G(ii) = min(G(ii), K);
-        F(ii) = sqrt(K-G(ii-1)) / prm.sigma;
-    end
-    
-    %pred(:,k) = R./max(R);
-    pred(:,k) = R;
+% COMPUTE RESPONSE AT EACH TIMEPOINT 
+R(1,:) = max(linrsp(1,:),0).^n;
+G(1,:) = prm.alpha * R(1,:);
+F(1,:) = sqrt(K-G(1,:)) / prm.sigma;
+
+for ii = 2:length(t)
+    R(ii,:) = max(linrsp(ii,:) .* F(ii-1,:),0).^n;
+    G(ii,:) = (1-prm.alpha) * G(ii-1,:) + prm.alpha * R(ii,:);
+    G(ii,:) = min(G(ii,:), K);
+    F(ii,:) = sqrt(K-G(ii-1,:)) / prm.sigma;
 end
+
+pred = R;
 
 %% COMPUTE ERROR
 
