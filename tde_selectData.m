@@ -1,4 +1,4 @@
-function [epochs, channels, stimNames, t, srate] = tde_selectData(data, stimNames, opts)
+function [epochs, channels, stimNames, srate] = tde_selectData(data, t, stimNames, opts)
 
 % Description
 %
@@ -19,6 +19,10 @@ function [epochs, channels, stimNames, t, srate] = tde_selectData(data, stimName
 % <data>
 if ~exist('data', 'var') || isempty(data)
 	error('Please provide the data struct outputted by tde_getData.m as input');
+end 
+
+if ~exist('t', 'var') || isempty(t)
+	error('Please provide the epoch time (t) ');
 end 
 
 % <stimNames>
@@ -66,14 +70,14 @@ if ~isfield(opts,'sort_channels') || isempty(opts.sort_channels)
     opts.sort_channels      = true;  % boolean
 end
 if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
-    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures', 'electrodeselection');
+    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures', 'dataselection');
 end
 
+%% Initialize
 savePlots   = opts.doplots;
 plotSaveDir = opts.plotsavedir;
-if ~exist(plotSaveDir, 'dir'); mkdir(plotSaveDir); end
+if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir, 'electrodeselection')); mkdir(fullfile(plotSaveDir, 'epochselection')); end
 
-% Initialize
 allEpochs   = [];
 allChannels = [];
 
@@ -85,7 +89,6 @@ for ii = 1:length(data) % Loop over subjects
     epochs      = data{ii}.epochs;
     channels    = data{ii}.channels;
     events      = data{ii}.events;
-    t           = data{ii}.t;
 
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
           
