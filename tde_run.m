@@ -8,7 +8,7 @@ reComputeFlag = false;
 opts = [];
 opts.doplots              = false;
 opts.average_elecs        = true;
-opts.elec_max_thresh      = 0.5;
+opts.elec_max_thresh      = 1;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
@@ -21,20 +21,20 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary/testing)
-%data2fit = data2fit(:,:,1);
-%channels = channels(1,:);
+data2fit = data2fit(:,:,1);
+channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1]); 
+modelfun = modelfuns([1 3 4]); 
 
 % define model fitting options
 options = struct();
-options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
-saveDir = fullfile(analysisRootPath, 'results');
+saveDir =  [];% fullfile(analysisRootPath, 'results');
 LOADFITS = 0;
 
 % Fit or load model(s)
@@ -62,14 +62,14 @@ end
 % Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelfits');
 
 tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
 % Plot derived params and fitted params
 
 % Provide a directory so save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
 
 tde_plotFittedAndDerivedParams(results, channels, saveDir);
 
