@@ -22,44 +22,39 @@ if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 
 % Plot multiple models in each subplot
 
-% Currently assuming we'll never plot >4 models at a time
-colors = {'r', 'b', 'c', 'm'}; 
+% Currently assuming we'll never plot >6 models at a time
+colors = {'r', 'b', 'c', 'm', 'g', 'y'}; 
 
 % Extract timecourses and model names and derived parameters from results
 modelNames = cell(1,nModels);
 m = []; se = []; mp = [];
-for kk = 1:nModels
-    if ~dataWasAveraged
-        %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-        [m(kk,:,:), se(kk,:,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-        [mp(kk,:,:)] = averageAcrossAreas(results(kk).derivedPrm, INX);
-    else
-        m(kk,:,:) = results(kk).derivedPred; 
-        mp(kk,:,:) = results(kk).derivedPrm;
-    end
-    modelNames{kk} = func2str(results(kk).model);
-end
 
-% Make plot
 figure('Name', sprintf('%s', 'Derived predictions')); 
 for ii = 1:nChans
     subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
-    l = cell(1,nModels);
+	l = cell(1,nModels);
     for kk = 1:nModels
-        if ~isempty(se)
+        if ~dataWasAveraged
             %h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
-            h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
-            h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
+            %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
+            %h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
+            %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
+            plot(results(kk).derivedPred(:,INX{ii}), 'Color', colors{kk}, 'LineWidth', 2);        
+            %mp = averageAcrossAreas(results(kk).derivedPrm, INX);
+            %l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
+            %    func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
+        else
+            plot(results(kk).derivedPred(:,ii), 'Color', colors{kk}, 'LineWidth', 2); 
+            mp = results(kk).derivedPrm;
+            l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
+                func2str(results(kk).model), mp(1,ii), mp(2,ii));
         end
-        plot(m(kk,:,ii), 'Color', colors{kk}, 'LineWidth', 2);        
         set(gca, 'Xlim', [0 1000]);
-        l{kk} = sprintf('%s t2p = %0.2f rasymp = %0.2f', ...
-            func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
+        modelNames{kk} = func2str(results(kk).model);
     end
-	legend(l); 
+    if dataWasAveraged, legend(l); end 
     title(channels.name{ii});
     set(gca, 'FontSize', 14);
-    
 end
 set(gcf, 'Position', [400 200 2000 1200]);
 
