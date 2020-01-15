@@ -12,7 +12,7 @@ nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
 
 %% plot data and predictions
-colors = {'r', 'b', 'c', 'm'}; % assuming we'll never plot >4 model fits at a time
+colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
 l = cell(1,nModels+1);
@@ -76,7 +76,9 @@ for ii = 1:nDatasets
             figDir = fullfile(saveDir, 'electrodeaverages');
         end
         if ~exist(figDir, 'dir'), mkdir(figDir), end
-        saveas(gcf, fullfile(figDir, figureName), 'png'); close;
+        saveas(gcf, fullfile(figDir, figureName), 'png'); 
+        saveas(gcf, fullfile(figDir, figureName), 'fig'); 
+        close;
     end
 end
 
