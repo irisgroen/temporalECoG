@@ -26,6 +26,7 @@ if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorith
 if ~isfield(options,'xvalmode')  || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display')   || isempty(options.display), options.display = 'iter'; end
 if ~exist('saveDir', 'var')      || isempty(saveDir), saveDir = []; end
+if iscell(objFunction), objFunction = objFunction{1}; end
 
 % Get model start points and bounds
 if ~isfield(options,'startprm') || isempty(options.startprm)
@@ -95,10 +96,10 @@ for ii = 1:nDatasets % loop over channels or channel averages
         data2fit = dset(:,fit_inx);
         stim2predict = stim(:,pred_inx);
         
-        if jj > 1
-            fprintf('[%s] Fold %d: Fitting on stimulus %s \n', mfilename, jj-1, num2str(fit_inx)) 
-            fprintf('[%s] Fold %d: Predicting for stimulus %s \n', mfilename, jj-1, num2str(pred_inx));
-        end
+%         if jj > 1
+%             fprintf('[%s] Fold %d: Fitting on stimulus %s \n', mfilename, jj-1, num2str(fit_inx)) 
+%             fprintf('[%s] Fold %d: Predicting for stimulus %s \n', mfilename, jj-1, num2str(pred_inx));
+%         end
         
         % Search for best-fitting parameters
         switch options.algorithm

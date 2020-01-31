@@ -7,8 +7,8 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots              = false;
-opts.average_elecs        = true;
-opts.elec_max_thresh      = 1;
+opts.average_elecs        = false;
+opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
@@ -21,21 +21,21 @@ tde_plotData(data2fit, channels, t, opts);
 %% 2. Model fitting
 
 % define subset of data (temporary/testing)
-data2fit = data2fit(:,:,1);
-channels = channels(1,:);
+%data2fit = data2fit(:,:,1);
+%channels = channels(1,:);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 3 4]); 
+modelfun = modelfuns([1 3 4 5 6 7]); 
 
 % define model fitting options
 options = struct();
-options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
 
 % define saveDir (optional)
-saveDir =  [];% fullfile(analysisRootPath, 'results');
-LOADFITS = 0;
+saveDir  = fullfile(analysisRootPath, 'results');
+LOADFITS = 1;
 
 % Fit or load model(s)
 params = []; pred = [];
@@ -43,7 +43,7 @@ params = []; pred = [];
 for ii = 1:size(modelfun,2)
     
     if LOADFITS
-        a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d.mat', func2str(modelfun{ii}), options.xvalmode)));
+        a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d_individualelecs.mat', func2str(modelfun{ii}), options.xvalmode)));
         params{ii} = a.params;
         pred{ii} = a.pred;
     
@@ -59,17 +59,17 @@ end
 % Compute R2 and derived parameters
 [results] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
 
-% Plot timecourses and fits
+%% 4. Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
-saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
 
 tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
 % Plot derived params and fitted params
 
 % Provide a directory so save figures (optional)
-saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
+saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
 
 tde_plotFittedAndDerivedParams(results, channels, saveDir);
 
