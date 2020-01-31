@@ -29,14 +29,19 @@ for kk = 1:nModels
         % For each individual stimulus 
         rsq = nan(nStim,1);
         for jj = 1:nStim % loop over stimuli
-            mdl = fitlm(pred{kk}(:,jj,ii), data(:,jj, ii));
-            rsq(jj) = mdl.Rsquared.Ordinary;
+            DATA = data(:,jj,ii);
+            MODEL = pred{kk}(:,jj,ii);
+            rsq(jj) = 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
         end
         rSq_bystim(:,ii) = rsq;
-        
+             
         % For all stimuli concatenated
-        mdl = fitlm(flatten(pred{kk}(:,:,ii)), flatten(data(:,:,ii)));
-        rSq_concat(:,ii) = mdl.Rsquared.Ordinary;
+        DATA = flatten(data(:,:,ii));
+        MODEL = flatten(pred{kk}(:,:,ii));
+        rSq_concat(:,ii) = 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
+        
+        % For specific conditions
+        
         fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, rSq_concat(:,ii))
     end
 
