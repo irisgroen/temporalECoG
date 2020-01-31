@@ -10,7 +10,7 @@ if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 nModels     = size(results,2);
 nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
-
+stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
 %% plot data and predictions
 colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
@@ -68,8 +68,18 @@ for ii = 1:nDatasets
 
     if ~isempty(saveDir)
         if ~isfield(summary(channels), 'number_of_elecs') % this is non-averaged data
-            figureName = sprintf('%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
-                channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
+            if isfield(summary(channels), 'bensonarea') 
+                if isfield(summary(channels), 'subject_name')
+                    figureName = sprintf('%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                        channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
+                else
+                    figureName = sprintf('%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                        channels.name{ii}, [l{2:end}]);
+                end
+            else
+                figureName = sprintf('%s_%s', ...
+                    channels.name{ii}, [l{2:end}]);
+            end
             figDir = fullfile(saveDir, 'individualelectrodes');
         else
             figureName = sprintf('%s_%s', channels.name{ii}, [l{2:end}]);
@@ -77,9 +87,10 @@ for ii = 1:nDatasets
         end
         if ~exist(figDir, 'dir'), mkdir(figDir), end
         saveas(gcf, fullfile(figDir, figureName), 'png'); 
-        saveas(gcf, fullfile(figDir, figureName), 'fig'); 
+        %saveas(gcf, fullfile(figDir, figureName), 'fig'); 
         close;
     end
+    close;
 end
 
 end

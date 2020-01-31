@@ -85,7 +85,7 @@ for kk = 1:nModels
     end
 
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-    %set(gca, 'Ylim', [0 1]);
+    set(gca, 'Ylim', [0 1]);
     title('explained variance'); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
 
     % Plot derived parameters
@@ -178,6 +178,6 @@ function savePlot(figName, saveDir, dataWasAveraged)
     end
     if ~exist(figDir, 'dir'), mkdir(figDir), end
     saveas(gcf, fullfile(figDir, figName), 'png'); %close;
-    saveas(gcf, fullfile(figDir, figName), 'fig'); %close;
+    %saveas(gcf, fullfile(figDir, figName), 'fig'); %close;
 end
     
