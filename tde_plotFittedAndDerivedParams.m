@@ -29,11 +29,13 @@ colors = {'r', 'b', 'c', 'm', 'g', 'y'};
 modelNames = cell(1,nModels);
 m = []; se = []; mp = [];
 
-figure('Name', sprintf('%s', 'Derived predictions')); 
-for ii = 1:nChans
-    subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
-	l = cell(1,nModels);
-    for kk = 1:nModels
+for kk = 1:nModels
+    
+    figure('Name', sprintf('Derived predictions %s', func2str(results(kk).model))); 
+    
+    for ii = 1:nChans
+        subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
+        l = cell(1,nModels);
         if ~dataWasAveraged
             %h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
             %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
@@ -55,22 +57,23 @@ for ii = 1:nChans
     if dataWasAveraged, legend(l); end 
     title(channels.name{ii});
     set(gca, 'FontSize', 14);
-end
-set(gcf, 'Position', [400 200 2000 1200]);
+    set(gcf, 'Position', [400 200 2000 1200]);
 
-% Save plot
-if saveFig
-    figName = sprintf('derivedPredictions_%s', [modelNames{:}]);
-    savePlot(figName, saveDir, dataWasAveraged)
+    % Save plot
+    if saveFig
+        figName = sprintf('derivedPredictions_%s', [modelNames{:}]);
+        savePlot(figName, saveDir, dataWasAveraged)
+    end
 end
 
 %% Plot derived parameters
 
 % Separate figure for each model:
 derivedTitles = {'time2peak', 'Rasymp'};
+
 for kk = 1:nModels
     
-    figure('Name', sprintf('%s %s', 'Derived parameters', func2str(results(kk).model))); hold on
+    figure('Name', sprintf('Derived parameters %s', func2str(results(kk).model))); hold on
     
     % Plot explained variance
     subplot(1,3,1); hold on
@@ -117,7 +120,8 @@ end
 
 % Separate figure for each model:
 for kk = 1:nModels
-    figure('Name', sprintf('%s %s', 'Fitted parameters', func2str(results(kk).model))); hold on
+    
+    figure('Name', sprintf('Fitted parameters %s', func2str(results(kk).model))); hold on
     
     % Read in parameter names from json
     tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(results(kk).model))));
