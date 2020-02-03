@@ -1,4 +1,4 @@
-function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir)
+function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir, saveName)
 
 % function [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
@@ -18,14 +18,19 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
 % <saveDir> path to save parameters and fits; if empty, results are not
 %   saved (default)
- 
+% <saveName> string to add to the save filename, if results are saved
+%   (default empty)
+%
+% Example
+
 %% PARSE OPTIONS
 
-if ~exist('options', 'var')      || isempty(options), options = struct(); end
+if ~exist('options', 'var') || isempty(options), options = struct(); end
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
-if ~isfield(options,'xvalmode')  || isempty(options.xvalmode), options.xvalmode = 0; end
-if ~isfield(options,'display')   || isempty(options.display), options.display = 'iter'; end
-if ~exist('saveDir', 'var')      || isempty(saveDir), saveDir = []; end
+if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
+if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
+if ~exist('saveDir', 'var'), saveDir = []; end
+if ~exist('saveName', 'var'), saveName = []; end
 if iscell(objFunction), objFunction = objFunction{1}; end
 
 % Get model start points and bounds
@@ -121,8 +126,12 @@ end
 if ~isempty(saveDir)
     
     if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-
-    saveName = fullfile(saveDir, sprintf('%s_results_xvalmode%d', func2str(objFunction), options.xvalmode));
+    if isempty(saveName)
+        saveName = sprintf('%s_results_xvalmode%d', func2str(objFunction), options.xvalmode);
+    else
+        saveName = sprintf('%s_results_xvalmode%d_%s', func2str(objFunction), options.xvalmode, saveName);
+    end
+    saveName = fullfile(saveDir, saveName);
     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
       
     if exist(sprintf('%s.mat',saveName),'file')
