@@ -2,8 +2,16 @@ function [results] = tde_plotFittedAndDerivedParams(results, channels, saveDir)
 
 if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 
+%% Prep
+
 nChans      = height(channels);
 nModels     = size(results,2);
+
+% Extract model names:
+modelNames = cell(1,nModels);
+for kk = 1:nModels
+    modelNames{kk} = func2str(results(kk).model);
+end
 
 % Determine if data was averaged across elecs prior to fit; if not, average
 % derived and fitted parameters now
@@ -15,23 +23,19 @@ else
     nChans = size(INX,2);
 end
 
-% Determine if we're saving figures
+% Are we saving figures?
 if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 
 %% Plot prediction for sustained stimulus
 
-% Plot multiple models in each subplot
-
-% Currently assuming we'll never plot >6 models at a time
-colors = {'r', 'b', 'c', 'm', 'g', 'y'}; 
+% Separate figure for each model:
 
 % Extract timecourses and model names and derived parameters from results
-modelNames = cell(1,nModels);
-m = []; se = []; mp = [];
 
 for kk = 1:nModels
     
-    figure('Name', sprintf('Derived predictions %s', func2str(results(kk).model))); 
+	modelNames{kk} = func2str(results(kk).model);
+    figure('Name', sprintf('Derived predictions %s', modelNames{kk})); 
     
     for ii = 1:nChans
         subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
@@ -41,27 +45,28 @@ for kk = 1:nModels
             %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
             %h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
             %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-            plot(results(kk).derivedPred(:,INX{ii}), 'Color', colors{kk}, 'LineWidth', 2);        
+            plot(results(kk).derivedPred(:,INX{ii}), 'Color', 'k', 'LineWidth', 2);        
             %mp = averageAcrossAreas(results(kk).derivedPrm, INX);
             %l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
             %    func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
         else
-            plot(results(kk).derivedPred(:,ii), 'Color', colors{kk}, 'LineWidth', 2); 
-            mp = results(kk).derivedPrm;
+            plot(results(kk).derived.pred(:,ii), 'Color', 'k', 'LineWidth', 2); 
+            mp = results(kk).derived.params;
             l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
                 func2str(results(kk).model), mp(1,ii), mp(2,ii));
         end
         set(gca, 'Xlim', [0 1000]);
-        modelNames{kk} = func2str(results(kk).model);
+        
+        title(channels.name{ii});
     end
-    if dataWasAveraged, legend(l); end 
-    title(channels.name{ii});
+    
+    %if dataWasAveraged, legend(l); end 
     set(gca, 'FontSize', 14);
     set(gcf, 'Position', [400 200 2000 1200]);
 
     % Save plot
     if saveFig
-        figName = sprintf('derivedPredictions_%s', [modelNames{:}]);
+        figName = sprintf('derivedPredictions_%s', [modelNames{kk}]);
         savePlot(figName, saveDir, dataWasAveraged)
     end
 end
@@ -73,17 +78,17 @@ derivedTitles = {'time2peak', 'Rasymp'};
 
 for kk = 1:nModels
     
-    figure('Name', sprintf('Derived parameters %s', func2str(results(kk).model))); hold on
+    figure('Name', sprintf('Derived parameters %s', modelNames{kk})); hold on
     
     % Plot explained variance
     subplot(1,3,1); hold on
     if ~dataWasAveraged
-        [m, se, dat] = averageAcrossAreas(results(kk).rSquareConc, INX);
+        [m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
         for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
         %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
     else
-        m = results(kk).rSquareConc; 
+        m = results(kk).R2.concat_all; 
         plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
     end
 
@@ -95,12 +100,12 @@ for kk = 1:nModels
     for p = 1:2
         subplot(1,3,p+1); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossAreas(results(kk).derivedPrm(p,:), INX);
+            [m, se, dat] = averageAcrossAreas(results(kk).derived.params(p,:), INX);
             for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
             errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         else
-            m = results(kk).derivedPrm(p,:); 
+            m = results(kk).derived.params(p,:); 
             plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
@@ -121,10 +126,10 @@ end
 % Separate figure for each model:
 for kk = 1:nModels
     
-    figure('Name', sprintf('Fitted parameters %s', func2str(results(kk).model))); hold on
+    figure('Name', sprintf('Fitted parameters %s', modelNames{kk})); hold on
     
     % Read in parameter names from json
-    tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(results(kk).model))));
+    tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', modelNames{kk})));
     paramNames = strsplit(tmp.params,',');
     nParams = length(paramNames);
        

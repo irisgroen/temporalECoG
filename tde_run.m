@@ -20,18 +20,15 @@ tde_plotData(data2fit, channels, t, opts);
 
 %% 2. Model fitting
 
-% define subset of data (temporary/testing)
-%data2fit = data2fit(:,:,1);
-%channels = channels(1,:);
-
 % define model(s)
 modelfuns = tde_modelTypes();
 modelfun = modelfuns([1 3 4 5 6 7]); 
+%modelfun = modelfuns([1 7]); 
 
 % define model fitting options
-options = struct();
+options          = [];
 options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'off';% 'iter'; % 'iter' 'final' 'off
+options.display  = 'off';  % 'iter' 'final' 'off
 
 % define saveDir (optional)
 saveDir  = fullfile(analysisRootPath, 'results');
@@ -43,7 +40,12 @@ params = []; pred = [];
 for ii = 1:size(modelfun,2)
     
     if LOADFITS
-        a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d_individualelecs.mat', func2str(modelfun{ii}), options.xvalmode)));
+        if opts.average_elecs
+            name = 'electrodeaverages';
+        else
+            name = 'individualelecs';
+        end
+        a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d_%s.mat', func2str(modelfun{ii}), options.xvalmode, name)));
         params{ii} = a.params;
         pred{ii} = a.pred;
     
@@ -57,7 +59,8 @@ end
 %% 3. Model evaluation
 
 % Compute R2 and derived parameters
-[results] = tde_evaluateModelFit(data2fit, modelfun, params, pred);
+group_inx = [1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3];
+[results] = tde_evaluateModelFit(data2fit, modelfun, params, pred, group_inx);
 
 %% 4. Plot timecourses and fits
 

@@ -11,6 +11,14 @@ nModels     = size(results,2);
 nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
 stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
+
+% Determine if data was averaged across elecs prior to fit; if not, average
+% derived and fitted parameters now
+if isfield(summary(channels), 'number_of_elecs')
+    dataWasAveraged = true;
+else
+    dataWasAveraged = false;
+end
 %% plot data and predictions
 colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
@@ -22,7 +30,7 @@ for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 % Loop over channels or channel averages
 for ii = 1:nDatasets
     
-    figure('Name', sprintf('%s %s', 'Predictions', channels.name{ii}));
+    figure;
     
     d = data(:,:,ii);
     maxresp = max(d(:)); % scale stimulus to max across dataset
@@ -31,9 +39,11 @@ for ii = 1:nDatasets
     for jj = 1:length(conditionsOfInterest)
         subplot(nCond,1,jj); hold on
         inx = contains(stim_info.name, conditionsOfInterest{jj});
+        
         % plot stimulus
         h = plot(flatten(stim_ts(:,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
         h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+        
         % plot data
         plot(flatten(d(:,inx)), 'Color', 'k', 'LineWidth', 2); 
         titlestr = cell(1,nModels);
@@ -42,8 +52,9 @@ for ii = 1:nDatasets
         for kk = 1:nModels           
             pred = results(kk).pred(:,inx,ii);
             plot(flatten(pred), 'Color', colors{kk}, 'LineWidth', 2);
-            titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), mean(results(kk).rSquareStim(inx,ii)));
+            titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), mean(results(kk).R2.concat_cond(jj,ii)));
         end
+        
         % add title
         title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
         
@@ -65,24 +76,31 @@ for ii = 1:nDatasets
         if jj == 1, legend(l); end
     end
     set(gcf, 'Position', [400 200 1800 1200]);
-
-    if ~isempty(saveDir)
-        if ~isfield(summary(channels), 'number_of_elecs') % this is non-averaged data
-            if isfield(summary(channels), 'bensonarea') 
-                if isfield(summary(channels), 'subject_name')
-                    figureName = sprintf('%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
-                        channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
-                else
-                    figureName = sprintf('%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
-                        channels.name{ii}, [l{2:end}]);
-                end
+    
+    % Determine how to name the plot 
+    if ~dataWasAveraged
+        if isfield(summary(channels), 'bensonarea') 
+            if isfield(summary(channels), 'subject_name')
+                figureName = sprintf('%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                    channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
             else
-                figureName = sprintf('%s_%s', ...
+                figureName = sprintf('%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
                     channels.name{ii}, [l{2:end}]);
             end
-            figDir = fullfile(saveDir, 'individualelectrodes');
         else
             figureName = sprintf('%s_%s', channels.name{ii}, [l{2:end}]);
+        end
+    else
+        figureName = sprintf('%s_%s', channels.name{ii}, [l{2:end}]);
+    end
+    
+    set(gcf, 'Name', figureName);
+    
+    % Determine whether to save it and if so where
+    if ~isempty(saveDir)
+        if ~dataWasAveraged        
+            figDir = fullfile(saveDir, 'individualelectrodes');
+        else
             figDir = fullfile(saveDir, 'electrodeaverages');
         end
         if ~exist(figDir, 'dir'), mkdir(figDir), end
@@ -90,7 +108,6 @@ for ii = 1:nDatasets
         %saveas(gcf, fullfile(figDir, figureName), 'fig'); 
         close;
     end
-    close;
 end
 
 end

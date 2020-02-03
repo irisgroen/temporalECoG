@@ -1,21 +1,30 @@
-function [results] = tde_evaluateModelFit(data, objFunction, params, pred)
+function [results] = tde_evaluateModelFit(data, objFunction, params, pred, stimcond)
 
 % Inputs: cell arrays with objFunction, params, data, pred
 if ~iscell(objFunction), objFunction = {objFunction}; end
 if ~iscell(params), params = {params}; end
 if ~iscell(pred), pred = {pred}; end
-% if ~exist(makePlots, 'var') || isempty(makePlots), makePlots = 0; end
+if ~exist('stimcond','var'), stimcond = []; end
 
 nModels     = size(objFunction,2);
+nSamp       = size(data,1);
 nStim       = size(data,2);
 nDatasets   = size(data,3);
 
-rSq_bystim  = nan(nStim,nDatasets);
-rSq_concat  = nan(1,nDatasets);
+% initialize
+R2stim      = nan(nStim,nDatasets);
+R2concat    = nan(1,nDatasets);
+if ~isempty(stimcond), R2cond = nan(length(unique(stimcond)), nDatasets); end
+    
 derivedPrm  = nan(2,nDatasets);
+derivedPred = [];
+
+
+%% USEFUL FUNCTIONS
+computeR2 = @(DATA, MODEL) 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
 
 %% COMPUTE SUMMARY METRICS
-results = [];
+results = struct;
 
 % Loop over models
 for kk = 1:nModels
@@ -31,18 +40,27 @@ for kk = 1:nModels
         for jj = 1:nStim % loop over stimuli
             DATA = data(:,jj,ii);
             MODEL = pred{kk}(:,jj,ii);
-            rsq(jj) = 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
+            rsq(jj) = computeR2(DATA,MODEL);
         end
-        rSq_bystim(:,ii) = rsq;
+        R2stim(:,ii) = rsq;
              
         % For all stimuli concatenated
         DATA = flatten(data(:,:,ii));
         MODEL = flatten(pred{kk}(:,:,ii));
-        rSq_concat(:,ii) = 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
+        R2concat(:,ii) = computeR2(DATA,MODEL);
         
         % For specific conditions
+        if exist('R2cond', 'var')
+            cond = unique(stimcond); nCond = length(cond);
+            for jj = 1:nCond
+                condInx = find(stimcond == cond(jj));
+                DATA = flatten(data(:,condInx,ii));
+                MODEL = flatten(pred{kk}(:,condInx,ii));
+                R2cond(jj,ii) = computeR2(DATA,MODEL);
+            end
+        end
         
-        fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, rSq_concat(:,ii))
+        fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, R2concat(:,ii))
     end
 
     %% COMPUTE DERIVED PARAMETERS 
@@ -57,13 +75,14 @@ for kk = 1:nModels
     end
 
     %% COLLECT RESULTS
-    results(kk).model       = objFunction{kk};
-	results(kk).params      = params{kk};
-    results(kk).pred        = pred{kk};
-    results(kk).rSquareStim = rSq_bystim;
-    results(kk).rSquareConc = rSq_concat;
-    results(kk).derivedPrm  = derivedPrm;
-    results(kk).derivedPred = derivedPred;
+    results(kk).model           = objFunction{kk};
+	results(kk).params          = params{kk};
+    results(kk).pred            = pred{kk};
+    results(kk).R2.stim         = R2stim;
+    results(kk).R2.concat_all   = R2concat;
+    if exist('R2cond', 'var'), results(kk).R2.concat_cond = R2cond; end
+    results(kk).derived.params  = derivedPrm;
+    results(kk).derived.pred    = derivedPred;
 end
 
 end
