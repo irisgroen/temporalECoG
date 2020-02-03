@@ -45,7 +45,7 @@ for kk = 1:nModels
             %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
             %h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
             %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-            plot(results(kk).derivedPred(:,INX{ii}), 'Color', 'k', 'LineWidth', 2);        
+            plot(results(kk).derived.pred(:,INX{ii}), 'Color', 'k', 'LineWidth', 2);        
             %mp = averageAcrossAreas(results(kk).derivedPrm, INX);
             %l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
             %    func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
@@ -74,11 +74,14 @@ end
 %% Plot derived parameters
 
 % Separate figure for each model:
-derivedTitles = {'time2peak', 'Rasymp'};
+derivedTitles = {'explained variance', 'time2peak', 'Rasymp'};
+m_all = [];
+se_all = [];
 
 for kk = 1:nModels
     
     figure('Name', sprintf('Derived parameters %s', modelNames{kk})); hold on
+    set(gcf, 'Position', [400 800 2000 600]);
     
     % Plot explained variance
     subplot(1,3,1); hold on
@@ -87,14 +90,16 @@ for kk = 1:nModels
         for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
         %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        se_all(1,:,:,kk) = squeeze(se);
     else
         m = results(kk).R2.concat_all; 
         plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
     end
-
+    m_all(1,:,kk) = squeeze(m);
+    
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     set(gca, 'Ylim', [0 1]);
-    title('explained variance'); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
+    title(derivedTitles{1}); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
 
     % Plot derived parameters
     for p = 1:2
@@ -104,6 +109,7 @@ for kk = 1:nModels
             for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
             errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            se_all(p+1,:,:,kk) = squeeze(se);
         else
             m = results(kk).derived.params(p,:); 
             plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
@@ -111,14 +117,56 @@ for kk = 1:nModels
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
         title(derivedTitles{p}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
-    end 
-    set(gcf, 'Position', [400 800 2000 600]);
+        m_all(p+1,:,kk) = squeeze(m);
+    end   
     
     % Save plot
     if saveFig
         figName = sprintf('derivedParams_%s', modelNames{kk});
         savePlot(figName, saveDir, dataWasAveraged)
     end
+end
+
+% All models together in one plot:
+
+figure('Name', 'Derived parameters - all models'); hold on
+set(gcf, 'Position', [400 800 2000 600]);
+
+%colors = parula(nModels);
+
+for jj = 1:size(m_all,1)
+
+    subplot(1,3,jj); hold on
+    m = squeeze(m_all(jj,:,:));
+
+    h = bar(m);
+    set(h, 'BarWidth', 1); 
+
+    numgroups = size(m,1);
+    numbars = size(m,2);
+    groupwidth = min(0.8,numbars/(numbars+1.5));
+
+    if ~isempty(se_all)
+        se = squeeze(se_all(jj,:,:,:));
+        neg = m-se(:,1,:);
+        pos = se(:,2,:)-m;
+        for ii = 1:numbars
+            x = (1:numgroups) - groupwidth/2 + (2*ii-1) * groupwidth / (2*numbars);  % Aligning error bar with individual bar    
+            errorbar(x, m(:,ii), neg(:,ii), pos(:,ii), 'k', 'LineWidth', 2,  'LineStyle', 'none', 'CapSize', 0);
+        end
+    end
+    set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
+    title(derivedTitles{jj}); xlabel('visual area'); 
+    if jj == 1, legend(modelNames); set(gca, 'Ylim', [0 1]); end
+    if jj == 2, set(gca, 'Ylim', [0 0.2]); end
+    if jj == 3, set(gca, 'Ylim', [0 1]); end
+    set(gca, 'fontsize', 16);
+end
+
+% Save plot
+if saveFig
+    figName = sprintf('derivedParams_%s', [modelNames{:}]);
+    savePlot(figName, saveDir, dataWasAveraged)
 end
 
 %% Plot fitted parameters

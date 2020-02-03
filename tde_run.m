@@ -22,8 +22,8 @@ tde_plotData(data2fit, channels, t, opts);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 3 4 5 6 7]); 
-%modelfun = modelfuns([1 7]); 
+%modelfun = modelfuns([1 3 4 5 6 7]); 
+modelfun = modelfuns([1 7]); 
 
 % define model fitting options
 options          = [];
