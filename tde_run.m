@@ -6,7 +6,7 @@ reComputeFlag = false;
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.doplots              = false;
+opts.doplots              = true;
 opts.average_elecs        = false;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;

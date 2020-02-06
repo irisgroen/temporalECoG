@@ -26,51 +26,6 @@ end
 % Are we saving figures?
 if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 
-%% Plot prediction for sustained stimulus
-
-% Separate figure for each model:
-
-% Extract timecourses and model names and derived parameters from results
-
-for kk = 1:nModels
-    
-	modelNames{kk} = func2str(results(kk).model);
-    figure('Name', sprintf('Derived predictions %s', modelNames{kk})); 
-    
-    for ii = 1:nChans
-        subplot(ceil(sqrt(nChans)),ceil(sqrt(nChans)),ii); hold on
-        l = cell(1,nModels);
-        if ~dataWasAveraged
-            %h = ciplot(m(kk,:,ii)-se(kk,:,ii), m(kk,:,ii)+se(kk,:,ii), [], colors{kk}, 0.25);
-            %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
-            %h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
-            %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-            plot(results(kk).derived.pred(:,INX{ii}), 'Color', 'k', 'LineWidth', 2);        
-            %mp = averageAcrossAreas(results(kk).derivedPrm, INX);
-            %l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
-            %    func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
-        else
-            plot(results(kk).derived.pred(:,ii), 'Color', 'k', 'LineWidth', 2); 
-            mp = results(kk).derived.params;
-            l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
-                func2str(results(kk).model), mp(1,ii), mp(2,ii));
-        end
-        set(gca, 'Xlim', [0 1000]);
-        
-        title(channels.name{ii});
-    end
-    
-    %if dataWasAveraged, legend(l); end 
-    set(gca, 'FontSize', 14);
-    set(gcf, 'Position', [400 200 2000 1200]);
-
-    % Save plot
-    if saveFig
-        figName = sprintf('derivedPredictions_%s', [modelNames{kk}]);
-        savePlot(figName, saveDir, dataWasAveraged)
-    end
-end
-
 %% Plot derived parameters
 
 % Separate figure for each model:
@@ -116,7 +71,7 @@ for kk = 1:nModels
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
-        title(derivedTitles{p}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
+        title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
         m_all(p+1,:,kk) = squeeze(m);
     end   
     
