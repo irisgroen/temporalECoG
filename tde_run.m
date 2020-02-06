@@ -7,7 +7,7 @@ reComputeFlag = false;
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.doplots              = true;
-opts.average_elecs        = false;
+opts.average_elecs        = true;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
@@ -22,8 +22,8 @@ tde_plotData(data2fit, channels, t, opts);
 
 % define model(s)
 modelfuns = tde_modelTypes();
-%modelfun = modelfuns([1 3 4 5 6 7]); 
-modelfun = modelfuns([1 7]); 
+modelfun = modelfuns([1 3 4 5 6 7]); 
+%modelfun = modelfuns([1 7]); 
 
 % define model fitting options
 options          = [];
@@ -69,11 +69,14 @@ saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
 
 tde_plotDataAndFits(results, data2fit, channels, stim_ts, stim_info, t, [], saveDir)
 
-% Plot derived params and fitted params
 
-% Provide a directory so save figures (optional)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
 
-tde_plotFittedAndDerivedParams(results, channels, saveDir);
+tde_plotParams(results, channels, saveDir);
+
+
+saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
+
+tde_plotDerivedPredictions(results, channels,1,0, saveDir);
 
 
