@@ -6,10 +6,10 @@ reComputeFlag = false;
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.doplots              = true;
-opts.average_elecs        = true;
+opts.average_elecs        = false;
 opts.elec_max_thresh      = 0.5;
 opts.elec_exclude_depth   = true;
+opts.doplots              = false;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
 
 % plot average response per stimulus for selected data
@@ -77,6 +77,6 @@ tde_plotParams(results, channels, saveDir);
 
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
 
-tde_plotDerivedPredictions(results, channels,1,0, saveDir);
+tde_plotDerivedPredictions(results,channels,1,1, saveDir);
 
 

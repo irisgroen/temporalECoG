@@ -96,7 +96,7 @@ end
 
 
     
-%% One figure with suplots for each model, superimposed visual areas:
+%% One figure with subplots for each model, superimposed visual areas:
 
 if plotType == 2
     
@@ -121,12 +121,13 @@ if plotType == 2
         % Plot multiple areas together in one plot
         for ii = 1:nChans
             if ~dataWasAveraged
-                m = mean(results(kk).derived.pred(:,INX{ii}),1, 'omitnan');
-                se = std(results(kk).derived.pred(:,INX{ii}),0,1, 'omitnan');
-                h = ciplot(m-se, m+se, [], colors(ii,:), 0.25);
-                h.Annotation.LegendInformation.IconDisplayStyle = 'off';              
+                m = mean(results(kk).derived.pred(:,INX{ii}),2, 'omitnan');
+                %se = std(results(kk).derived.pred(:,INX{ii}),0,2, 'omitnan');
+                %h = ciplot(m-se, m+se, [], colors(ii,:), 0.25);
+                %h.Annotation.LegendInformation.IconDisplayStyle = 'off';              
             else
                 m = results(kk).derived.pred(:,ii);
+                %m = squeeze(mean(results(kk).pred(:,[5 11],ii),2));
             end
             if normalize, m = m/max(m); end
             plot(m, 'Color', colors(ii,:), 'LineWidth', 2);        
