@@ -1,24 +1,61 @@
-function [data] = tde_getData(compute, inputDir, outputDir, subjectList, sessionList, epochTime, sampleRate)
+function [data] = tde_getData(compute, saveStr, saveDir, dataDir, subjectList, sessionList, epochTime, sampleRate, tasks, description)
 
-% Description: 
+% Read in ECoG data from visual template matching channels for multiple
+% subjects for a given set of tasks.
+
+% [data] = tde_getData(compute, [saveStr], [outputDir], [inputDir], ...
+%                      [subjectList], [sessionList], [epochTime], ...
+%                      [sampleRate], [tasks], [description])
 %
-% function [data] = tde_getData(compute, [inputDir], [outputDir], [subjectList], [sessionList], [epochTime], [sampleRate])
+% INPUT (required):
+% - compute : boolean indicating whether to compute or read from disk.
 %
-% Input (use varargin?)
-% - inputDir
-% - outputDir
-% - subjectslist
-% - sessionList
-% - epochTime
-% - sampleRate
+% INPUT (optional):
+% - saveStr : string to be added to filename for saved out data
+%          default: 'data'
+% - saveDir : directory to get data from. 
+%          default: fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband')
+% - dataDir : directory to write data to 
+%          default: fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband')
+% - subjectlist : cell array of subject names. If empty, script
+%           will read subject names from subject_id column in
+%           subjectlist.tsv file in tdeRootPath.m
+% - sessionList : cell array of session names of the same 
+%           dimensions as subjectList. default: all sessions 
+% - epochTime : [t_start t_stop] array defining the epoch window
+%          default: [-0.2 1];
+% - sampleRate : desired sample rate in Hz for all datasets.
+%          Datasets with rates will be downsampled. default: 512            
+% - tasks : cell array of task names to match to the bids field 
+%          task-<taskname> in the input filenames.
+%          default: {'spatialpattern', 'temporalpattern', 'soc'};
+% - description : string to match to the bids field desc-<desc>
+%          in the input filenames. default: 'broadband';
 %
-% Output
-% a cell array with for each cell a struct with the following fields:
+% OUTPUT
+% A cell array with for each cell a struct with the following fields:
 % - name
 % - epochs
 % - channels
 % - events
 % - t
+%
+% NOTES
+% - Data should be bids-formatted.
+% - Function will perform the following steps:
+%   STEP 0: Match electrode positions to wang and benson atlases
+%   STEP 1: Read in the datafiles
+%   STEP 2: Select channels with a visual match to either of the atlases.
+%   STEP 3: Downsample data (if higher sample rate than SampleRate) and
+%           shift onsets for UMCU patients.
+%   STEP 4: Epoch the data according to the onsets in the events.tsv files
+%           found in the dataDir according to epochTime
+%   STEP 5: Save out data for each subject in the saveDir.
+% 
+% Uses electrode_to_nearest_node.m bidsEcogGetPreprocData.m
+%       ecog_makeEpochs.m bair_addVisualAtlasNamesToChannelTable
+% 
+% IG 2020
 
 %% Define inputs 
 
@@ -27,17 +64,20 @@ if ~exist('compute', 'var') || isempty(compute)
 	error('Please specify whether to compute the data (1) or to load from disk (0)');
 end  
 
-% <inputDir>
-if ~exist('inputDir', 'var') || isempty(inputDir)
-    %inputDir = '/Volumes/server/Projects/BAIR/Data/BIDS/visual/derivatives/ECoGBroadband';
-    inputDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
-end  
-
-% <outputDir>
-if ~exist('outputDir', 'var') || isempty(outputDir)
-    %outputDir = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/data';
-	outputDir = fullfile(analysisRootPath, 'data');
+% <saveName>
+if ~exist('saveStr', 'var') || isempty(saveStr)
+	saveStr = 'data';
 end 
+
+% <saveDir>
+if ~exist('saveDir', 'var') || isempty(saveDir)
+	saveDir = fullfile(analysisRootPath, 'data');
+end 
+
+% <inputDir>
+if ~exist('dataDir', 'var') || isempty(dataDir)
+    dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
+end  
 
 % <subjectList>
 if ~exist('subjectList', 'var') || isempty(subjectList)
@@ -61,11 +101,15 @@ if ~exist('sampleRate', 'var') || isempty(sampleRate)
     sampleRate = 512;
 end
 
-% <tasks> (fixed for TDE project)
-tasks = {'spatialpattern', 'temporalpattern', 'soc'};
+% <tasks> 
+if ~exist('tasks', 'var') || isempty(tasks)
+    tasks = {'spatialpattern', 'temporalpattern', 'soc'}; % TDE 
+end
 
-% <preprocessing data type> (fixed for TDE project)
-description = 'broadband';
+% <description> 
+if ~exist('description', 'var') || isempty(description)
+    description = 'broadband'; % TDE
+end
 
 %% Loop across subjects
 data = cell(length(subjectList),1);
@@ -79,7 +123,7 @@ for ii = 1 : length(subjectList)
     if ~compute
         
         % load from outputDir    
-        data{ii} = load(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)));
+        data{ii} = load(fullfile(saveDir, sprintf('%s_data_visualelecs.mat', subject)));
         fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
     
     else
@@ -97,8 +141,10 @@ for ii = 1 : length(subjectList)
  
         %% STEP 1: GET THE DATA
         fprintf('[%s] Step 1: Loading data...\n',mfilename);
+        
+        if ~isempty(sessionList), session = sessionList{ii}; else, session = []; end
 
-        [subdata, channels, events] = bidsEcogGetPreprocData(inputDir, subject, sessionList, tasks, [], description);
+        [subdata, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], description);
 
         %% STEP 2: SELECT A SUBSET OF CHANNELS 
 
@@ -174,8 +220,10 @@ for ii = 1 : length(subjectList)
         channels.subject_name = repmat({subject}, [height(channels),1]);
         
         % Save out the data
-        fprintf('[%s] Step 5: Saving data for subject %s to %s \n',mfilename, subject, outputDir);
-        save(fullfile(outputDir, sprintf('%s_data_visualelecs.mat', subject)),'subject', 'epochs', 't', 'events', 'channels')
+        fprintf('[%s] Step 5: Saving data for subject %s to %s \n',mfilename, subject, saveDir);
+        saveName = sprintf('%s_%s_visualelecs.mat', subject, saveStr);
+        saveName = fullfile(outPutDir, saveName);
+        save(saveName,'subject', 'epochs', 't', 'events', 'channels')
         
         % Collect into an output struct
         data{ii}.subject  = subject;
