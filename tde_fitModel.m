@@ -1,6 +1,6 @@
 function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir, saveName)
 
-% function [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
+% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
 % <objFunction> model form
 % <stimuli> stimulus time courses (time x condition)
@@ -127,9 +127,9 @@ if ~isempty(saveDir)
     
     if ~exist(saveDir, 'dir'); mkdir(saveDir); end
     if isempty(saveName)
-        saveName = sprintf('%s_results_xvalmode%d', func2str(objFunction), options.xvalmode);
+        saveName = sprintf('%s_xvalmode%d', func2str(objFunction), options.xvalmode);
     else
-        saveName = sprintf('%s_results_xvalmode%d_%s', func2str(objFunction), options.xvalmode, saveName);
+        saveName = sprintf('%s_xvalmode%d_%s', func2str(objFunction), options.xvalmode, saveName);
     end
     saveName = fullfile(saveDir, saveName);
     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
@@ -139,7 +139,7 @@ if ~isempty(saveDir)
         saveName = sprintf('%s_%s', saveName, datestr(now,30));
         fprintf('[%s] Saving results to %s \n', mfilename, saveName);
     end
-    save(saveName, 'pred', 'params');  
+    save(saveName, 'pred', 'params', 'stim', 'data', 'srate', 'options');  
 end
 
 fprintf('[%s] Done!\n',mfilename);
