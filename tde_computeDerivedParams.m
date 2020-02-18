@@ -6,7 +6,7 @@ function [derivedPrm, pred, t] = tde_computeDerivedParams(objFunction, prm)
 
 %% compute derived parameters
 
-t    = 0.001 : 0.001 : 10;
+t    = 0.001 : 0.0001 : 10;
 stim = ones(length(t),1);
 srate = 1/median(diff(t)); % samples per second
 

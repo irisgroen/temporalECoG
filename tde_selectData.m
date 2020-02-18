@@ -2,7 +2,7 @@ function [epochs, channels, stimNames, t, srate] = tde_selectData(data, stimName
 
 % Description
 %
-% function [epochs, channels, stimNames, t] = tde_selectData(data, [stimNames], [opts])
+% [epochs, channels, stimNames, t] = tde_selectData(data, [stimNames], [opts])
 % 
 % Outputs reduced version of data after following steps:
 %
