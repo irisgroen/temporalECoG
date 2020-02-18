@@ -65,7 +65,7 @@ for ii = 1:nSubjects
         case 'som661'
             % in this subject, more triggers were sent than the actual prf
             % bar positions --> need to interpolate? skip for now
-%            continue
+            continue
         otherwise
             stimInx = 1:224;
     end
@@ -91,7 +91,6 @@ for ii = 1:nSubjects
     
     data2fit{ii}.ts       = ts;
     data2fit{ii}.stim_inx = stimInx;
-    data2fit{ii}.channels = channels;
 
     % Make plots of the trials and of the PRF timecourses
     if doPlots
@@ -106,13 +105,16 @@ for ii = 1:nSubjects
             subplot(plotDim1,plotDim2,el); hold on
             for kk = 1:nEpochs
                 %ecog_plotSingleTimeCourse(t, epochs(:,kk,el));
-                plot(t, epochs(:,kk,el)); axis tight
+                plot(t, epochs(:,kk,el)); 
             end
+            plot(t, squeeze(mean(epochs(:,kk,el),2)), 'k', 'LineWidth', 3); axis tight;
+
             yLim = get(gca, 'YLim');
             line([0 0], yLim,'LineStyle', ':', 'Color', 'k');
             line([t(1) t(end)], [0 0],'LineStyle', ':', 'Color', 'k');
             plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
             title(plotTitle);
+            axis tight
             if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
             set(gcf, 'Position', [150 100 1500 1250]);
             set(gca, 'FontSize', 14);
@@ -130,15 +132,14 @@ for ii = 1:nSubjects
                 plot(1:nStim, squeeze(ts(el,:,kk)), 'LineWidth', 1);
                 runNames = [runNames {sprintf('run %d', kk)}];
             end
-            plot(1:nStim, squeeze(mean(ts(el,:,:),3)), 'k', 'LineWidth', 3); axis tight;
+            plot(1:nStim, squeeze(mean(ts(el,:,:),2)), 'k', 'LineWidth', 3); axis tight;
             runNames = [runNames {'average'}];
             title(plotTitle);
             if el == 1; xlabel('PRF stimulus (#)'); ylabel('Broadband signal change'); legend(runNames); end
             set(gcf, 'Position', [150 100 1500 1250]);
             set(gca, 'FontSize', 14);
         end
-        saveas(gcf, fullfile(plotSaveDir,'data', figureName), 'png'); close;
-        
+        saveas(gcf, fullfile(plotSaveDir,'data', figureName), 'png'); close;        
     end   
 end
     
@@ -304,7 +305,8 @@ for ii = 1:nSubjects
                 set(gca, 'XLim', [25 225],'YLim',[25 225])
             end
             saveas(gcf, fullfile(plotSaveDir,'modelfits', figureName), 'png'); close;
-
+            
+            % Add some fun summary plots compaing e.g. 
         end
     end
 end
