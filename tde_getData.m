@@ -26,10 +26,10 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, description, e
 % - sampleRate : desired sample rate in Hz for all datasets.
 %          Datasets with rates will be downsampled. default: 512            
 % - saveStr : string to be added to filename for saved out data
-%          default: 'data'
-% - saveDir : directory to get data from. 
-%          default: fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband')
-% - dataDir : directory to write data to 
+%          default: 'tdedata'
+% - saveDir : directory to write data to 
+%          default: fullfile(analysisRootPath, 'data');
+% - dataDir : directory to get data from 
 %          default: fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband')
 %
 % OUTPUT
@@ -98,7 +98,7 @@ end
 
 % <saveStr>
 if ~exist('saveStr', 'var') || isempty(saveStr)
-	saveStr = 'data';
+	saveStr = 'tdedata';
 end 
 
 % <saveDir>
@@ -122,9 +122,12 @@ for ii = 1 : length(subjects)
     
     if ~compute
         
-        % load from outputDir    
-        data{ii} = load(fullfile(saveDir, sprintf('%s_data_visualelecs.mat', subject)));
-        fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
+        % load from outputDir
+        fileName = fullfile(saveDir, sprintf('%s_%s_visualelecs.mat', subject, saveStr));
+        if exist(fileName, 'file')
+            data{ii} = load(fileName);
+            fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
+        end
     
     else
         
@@ -242,6 +245,14 @@ for ii = 1 : length(subjects)
         end
     end   
 end
+
+% Remove empty cells from the output
+emptycells=[];
+for ii = 1:length(data)
+    if isempty(data{ii}), emptycells = [emptycells ii]; end
+end
+data(emptycells) = [];
+
 fprintf('[%s] Done! \n',mfilename);
 end
 

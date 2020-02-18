@@ -1,6 +1,6 @@
 function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir, saveName)
 
-% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
+% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options, saveDir, saveName) 
 %
 % <objFunction> model form
 % <stimuli> stimulus time courses (time x condition)
