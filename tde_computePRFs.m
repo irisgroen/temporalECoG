@@ -1,11 +1,22 @@
-function tde_computePRFs(recomputeData, doPlots)
+function tde_computePRFs(recomputeData, doPlots, saveDir, resultsStr)
 
-% [results] = tde_computePRFs(recomputeData, recomputeFits, doPlots) 
-
-% <saveDir> path to save parameters and fits; if empty, results are not
-%   saved (default)
-% <saveName> string to add to the save filename, if results are saved
-%   (default empty)
+% loads PRF runs from a bids directory and runs analyzePRF on the data
+% [results] = tde_computePRFs(recomputeData, doPlots, saveDir, resultsStr) 
+%
+% TO DO make subjects etc input params? and opts for analyzePRF editable in
+% input?
+%
+% <recomputeData> flag used as input to tde_getData.m indicating whether to
+%   get the data from the bids directory anew or to load it from disk
+%   default: 'false'
+% % <doPlots> flag indicating whether to save out plots of data and
+%   prfs to fullfile(analysisRootPath, 'figures', 'prfs')
+%   default 'false
+% <saveDir> path to save parameters and fits
+%   default: fullfile(analysisRootPath, 'prfs')
+% <resultsStr> string to add to the save filename for the results.mat
+%   created by analyzePRF, if results are saved
+%   default: 'prfs'
 
 % <recomputeData>
 if ~exist('recomputeData','var') || isempty(recomputeData)
