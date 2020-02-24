@@ -6,28 +6,14 @@ function [derivedPrm, pred, t] = tde_computeDerivedParams(objFunction, prm)
 
 %% compute derived parameters
 
-t    = 0.001 : 0.0001 : 10;
+t    = 0.001 : 0.001 : 10;
 stim = ones(length(t),1);
 srate = 1/median(diff(t)); % samples per second
 
-%prm(end) = 1; % Jing's code appears to fix the gain to 1, do we want this?
 [~, pred] = objFunction(prm, [], stim, srate);
 
 [~,x] = max(pred);
 derivedPrm.t2pk    = t(x);
 derivedPrm.r_asymp = pred(end)/max(pred);
-
-% Jings code:
-% % compute model responses
-% for k = 1 : size(prm, 1)
-%     
-%    [~, rsp(k, :)] = dn_computeFineFit(prm(k, :), stim, stim, t, irfType);
-%    
-%    % compute time to peak
-%    derivedPrm.t2pk(k) = find(rsp(k, :) == max(rsp(k, :)));
-%    
-%    % compute asymptotic response
-%    derivedPrm.r_asymp(k) = rsp(k, end);
-% end
 
 end
