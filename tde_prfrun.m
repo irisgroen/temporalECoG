@@ -9,7 +9,7 @@ saveStr       = 'prfdata';
 [data] = tde_getData(recomputeFlag, [], [], tasks, [], epochTime, [], saveStr);
 
 % Compute the PRF timecourses
-doPlots = false;
+doPlots = true;
 
 [data] = tde_computePRFtimecourses(data, [], [], doPlots);
 
