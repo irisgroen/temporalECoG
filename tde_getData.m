@@ -114,6 +114,8 @@ end
 if ~exist(saveDir, 'dir'), mkdir(saveDir); end
 
 %% Loop across subjects
+if ~iscell(subjects), subjects = {subjects}; end
+
 data = cell(length(subjects),1);
 
 for ii = 1 : length(subjects)

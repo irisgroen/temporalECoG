@@ -19,10 +19,6 @@ if ~isempty(stimcond), R2cond = nan(length(unique(stimcond)), nDatasets); end
 derivedPrm  = nan(2,nDatasets);
 derivedPred = [];
 
-
-%% USEFUL FUNCTIONS
-computeR2 = @(DATA, MODEL) 1-(sum((DATA-MODEL).^2) ./ sum((DATA-mean(DATA)).^2));
-
 %% COMPUTE SUMMARY METRICS
 results = struct;
 

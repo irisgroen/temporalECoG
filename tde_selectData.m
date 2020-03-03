@@ -1,13 +1,13 @@
-function [epochs, channels, stimNames, t, srate] = tde_selectData(data, stimNames, opts)
+function [epochs, channels, stimnames, t, srate] = tde_selectData(data, opts)
 
 % Description
 %
-% [epochs, channels, stimNames, t] = tde_selectData(data, [stimNames], [opts])
+% [epochs, channels, stimNames, t] = tde_selectData(data, [opts])
 % 
 % Outputs reduced version of data after following steps:
 %
-% Removes bad epochs and channels with many bad epochs (epochOpts)
-% Removes channels that do not match inclusion criteria (elecOpts)
+% Removes bad epochs and channels with many bad epochs (opts.epoch_)
+% Removes channels that do not match inclusion criteria (opts.elec_)
 % Converts to percent signal change (using baselineTime)
 % Averages across trials (make optional?)
 % Normalizes by max (optional)
@@ -21,16 +21,15 @@ if ~exist('data', 'var') || isempty(data)
 	error('Please provide the data struct outputted by tde_getData.m as input');
 end 
 
-% <stimNames>
-if ~exist('stimNames', 'var') || isempty(stimNames)
-    stimNames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
-                 'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
-                 'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
-end
-
 % <opts>
 if ~exist('opts','var') || isempty(opts)
     opts = struct();
+end
+% <stimnames>
+if ~isfield(opts, 'stimnames') || isempty(opts.stimnames)
+    opts.stimnames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
+                 'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
+                 'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 end
 if ~isfield(opts,'stim_on') || isempty(opts.stim_on)
     opts.stim_on             = [0 0.5]; % time period across which stimulus is presented
@@ -39,13 +38,19 @@ if ~isfield(opts,'baseline_time') || isempty(opts.baseline_time)
     opts.baseline_time       = [-0.2 0]; % time period across which to compute normalization baseline
 end
 if ~isfield(opts,'epoch_outlier_thresh') || isempty(opts.epoch_outlier_thresh)
-    opts.epoch_outlier_thresh= 20; % x-fold max magnitude above which epoch will be labeled as outlier
+    opts.epoch_outlier_thresh = 20; % x-fold max magnitude above which epoch will be labeled as outlier
+end
+if ~isfield(opts,'elec_selection_method') || isempty(opts.elec_selection_method)
+    opts.elec_selection_method = 'thresh'; % thresh, splithalf, meanpredict
 end
 if ~isfield(opts,'elec_max_thresh') || isempty(opts.elec_max_thresh)
-    opts.elec_max_thresh     = 1; % minimum required maximal response in % signal change for electrode inclusion
+    opts.elec_max_thresh = 1; % minimum required maximal response in % signal change for electrode inclusion
 end
 if ~isfield(opts,'elec_mean_thresh') || isempty(opts.elec_mean_thresh)
-    opts.elec_mean_thresh    = 0; % minimum required mean response during stim_on period in % signal change
+    opts.elec_mean_thresh = 0; % minimum required mean response during stim_on period in % signal change
+end
+if ~isfield(opts,'elec_split_thresh') || isempty(opts.elec_split_thresh)
+    opts.elec_split_thresh = []; % minimum required correlation value between split halves of data
 end
 if ~isfield(opts,'elec_exclude_depth') || isempty(opts.elec_exclude_depth)
     opts.elec_exclude_depth  = false; % boolean
@@ -66,13 +71,17 @@ if ~isfield(opts,'sort_channels') || isempty(opts.sort_channels)
     opts.sort_channels      = true;  % boolean
 end
 if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
-    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures', 'dataselection');
+    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures');
 end
 
 %% Initialize
 savePlots   = opts.doplots;
 plotSaveDir = opts.plotsavedir;
-if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir, 'electrodeselection')); mkdir(fullfile(plotSaveDir, 'epochselection')); end
+plotSaveDir_epoch = fullfile(plotSaveDir, 'epochselection');
+plotSaveDir_elecs = fullfile(plotSaveDir, 'electrodeselection');
+
+if ~exist(plotSaveDir_epoch,'dir'); mkdir(plotSaveDir_epoch); end
+if ~exist(plotSaveDir_elecs,'dir'); mkdir(plotSaveDir_elecs); end
 
 allEpochs   = [];
 allChannels = [];
@@ -90,14 +99,15 @@ for ii = 1:length(data) % Loop over subjects
     fprintf('[%s] Selecting data for subject %s \n',mfilename, subject);
           
     % Restrict selection to relevant stimuli only
-    stimsForSelection = contains(events.trial_name, stimNames);
-    epochs = epochs(:, stimsForSelection, :);
-    events = events(stimsForSelection, :);
+    stim_inx = contains(events.trial_name, opts.stimnames);
+    epochs = epochs(:, stim_inx, :);
+    events = events(stim_inx, :);
     
 %% STEP 1 Select epochs
     
     %fprintf('[%s] Removing bad epochs...\n',mfilename);
-    [epochs_selected, outliers, max_epochs] = ecog_selectEpochs(epochs, t, opts.stim_on, opts.epoch_outlier_thresh);
+    [epochs_selected, outliers, max_epochs] = ...
+        ecog_selectEpochs(epochs, t, opts.stim_on, opts.epoch_outlier_thresh);
     
     if savePlots
         for jj = 1:height(channels)
@@ -117,11 +127,12 @@ for ii = 1:length(data) % Loop over subjects
                     ecog_plotSingleTimeCourse(t, epochs(:,outliers_found(kk),jj), [], [], sprintf('epoch %d %s', outliers_found(kk), events.trial_name{outliers_found(kk)}));    
                 end
                 set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-                saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
+                saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
             end
         end
     end
     
+    % Replaces epochs with selected_epochs
     epochs = epochs_selected;
     
 %% STEP 2 Convert to percent signal change 
@@ -139,24 +150,12 @@ for ii = 1:length(data) % Loop over subjects
 %% STEP 3 Select electrodes   
     %fprintf('[%s] Selecting electrodes...\n',mfilename);
     
-    % Compute mean across all trials
-    mean_resp = mean(epochs,2, 'omitnan');
+    [epochs_selected, channels_selected, select_idx] = ...
+        ecog_selectElectrodes(epochs, channels, events, t, opts, plotSaveDir_elecs);
     
-    % Initialize selection to include all channels
-    select_idx = ones(height(channels),3);
-    
-    % Exclude channels based on max and mean:
-    stim_on_idx = t > opts.stim_on(1) & t <= opts.stim_on(2);  
-    select_idx(:,1) = max(mean_resp(stim_on_idx,:),[],1) > opts.elec_max_thresh;
-    select_idx(:,2) = mean(mean_resp(stim_on_idx,:),1) > opts.elec_mean_thresh;
-
-    % Exclude depth electrodes
-    if opts.elec_exclude_depth, select_idx(:,3) = contains(lower(channels.type), 'ecog'); end  
-
-    % Combine criteria
-    select_idx = sum(select_idx,2) == 3;
-
     if savePlots
+        % Compute mean across all trials
+        mean_resp = mean(epochs,2,'omitnan');
         % Compute std deviations for plotting
         llim = (mean_resp - (std(epochs,0,2,'omitnan')));
         ulim = (mean_resp + (std(epochs,0,2,'omitnan')));
@@ -172,7 +171,7 @@ for ii = 1:length(data) % Loop over subjects
             %if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
             set(gcf, 'Position', [150 100 1500 1250]);
         end
-        saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
+        saveas(gcf, fullfile(plotSaveDir_elecs, figureName), 'png'); close;
         % Plot selected channels
         figureName = sprintf('viselec_%s_selected', subject);
         figure('Name', figureName); 
@@ -184,20 +183,20 @@ for ii = 1:length(data) % Loop over subjects
                 set(gcf, 'Position', [150 100 1500 1250]);
             end
         end
-        saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
+        saveas(gcf, fullfile(plotSaveDir_elecs, figureName), 'png'); close;
     end
     
     % Select the channels
-    epochs = epochs(:,:,select_idx);
+    epochs = epochs_selected;
     
     % Update channels table
-    channels = channels(select_idx,:);
+    channels = channels_selected;
     
 %% STEP 4 average across trials, concatenate subjects
     
     % Average trials
     if opts.average_trials
-        [epochs] = average_trials(epochs, events, stimNames);
+        [epochs] = ecog_averageEpochs(epochs, events, opts.stimnames);   
     end
     
     % Concatenate the data across subjects
@@ -214,8 +213,9 @@ end
 
 % Now that we have the selected trials and electrodes from all subjects, 
 % run a few checks, and make decisions on how to further process the data.
-epochs   = allEpochs;
-channels = allChannels;
+epochs    = allEpochs;
+channels  = allChannels;
+stimnames = opts.stimnames;
 
 % Check that all channels have same sample frequency
 assert(length(unique(channels.sampling_frequency))==1);
@@ -249,18 +249,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% SUBROUTINES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Trial averaging
-function [epochs_averaged] = average_trials(epochs, events, stimNames)   
-    
-    % Average across trials within stimulus condition
-    epochs_averaged = nan(size(epochs,1), length(stimNames), size(epochs,3));
-    for ii = 1:length(stimNames)
-        trial_idx = contains(events.trial_name, stimNames{ii});
-        epochs_averaged(:,ii,:) = mean(epochs(:,trial_idx,:),2, 'omitnan');
-    end
-    % Also compute se across trials?
-end
   
 % Data normalization
 function [data] = normalize_data(data)
