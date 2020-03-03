@@ -1,4 +1,4 @@
-function tde_fitPRFs(data, bar_apertures, opt, doPlots, saveDir, resultsStr)
+function [out] = tde_fitPRFs(data, bar_apertures, opt, doPlots, saveDir, resultsStr, plotSaveDir)
 
 % <saveDir> path to save parameters and fits
 %   default: fullfile(analysisRootPath, 'prfs')
@@ -17,16 +17,21 @@ if ~exist('saveDir', 'var'), saveDir = fullfile(analysisRootPath, 'prfs'); end
 % <resultsStr>
 if ~exist('resultsStr', 'var'), resultsStr = 'prfs'; end
 
-
-if doPlots
+% <plotSaveDir>
+if ~exist('plotSaveDir','var') || isempty(plotSaveDir)
     plotSaveDir = fullfile(analysisRootPath, 'figures', 'prfs');
-    if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir));end
 end
+if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir));end
+
+% Resize images to speed up calculations
+bar_apertures = imresize(bar_apertures, [100 100], 'nearest');
 
 tr = 1; % no HRF for ECoG data
 
 % Fit PRF models for each electrode in each subject
 nSubjects = length(data);
+
+out = cell(nSubjects,1);
 
 % Loop over subjects
 for ii = 1:nSubjects
@@ -48,7 +53,10 @@ for ii = 1:nSubjects
             %stimulus = {bar_apertures,bar_apertures,bar_apertures,bar_apertures};
 
             results = analyzePRF(stimulus,data2fit, tr, opt);
-
+            results.channels = channels;
+            results.subject  = subject;
+            out{ii}          = results;
+            
             % Save fits to results directory
             if ~isempty(saveDir)
     
@@ -63,7 +71,7 @@ for ii = 1:nSubjects
                     saveName = sprintf('%s_%s', saveName, datestr(now,30));
                     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
                 end
-                save(saveName, 'channels','data','results','tr','opt','subject');  
+                save(saveName, 'data2fit','results');  
             end
 
             % Make plots of the estimated PRFs and PRF fits

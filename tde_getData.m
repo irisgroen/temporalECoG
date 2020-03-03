@@ -1,11 +1,11 @@
-function [data] = tde_getData(compute, subjects, sessions, tasks, description, epochTime, sampleRate, saveStr, saveDir, dataDir )
+function [data] = tde_getData(compute, subjects, sessions, tasks, description, epochTime, sampleRate, saveStr, saveDir, dataDir)
 
 % Read in ECoG data from visual template matching channels for multiple
 % subjects for a given set of tasks.
 %
 % [data] = tde_getData(compute, [subjects], [sessions], [tasks], ...
 %                      [description], [epochTime], [sampleRate], ...
-%                      [saveStr], [saveDir], [dataDir]
+%                      [saveStr], [saveDir], [dataDir])
 %
 % INPUT (required):
 % - compute : boolean indicating whether to compute or read from disk.
@@ -111,6 +111,8 @@ if ~exist('dataDir', 'var') || isempty(dataDir)
     dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
 end 
 
+if ~exist(saveDir, 'dir'), mkdir(saveDir); end
+
 %% Loop across subjects
 data = cell(length(subjects),1);
 
@@ -123,7 +125,7 @@ for ii = 1 : length(subjects)
     if ~compute
         
         % load from outputDir
-        fileName = fullfile(saveDir, sprintf('%s_%s_visualelecs.mat', subject, saveStr));
+        fileName = fullfile(saveDir, sprintf('%s_%s.mat', subject, saveStr));
         if exist(fileName, 'file')
             data{ii} = load(fileName);
             fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
@@ -159,22 +161,26 @@ for ii = 1 : length(subjects)
         
         
         else
-            % Add visual area names (W and B) ecc, angle, sigma to channels table
+            % Add atlas names Wang and Benson + Benson ecc, angle, sigma to channels table
             [channels] = bair_addVisualAtlasNamesToChannelTable(channels,visualelectrodes);
 
             % Make selection on visual only, index into data + channels
             fprintf('[%s] Step 2: Selecting channels with visual matches \n',mfilename);
-
+            
             chan_idx1 = find(~contains(channels.wangarea, 'none') & contains(channels.status, 'good'));
             chan_idx2 = find(~contains(channels.bensonarea, 'none') & contains(channels.status, 'good'));        
             chan_idx = unique([chan_idx1; chan_idx2]);
 
-            fprintf('[%s] Step 2: Found %d channels with visual matches out of %d ecog channels \n', ...
+            if ~isempty(chan_idx)
+                fprintf('[%s] Step 2: Found %d channels with visual matches out of %d ecog channels \n', ...
                 mfilename, length(chan_idx), length(find(contains(lower(channels.type), {'ecog', 'seeg'}))));
+            else
+                warning('No visual matches found for subject %s!\n', subject);
+                continue
+            end
 
             subdata = subdata(chan_idx,:);
             channels = channels(chan_idx,:);
-
             %% STEP 3: CHECK SAMPLE RATES ANDS SHIFT DATA
 
             fprintf('[%s] Step 3: Checking sample rates...\n',mfilename);
@@ -232,7 +238,11 @@ for ii = 1 : length(subjects)
 
             % Save out the data
             fprintf('[%s] Step 5: Saving data for subject %s to %s \n',mfilename, subject, saveDir);
-            saveName = sprintf('%s_%s_visualelecs.mat', subject, saveStr);
+            if ~isempty(visualelectrodes)
+                saveName = sprintf('sub-%s_%s_visualelecs.mat', subject, saveStr);
+            else
+                saveName = sprintf('sub-%s_%s.mat', subject, saveStr);
+            end
             saveName = fullfile(saveDir, saveName);
             save(saveName,'subject', 'epochs', 't', 'events', 'channels')
 

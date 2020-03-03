@@ -16,7 +16,6 @@ doPlots = true;
 % Load the stimulus apertures
 stimName = fullfile(tdeRootPath, 'prf_apertures', 'bar_apertures.mat');
 load(stimName, 'bar_apertures');
-bar_apertures = imresize(bar_apertures, [100 100], 'nearest');
 
 %% 2: Model fitting
 
@@ -28,14 +27,13 @@ opt.xvalmode   = 0;
 opt.display    = 'off';
 
 doPlots = true;
-tde_fitPRFs(data, bar_apertures, opt, doPlots)
+[results] = tde_fitPRFs(data, bar_apertures, opt, doPlots);
 
-%% 3: Model evaluation? E.g. Summarize R2 across elecs?
+%% 3: Model evaluation? E.g. Summarize R2 within participants?
 
 
-%% 4. Plot timecourse fits and estimated prfs
-% separately for each electrode to facilitate comparison with tde model
-% fits
+%% 4. Plot timecourse fits and estimated prfs - individual elecs
+% to facilitate comparison with tde model fits
 
 
 % Add some summary plots comparing e.g. benson and analyzePRF?

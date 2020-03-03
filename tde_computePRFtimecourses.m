@@ -1,4 +1,4 @@
-function [data] = tde_computePRFtimecourses(data, time_win, normalizeEpochs, doPlots)
+function [data] = tde_computePRFtimecourses(data, time_win, normalizeEpochs, doPlots, plotSaveDir)
 
 % Computes prf timecourses for data to be fitted with analyzePRF
 % [data2fit] = tde_computePRFs(recomputeData, doPlots, saveDir, resultsStr) 
@@ -26,10 +26,11 @@ if ~exist('doPlots','var') || isempty(doPlots)
     doPlots = false; % boolean
 end
 
-if doPlots
+% <plotSaveDir>
+if ~exist('plotSaveDir','var') || isempty(plotSaveDir)
     plotSaveDir = fullfile(analysisRootPath, 'figures', 'prfs');
-    if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir));end
 end
+if ~exist(plotSaveDir, 'dir'); mkdir(fullfile(plotSaveDir));end
 
 % Compute PRF timecourses for each subject
 nSubjects = length(data);
@@ -111,11 +112,12 @@ for ii = 1:nSubjects
             plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
             title(plotTitle);
             axis tight
-            if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
-            %set(gcf, 'Position', [150 100 1500 1250]);
-            set(gcf, 'Position', get(0,'screensize'));
-            set(gca, 'FontSize', 14);
+            %if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
+            set(gca, 'XTickLabel', []);
         end
+        %set(gcf, 'Position', [150 100 1500 1250]);
+        set(gcf, 'Position', get(0,'screensize'));
+        set(findall(gcf,'-property','FontSize'),'FontSize',14)
         saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
         
         % Plot PRF timecourses for each run + average
@@ -133,11 +135,12 @@ for ii = 1:nSubjects
             plot(1:nStim, squeeze(mean(ts(el,:,:),3)), 'k', 'LineWidth', 2); axis tight;
             runNames = [runNames {'average'}];
             title(plotTitle);
-            if el == 1; xlabel('PRF stimulus (#)'); ylabel('Broadband signal change'); end %legend(runNames); 
-            %set(gcf, 'Position', [150 100 1500 1250]);
-            set(gcf, 'Position', get(0,'screensize'));
-            set(gca, 'FontSize', 14);
+            set(gca, 'XTickLabel', []);
+            %if el == 1; xlabel('PRF stimulus (#)'); ylabel('Broadband signal change'); end %legend(runNames); 
         end
+        %set(gcf, 'Position', [150 100 1500 1250]);
+        set(gcf, 'Position', get(0,'screensize'));
+        set(findall(gcf,'-property','FontSize'),'FontSize',14)
         saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;        
     end   
 end
