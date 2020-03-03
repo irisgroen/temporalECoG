@@ -2,15 +2,17 @@
 
 % load or (re)compute the processed data
 reComputeFlag = false; 
-[data] = tde_getData(reComputeFlag);
+[data] = tde_getData(reComputeFlag, 'chaam');
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
 opts.average_elecs        = false;
-opts.elec_max_thresh      = 0.5;
+opts.elec_max_thresh      = 1;
 opts.elec_exclude_depth   = true;
-opts.doplots              = false;
-[data2fit, channels, stimnames, t, srate] = tde_selectData(data, [], opts);
+opts.doplots              = true;
+opts.elec_selection_method = 'splithalf';
+opts.elec_split_thresh = 0.1; % minimum required correlation value between split halves of data
+[data2fit, channels, stimnames, t, srate] = tde_selectData(data, opts);
 
 % plot average response per stimulus for selected data
 tde_plotData(data2fit, channels, t, opts);
