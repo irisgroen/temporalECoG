@@ -56,6 +56,12 @@ stim      = stimtmp(1 : size(stim, 1), :);
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
 
+% See Heeger 1993, eq A9
+if (prm.alpha > 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp)))
+    warning('alpha too big: %4.3f vs %4.3f. Oscillations might arise.\n', prm.alpha, 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp)))
+end
+
+
 % COMPUTE RESPONSE AT EACH TIMEPOINT 
 R(1,:) = max(linrsp(1,:),0).^n;
 G(1,:) = prm.alpha * R(1,:);
