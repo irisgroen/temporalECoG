@@ -7,15 +7,13 @@ function [out] = tde_fitPRFs(data, bar_apertures, opt, doPlots, saveDir, results
 %   default: 'prfs'
 
 % <doPlots>
-if ~exist('doPlots','var') || isempty(doPlots)
-    doPlots = false; % boolean
-end
+if ~exist('doPlots','var') || isempty(doPlots), doPlots = false; end
 
 % <saveDir>
-if ~exist('saveDir', 'var'), saveDir = fullfile(analysisRootPath, 'prfs'); end
+if ~exist('saveDir', 'var') || isempty(doPlots), saveDir = fullfile(analysisRootPath, 'prfs'); end
 
 % <resultsStr>
-if ~exist('resultsStr', 'var'), resultsStr = 'prfs'; end
+if ~exist('resultsStr', 'var') || isempty(resultsStr), resultsStr = 'prffits'; end
 
 % <plotSaveDir>
 if ~exist('plotSaveDir','var') || isempty(plotSaveDir)
@@ -45,14 +43,19 @@ for ii = 1:nSubjects
         if ~isfield(data{ii}, 'ts')
             continue
         else
-            data2fit = mean(data{ii}.ts,3);
-
-            % Define stimulus
+            
             stim_inx = data{ii}.stim_inx;
-            stimulus = bar_apertures(:,:,stim_inx);
-            %stimulus = {bar_apertures,bar_apertures,bar_apertures,bar_apertures};
-
-            results = analyzePRF(stimulus,data2fit, tr, opt);
+            % Define stimulus and data
+            for jj = 1:size(data{ii}.ts,3)
+                data2fit{jj} = data{ii}.ts(:,:,jj);
+                stimulus{jj} = double(bar_apertures(:,:,stim_inx));
+            end
+            
+            %data2fit = mean(data{ii}.ts,3);
+            %stimulus = {bar_apertures};
+            
+            %results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
+            results = analyzePRFdog(stimulus, data2fit, tr, opt);
             results.channels = channels;
             results.subject  = subject;
             out{ii}          = results;
@@ -62,7 +65,7 @@ for ii = 1:nSubjects
     
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
     
-                saveName = sprintf('%s_%s', subject, resultsStr);
+                saveName = sprintf('sub-%s_%s', subject, resultsStr);
                 saveName = fullfile(saveDir, saveName);
                 fprintf('[%s] Saving results to %s \n', mfilename, saveName);
     
@@ -71,7 +74,7 @@ for ii = 1:nSubjects
                     saveName = sprintf('%s_%s', saveName, datestr(now,30));
                     fprintf('[%s] Saving results to %s \n', mfilename, saveName);
                 end
-                save(saveName, 'data2fit','results');  
+                save(saveName, 'data2fit','results', 'stimulus');  
             end
 
             % Make plots of the estimated PRFs and PRF fits
@@ -90,10 +93,10 @@ for ii = 1:nSubjects
                 saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
 
                 % PRFs
-                coloropt = 0;
+                coloropt = 1;
                 figureName = sprintf('%s_prfs', subject);
 
-                ecog_plotPRFs(results, stimulus, channels, [], coloropt)  
+                ecog_plotPRFs(results, stimulus, channels, [], [], coloropt)  
                 set(gcf, 'Position', get(0,'screensize'));
                 set(findall(gcf,'-property','FontSize'),'FontSize',14)
                 saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
