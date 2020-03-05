@@ -1,17 +1,19 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = false; 
-[data] = tde_getData(reComputeFlag, 'chaam');
+reComputeFlag = true; 
+[data] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
 opts = [];
-opts.average_elecs        = false;
-opts.elec_max_thresh      = 1;
-opts.elec_exclude_depth   = true;
-opts.doplots              = true;
-opts.elec_selection_method = 'splithalf';
-opts.elec_split_thresh = 0.1; % minimum required correlation value between split halves of data
+opts.average_elecs             = false;
+opts.elec_max_thresh           = 1;
+opts.elec_exclude_depth        = true;
+opts.doplots                   = true;
+opts.elec_selection_method     = 'meanpredict';
+opts.elec_max_thresh           = 0.5; % minimum required maximal response in % signal change for electrode inclusion
+opts.elec_splithalf_thresh     = 0; % minimum required correlation value between split halves of data
+opts.elec_meanpredict_thresh   = 0;
 [data2fit, channels, stimnames, t, srate] = tde_selectData(data, opts);
 
 % plot average response per stimulus for selected data
