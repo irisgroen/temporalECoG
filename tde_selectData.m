@@ -25,7 +25,6 @@ end
 if ~exist('opts','var') || isempty(opts)
     opts = struct();
 end
-% <stimnames>
 if ~isfield(opts, 'stimnames') || isempty(opts.stimnames)
     opts.stimnames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
                  'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
@@ -80,8 +79,10 @@ plotSaveDir = opts.plotsavedir;
 plotSaveDir_epoch = fullfile(plotSaveDir, 'epochselection');
 plotSaveDir_elecs = fullfile(plotSaveDir, 'electrodeselection');
 
-if ~exist(plotSaveDir_epoch,'dir'); mkdir(plotSaveDir_epoch); end
-if ~exist(plotSaveDir_elecs,'dir'); mkdir(plotSaveDir_elecs); end
+if savePlots
+    if ~exist(plotSaveDir_epoch,'dir'); mkdir(plotSaveDir_epoch); end
+    if ~exist(plotSaveDir_elecs,'dir'); mkdir(plotSaveDir_elecs); end
+end
 
 allEpochs   = [];
 allChannels = [];
