@@ -1,11 +1,10 @@
-function [data] = tde_getData(compute, subjects, sessions, tasks, description, epochTime, sampleRate, saveStr, saveDir, dataDir)
+function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sampleRate, saveStr, saveDir)
 
-% Read in ECoG data from visual template matching channels for multiple
-% subjects for a given set of tasks.
+% Read in ECoG data from <bidsRootPath> for channels that match visual
+% atlases
 %
-% [data] = tde_getData(compute, [subjects], [sessions], [tasks], ...
-%                      [description], [epochTime], [sampleRate], ...
-%                      [saveStr], [saveDir], [dataDir])
+% [data] = tde_getData(compute, [subjects], [sessions], [tasks], [epochTime], ...
+%                               [sampleRate], [saveStr], [saveDir])
 %
 % INPUT (required):
 % - compute : boolean indicating whether to compute or read from disk.
@@ -19,8 +18,6 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, description, e
 % - tasks : cell array of task names to match to the bids field 
 %          task-<taskname> in the input filenames.
 %          default: {'spatialpattern', 'temporalpattern', 'soc'};
-% - description : string to match to the bids field desc-<desc>
-%          in the input filenames. default: 'broadband';
 % - epochTime : [t_start t_stop] array defining the epoch window
 %          default: [-0.2 1];
 % - sampleRate : desired sample rate in Hz for all datasets.
@@ -29,22 +26,21 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, description, e
 %          default: 'tdedata'
 % - saveDir : directory to write data to 
 %          default: fullfile(analysisRootPath, 'data');
-% - dataDir : directory to get data from 
-%          default: fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband')
 %
 % OUTPUT
 % A cell array with for each cell a struct with the following fields:
-% - name
-% - epochs
-% - channels
-% - events
-% - t
+% - subject  (str with subjectname)
+% - epochs_v (time x events x channels matrix with voltage data)
+% - epochs_b (time x events x channels matrix with broadband data)
+% - channels (bids-formatted channel table)
+% - events   (bids-formatted events table)
+% - t        (vector with time points)
 %
 % NOTES
 % - Data should be bids-formatted.
 % - Function will perform the following steps:
 %   STEP 0: Match electrode positions to wang and benson atlases
-%   STEP 1: Read in the datafiles
+%   STEP 1: Read in the time series data: both broadband and voltage
 %   STEP 2: Select channels with a visual match to either of the atlases.
 %   STEP 3: Downsample data (if higher sample rate than SampleRate) and
 %           shift onsets for UMCU patients.
@@ -81,11 +77,6 @@ if ~exist('tasks', 'var') || isempty(tasks)
     tasks = {'spatialpattern', 'temporalpattern', 'soc'}; % TDE 
 end
 
-% <description> 
-if ~exist('description', 'var') || isempty(description)
-    description = 'broadband'; % TDE
-end
-
 % <epochTime>
 if ~exist('epochTime', 'var') || isempty(epochTime)
     epochTime = [-0.2 1];
@@ -104,11 +95,6 @@ end
 % <saveDir>
 if ~exist('saveDir', 'var') || isempty(saveDir)
 	saveDir = fullfile(analysisRootPath, 'data');
-end 
-
-% <dataDir>
-if ~exist('dataDir', 'var') || isempty(dataDir)
-    dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
 end 
 
 if ~exist(saveDir, 'dir'), mkdir(saveDir); end
@@ -151,18 +137,20 @@ for ii = 1 : length(subjects)
         
         if ~isempty(sessions), session = sessions{ii}; else, session = []; end
 
-        [subdata, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], description);
+        % Read in voltage data
+        dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
+        [data_v, ~, ~] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'reref');
+        if isempty(data_v), warning('No voltage data found for subject %s!', subject); end
 
-        if isempty(subdata)
-            
-            % We did not find any data for this subject; move to next one.
-            warning('No data found for subject %s!', subject);
-            continue
-            
+        % Read in broadband data
+        dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
+        [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband');
+        if isempty(data_b), warning('No broadband data found for subject %s!', subject); end
+
         %% STEP 2: SELECT A SUBSET OF CHANNELS 
         
-        
-        else
+        if ~isempty(data_v) && ~isempty(data_b)
+            
             % Add atlas names Wang and Benson + Benson ecc, angle, sigma to channels table
             [channels] = bair_addVisualAtlasNamesToChannelTable(channels,visualelectrodes);
 
@@ -180,16 +168,20 @@ for ii = 1 : length(subjects)
                 warning('No visual matches found for subject %s!\n', subject);
                 continue
             end
-
-            subdata = subdata(chan_idx,:);
+            
+            % Reduce data to selected channels only.
+            data_v = data_v(chan_idx,:);
+            data_b = data_b(chan_idx,:);
             channels = channels(chan_idx,:);
+            
             %% STEP 3: CHECK SAMPLE RATES ANDS SHIFT DATA
 
             fprintf('[%s] Step 3: Checking sample rates...\n',mfilename);
 
             if channels.sampling_frequency(1) ~= sampleRate
                 fprintf('[%s] Step 3: Sample rate does not match requested sample rate. Resampling \n',mfilename);
-                subdata = downsample(subdata', channels.sampling_frequency(1)/sampleRate)';
+                data_v = downsample(data_v', channels.sampling_frequency(1)/sampleRate)';
+                data_b = downsample(data_b', channels.sampling_frequency(1)/sampleRate)';
                 events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/sampleRate));
                 channels.sampling_frequency(:) = sampleRate;
             end
@@ -209,7 +201,8 @@ for ii = 1 : length(subjects)
                 % ELECTRODES SHOULD BE INDICATED AS "BAD" IN THE ELECTRODES FILES
                 if contains(subject,'chaam')
                     chan_idx = find(~contains(channels.name, {'Oc12', 'Oc13', 'Oc21', 'Oc22'}));
-                    subdata = subdata(chan_idx,:);
+                    data_b = data_b(chan_idx,:);
+                    data_v = data_v(chan_idx,:);
                     channels = channels(chan_idx,:);
                 end
             end
@@ -218,10 +211,12 @@ for ii = 1 : length(subjects)
 
             fprintf('[%s] Step 4: Epoching data \n',mfilename);
 
-            [epochs, t] = ecog_makeEpochs(subdata, events.event_sample, epochTime, channels.sampling_frequency(1));  
+            [epochs_v, ~] = ecog_makeEpochs(data_v, events.event_sample, epochTime, channels.sampling_frequency(1));  
+            [epochs_b, t] = ecog_makeEpochs(data_b, events.event_sample, epochTime, channels.sampling_frequency(1));  
+            
 
             fprintf('[%s] Step 4: Found %d epochs across %d runs and %d sessions \n', ...
-                mfilename, size(epochs,2), length(unique(events.run_name)), length(unique(events.session_name)));
+                mfilename, size(epochs_b,2), length(unique(events.run_name)), length(unique(events.session_name)));
 
             %% STEP 5: Save out a single preproc file for each subject 
 
@@ -240,17 +235,14 @@ for ii = 1 : length(subjects)
 
             % Save out the data
             fprintf('[%s] Step 5: Saving data for subject %s to %s \n',mfilename, subject, saveDir);
-            if ~isempty(visualelectrodes)
-                saveName = sprintf('sub-%s_%s_visualelecs.mat', subject, saveStr);
-            else
-                saveName = sprintf('sub-%s_%s.mat', subject, saveStr);
-            end
+            saveName = sprintf('sub-%s_%s.mat', subject, saveStr);
             saveName = fullfile(saveDir, saveName);
-            save(saveName,'subject', 'epochs', 't', 'events', 'channels')
+            save(saveName,'subject', 'epochs_b', 'epochs_v', 't', 'events', 'channels')
 
             % Collect into an output struct
             data{ii}.subject  = subject;
-            data{ii}.epochs   = epochs;
+            data{ii}.epochs_b = epochs_b;
+            data{ii}.epochs_v = epochs_v;
             data{ii}.t        = t;
             data{ii}.events   = events;
             data{ii}.channels = channels;
