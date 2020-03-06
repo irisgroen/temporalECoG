@@ -123,47 +123,51 @@ for ii = 1:length(data) % Loop over subjects
     
     fprintf('[%s] Removing bad epochs...\n',mfilename);
     [~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs, t, opts);
-     
+    %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs, t, opts.stim_on);
+    
     if savePlots
         figureName = sprintf('outlierepochsallchans_sub-%s', subject);
         figure('Name', figureName);hold on
         if any(outlier_idx(:)) 
             subplot(1,2,1); ecog_plotSingleTimeCourse(t, epochs(:,outlier_idx), [], [], 'excluded epochs based on voltage')
+            set(gca, 'FontSize', 14);
         end
         subplot(1,2,2); ecog_plotSingleTimeCourse(t, epochs(:,~outlier_idx), [], [], 'included epochs based on voltage')
         set(gca, 'FontSize', 14);
+        set(gcf, 'Position', [150 100 1400 600]);
+        saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
 
     end
     
-%     if savePlots
-%         for jj = 1:height(channels)
-%             if any(outlier_idx(:,jj))
-%                 figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
-%                 figure('Name', figureName); hold on;
-%                 outliers_found = find(outlier_idx(:,jj));
-%                 nOutliers = length(outliers_found);
-%                 dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
-%                 dim1 = round((nOutliers+1)/2);
-%                 dim2 = round((nOutliers+1)/dim1);
-%                 subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
-%                 histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
-%                 set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
-%                 for kk = 1:nOutliers
-%                     subplot(dim2,dim1,kk+1); 
-%                     ecog_plotSingleTimeCourse(t, epochs(:,outliers_found(kk),jj), [], [], sprintf('epoch %d %s', outliers_found(kk), events.trial_name{outliers_found(kk)}));    
-%                 end
-%                 set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-%                 saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
-%             end
-%         end
-%     end
+    if savePlots
+        for jj = 1:height(channels)
+            if any(outlier_idx(:,jj))
+                figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+                figure('Name', figureName); hold on;
+                outliers_found = find(outlier_idx(:,jj));
+                nOutliers = length(outliers_found);
+                dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
+                dim1 = round((nOutliers+1)/2);
+                dim2 = round((nOutliers+1)/dim1);
+                subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
+                histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
+                set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
+                for kk = 1:nOutliers
+                    subplot(dim2,dim1,kk+1); 
+                    ecog_plotSingleTimeCourse(t, epochs(:,outliers_found(kk),jj), [], [], sprintf('epoch %d %s', outliers_found(kk), events.trial_name{outliers_found(kk)}));    
+                end
+                set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
+                saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
+            end
+        end
+    end
     
     % Mask the broadband epochs to include only the selected epochs.
     epochs = epochs_b;
     epochs(:,outlier_idx) = nan;
     
     %% STEP 2 Convert to percent signal change 
-    %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
+    fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
 %     [~,~,task_idx]= unique(events.task_name);
@@ -175,7 +179,7 @@ for ii = 1:length(data) % Loop over subjects
     channels.units = repmat({'%change'}, [height(channels),1]);
     
     %% STEP 3 Select electrodes   
-    %fprintf('[%s] Selecting electrodes...\n',mfilename);
+    fprintf('[%s] Selecting electrodes...\n',mfilename);
     
     [epochs_selected, channels_selected, select_idx] = ...
         ecog_selectElectrodes(epochs, channels, events, t, opts, plotSaveDir_elecs);
