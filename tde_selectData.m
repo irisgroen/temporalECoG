@@ -36,8 +36,11 @@ end
 if ~isfield(opts,'baseline_time') || isempty(opts.baseline_time)
     opts.baseline_time       = [-0.2 0]; % time period across which to compute normalization baseline
 end
+if ~isfield(opts,'epoch_jump_thresh') || isempty(opts.epoch_jump_thresh)
+    opts.epoch_jump_thresh = 100; % max jump in voltage allowed within stim_on period
+end
 if ~isfield(opts,'epoch_outlier_thresh') || isempty(opts.epoch_outlier_thresh)
-    opts.epoch_outlier_thresh = 20; % x-fold max magnitude above which epoch will be labeled as outlier
+    opts.epoch_outlier_thresh = 99; % percentile for max absolute voltage within stim_on period at which epoch will be labeled as outlier
 end
 if ~isfield(opts,'elec_selection_method') || isempty(opts.elec_selection_method)
     opts.elec_selection_method = 'thresh'; % thresh, splithalf, meanpredict
@@ -50,6 +53,9 @@ if ~isfield(opts,'elec_mean_thresh') || isempty(opts.elec_mean_thresh)
 end
 if ~isfield(opts,'elec_split_thresh') || isempty(opts.elec_split_thresh)
     opts.elec_split_thresh = []; % minimum required correlation value between split halves of data
+end
+if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thresh)
+    opts.elec_meanpredict_thresh = 0; % minimum required correlation value between split halves of data
 end
 if ~isfield(opts,'elec_exclude_depth') || isempty(opts.elec_exclude_depth)
     opts.elec_exclude_depth  = false; % boolean
@@ -79,21 +85,25 @@ plotSaveDir = opts.plotsavedir;
 plotSaveDir_epoch = fullfile(plotSaveDir, 'epochselection');
 plotSaveDir_elecs = fullfile(plotSaveDir, 'electrodeselection');
 
+% Make figure directories if they don't exist
 if savePlots
     if ~exist(plotSaveDir_epoch,'dir'); mkdir(plotSaveDir_epoch); end
     if ~exist(plotSaveDir_elecs,'dir'); mkdir(plotSaveDir_elecs); end
 end
 
-allEpochs   = [];
-allChannels = [];
+% We will use both the voltage and broadband epochs in selection, but will
+% output only the broadband epochs for the subsequent model testing step.
+allEpochs   = []; % To be filled with broadband epochs across all subjects
+allChannels = []; % To be filled with channel info across all subjects
 
-%% Loop over subjects
+%% Select data
 
 for ii = 1:length(data) % Loop over subjects
     
     subject     = data{ii}.subject;
-    epochs      = data{ii}.epochs;
-	t           = data{ii}.t;
+    epochs_b    = data{ii}.epochs_b;
+    epochs_v    = data{ii}.epochs_v;
+    t           = data{ii}.t;
     channels    = data{ii}.channels;
     events      = data{ii}.events;
 
@@ -101,42 +111,58 @@ for ii = 1:length(data) % Loop over subjects
           
     % Restrict selection to relevant stimuli only
     stim_inx = contains(events.trial_name, opts.stimnames);
-    epochs = epochs(:, stim_inx, :);
+    epochs_b = epochs_b(:, stim_inx, :);
+    epochs_v = epochs_v(:, stim_inx, :);
     events = events(stim_inx, :);
     
-%% STEP 1 Select epochs
+    %% STEP 1 Select epochs
     
-    %fprintf('[%s] Removing bad epochs...\n',mfilename);
-    [epochs_selected, outliers, max_epochs] = ...
-        ecog_selectEpochs(epochs, t, opts.stim_on, opts.epoch_outlier_thresh);
+    % Exclude bad epochs based on VOLTAGE 
+    epochs = epochs_v;
+    [epochs] = ecog_normalizeEpochs(epochs, t, opts.baseline_time, 'subtractwithintrial');
     
+    fprintf('[%s] Removing bad epochs...\n',mfilename);
+    [~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs, t, opts);
+     
     if savePlots
-        for jj = 1:height(channels)
-            if any(outliers(:,jj))
-                figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
-                figure('Name', figureName); hold on;
-                outliers_found = find(outliers(:,jj));
-                nOutliers = length(outliers_found);
-                dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
-                %dim1 = round((nOutliers+1)/2);
-                %dim2 = round((nOutliers+1)/dim1);
-                subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
-                histogram(max_epochs(:,jj),100); line([opts.epoch_outlier_thresh opts.epoch_outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
-                set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
-                for kk = 1:nOutliers
-                    subplot(dim2,dim1,kk+1); 
-                    ecog_plotSingleTimeCourse(t, epochs(:,outliers_found(kk),jj), [], [], sprintf('epoch %d %s', outliers_found(kk), events.trial_name{outliers_found(kk)}));    
-                end
-                set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
-                saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
-            end
+        figureName = sprintf('outlierepochsallchans_sub-%s', subject);
+        figure('Name', figureName);hold on
+        if any(outlier_idx(:)) 
+            subplot(1,2,1); ecog_plotSingleTimeCourse(t, epochs(:,outlier_idx), [], [], 'excluded epochs based on voltage')
         end
+        subplot(1,2,2); ecog_plotSingleTimeCourse(t, epochs(:,~outlier_idx), [], [], 'included epochs based on voltage')
+        set(gca, 'FontSize', 14);
+
     end
     
-    % Replaces epochs with selected_epochs
-    epochs = epochs_selected;
+%     if savePlots
+%         for jj = 1:height(channels)
+%             if any(outlier_idx(:,jj))
+%                 figureName = sprintf('outlierepochs_sub-%s_chan-%s', subject, channels.name{jj});
+%                 figure('Name', figureName); hold on;
+%                 outliers_found = find(outlier_idx(:,jj));
+%                 nOutliers = length(outliers_found);
+%                 dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
+%                 dim1 = round((nOutliers+1)/2);
+%                 dim2 = round((nOutliers+1)/dim1);
+%                 subplot(dim2,dim1,1); hold on; title(channels.name{jj}); 
+%                 histogram(max_epochs(:,jj),100); line([outlier_thresh outlier_thresh], get(gca, 'YLim'), 'Color', 'r','LineStyle', ':', 'LineWidth', 2);
+%                 set(gca, 'fontsize', 14); xlabel('max broadband'); ylabel('number of epochs');
+%                 for kk = 1:nOutliers
+%                     subplot(dim2,dim1,kk+1); 
+%                     ecog_plotSingleTimeCourse(t, epochs(:,outliers_found(kk),jj), [], [], sprintf('epoch %d %s', outliers_found(kk), events.trial_name{outliers_found(kk)}));    
+%                 end
+%                 set(gcf, 'Position', [150 100 300*dim1 300*dim2]);
+%                 saveas(gcf, fullfile(plotSaveDir_epoch, figureName), 'png'); close;
+%             end
+%         end
+%     end
     
-%% STEP 2 Convert to percent signal change 
+    % Mask the broadband epochs to include only the selected epochs.
+    epochs = epochs_b;
+    epochs(:,outlier_idx) = nan;
+    
+    %% STEP 2 Convert to percent signal change 
     %fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
 
     % Provide run index to perform separately for each run and session
@@ -148,7 +174,7 @@ for ii = 1:length(data) % Loop over subjects
     [epochs] = ecog_normalizeEpochs(epochs, t, opts.baseline_time, 'percentsignalchange', idx);
     channels.units = repmat({'%change'}, [height(channels),1]);
     
-%% STEP 3 Select electrodes   
+    %% STEP 3 Select electrodes   
     %fprintf('[%s] Selecting electrodes...\n',mfilename);
     
     [epochs_selected, channels_selected, select_idx] = ...
@@ -193,7 +219,7 @@ for ii = 1:length(data) % Loop over subjects
     % Update channels table
     channels = channels_selected;
     
-%% STEP 4 average across trials, concatenate subjects
+    %% STEP 4 average across trials, concatenate subjects
     
     % Average trials
     if opts.average_trials

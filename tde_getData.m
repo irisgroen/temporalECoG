@@ -113,7 +113,7 @@ for ii = 1 : length(subjects)
     if ~compute
         
         % load from outputDir
-        fileName = fullfile(saveDir, sprintf('%s_%s.mat', subject, saveStr));
+        fileName = fullfile(saveDir, sprintf('sub-%s_%s.mat', subject, saveStr));
         if exist(fileName, 'file')
             data{ii} = load(fileName);
             fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
