@@ -139,7 +139,7 @@ if ~isempty(saveDir)
         saveName = sprintf('%s_%s', saveName, datestr(now,30));
         fprintf('[%s] Saving results to %s \n', mfilename, saveName);
     end
-    save(saveName, 'pred', 'params', 'stim', 'data', 'srate', 'options');  
+    save(saveName, 'pred', 'params', 'stim', 'data', 'srate', 'options', 'objFunction');  
 end
 
 fprintf('[%s] Done!\n',mfilename);
