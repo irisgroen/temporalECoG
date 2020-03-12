@@ -1,4 +1,4 @@
-function [epochs, channels, stimnames, t, srate] = tde_selectData(data, opts)
+function [epochs, channels, stimnames, t, srate, opts] = tde_selectData(data, opts)
 
 % Description
 %

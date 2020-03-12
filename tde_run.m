@@ -10,13 +10,13 @@ opts.average_elecs             = true;
 opts.elec_exclude_depth        = true;
 opts.doplots                   = false;
 opts.elec_selection_method     = 'splithalf';
-opts.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5'};
-%opts.stimnames                = {'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6'};
-%opts.stimnames                = {'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
-[data, channels, stimnames, t, srate] = tde_selectData(fulldata, opts);
+%opts.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5'};
+%opts.stimnames                 = {'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6'};
+%opts.stimnames                 = {'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
+[data, channels, stimnames, t, srate, opts] = tde_selectData(fulldata, opts);
 
 % plot average response per stimulus for selected data
-savePlot = 1;
+savePlot = 0;
 tde_plotData(data, channels, t, opts, 1);
 
 % generate stimulus timecourses
@@ -28,7 +28,6 @@ tde_plotData(data, channels, t, opts, 1);
 modelfuns = tde_modelTypes();
 modelfun = modelfuns([1 2]); 
 
-% define model fitting options
 options          = [];
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off
