@@ -25,49 +25,50 @@ function [err, pred] = DNCASCADE(param, data, stim, srate)
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
-x       = []; % a struct of model parameteres
 
 numtimepts  = size(stim,1);
-numstim     = size(stim,2);
 
 normSum = @(x) x./sum(x);
 
 %% SET UP THE MODEL PARAMETERS
 
 fields = {'tau1', 'weight', 'tau2', 'n', 'sigma', 'shift', 'scale'};
-x      = toSetField(x, fields, param);
+prm      = toSetField([], fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
 
 % HERE I ASSUME THAT THE NEGATIVE PART OF THE IMPULSE RESPONSE HAS A TIME
 % CONSTANT 1.5 TIMES THAT OF THE POSITIVE PART OF THE IMPULSE RESPONSE
-if x.tau1 > 0.5, warning('tau1>1, the estimation for other parameters may not be accurate'); end
+if prm.tau1 > 0.5, warning('tau1>1, the estimation for other parameters may not be accurate'); end
     
 t       = (1:numtimepts)' / srate;
 
-irf_pos = gammaPDF(t, x.tau1, 2);
-irf_neg = gammaPDF(t, x.tau1*1.5, 2);
-irf     = irf_pos - x.weight.* irf_neg;
+irf_pos = gammaPDF(t, prm.tau1, 2);
+irf_neg = gammaPDF(t, prm.tau1*1.5, 2);
+irf     = irf_pos - prm.weight.* irf_neg;
 
 %% COMPUTE THE DELAYED REPSONSE FOR THE NORMALIZATION POOL
 
-irf_norm = normSum(exp(-t/x.tau2));
+irf_norm = normSum(exp(-t/prm.tau2));
 
 %% COMPUTE THE NORMALIZATION RESPONSE
 
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(x.shift * srate);
+sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
 
-% COMPUTE LAYER 1 RESPONSE
-rsp1 = dncomputeOneLayer(stim, irf, irf_norm, x);
+ncascades = 4;
 
-% COMPUTE LAYER 2 RESPONSE
-rsp2 = dncomputeOneLayer(rsp1, irf, irf_norm, x);
+rsp = stim;
+for ii = 1:ncascades
+    rsp = dncomputeOneLayer(rsp, irf, irf_norm, prm);
+end
 
-pred = rsp2;
+
+
+pred = rsp;
 
 if isempty(data)
     err = []; 
