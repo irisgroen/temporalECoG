@@ -40,14 +40,19 @@ for ii = 1:size(data,3)
         title(sprintf('%s %s %s %s', ...
             channels.bensonarea{ii}, channels.wangarea{ii}, channels.subject_name{ii}, channels.name{ii})); 
     end
-    %yaxlims = get(gca, 'YLim');
-    %set(gca, 'YLim', [-0.5 ceil(yaxlims(2)+ (0.1 * yaxlims(2)))]);
+    if ii == 1
+        ylabel('x-fold increase in broadband power');
+        xlabel('time (s)');
+    end
+    yaxlims = get(gca, 'YLim');
+    set(gca, 'YLim', [-0.5 ceil(yaxlims(2)+ (0.1 * yaxlims(2)))]);
     %yaxlims = get(gca, 'YLim');
     %line([0 0], [yaxlims(1) yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
     %line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
-    setsubplotaxes()
+    %setsubplotaxes()
     if ii == 1 && opts.average_elecs
-        legend(opts.stimnames);
+        %legend(opts.stimnames);
+        legend({'ISI 0.017s', 'ISI 0.033s', 'ISI 0.067s', 'ISI 0.133s', 'ISI 0.267s', 'ISI 0.533s'});
     end
     set(gca, 'FontSize', FontSz);
     

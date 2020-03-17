@@ -103,12 +103,19 @@ for jj = 1:size(m_all,1)
 
     if ~isempty(se_all)
         se = squeeze(se_all(jj,:,:,:));
-        neg = m-se(:,1,:);
-        pos = se(:,2,:)-m;
-        for ii = 1:numbars
-            x = (1:numgroups) - groupwidth/2 + (2*ii-1) * groupwidth / (2*numbars);  % Aligning error bar with individual bar    
-            errorbar(x, m(:,ii), neg(:,ii), pos(:,ii), 'k', 'LineWidth', 2,  'LineStyle', 'none', 'CapSize', 0);
-        end
+        if nModels > 1
+            neg = m-se(:,1,:);
+            pos = se(:,2,:)-m;
+            for ii = 1:numbars
+                x = (1:numgroups) - groupwidth/2 + (2*ii-1) * groupwidth / (2*numbars);  % Aligning error bar with individual bar    
+                errorbar(x, m(:,ii), neg(:,ii), pos(:,ii), 'k', 'LineWidth', 2,  'LineStyle', 'none', 'CapSize', 0);
+            end
+        else
+            neg = m - se(:,1)';
+            pos = se(:,2)'-m;
+            x = 1:length(m);
+            errorbar(x, m, neg, pos, 'k', 'LineWidth', 2,  'LineStyle', 'none', 'CapSize', 0);
+        end 
     end
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     title(derivedTitles{jj}); xlabel('visual area'); 
@@ -120,7 +127,7 @@ end
 
 % Save plot
 if saveFig
-    figName = sprintf('derivedParams_%s', [modelNames{:}]);
+    figName = sprintf('derivedParams_%s_allmodels', [modelNames{:}]);
     savePlot(figName, saveDir, dataWasAveraged)
 end
 

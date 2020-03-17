@@ -52,7 +52,12 @@ for ii = 1:nDatasets
         for kk = 1:nModels           
             pred = results(kk).pred(:,inx,ii);
             plot(flatten(pred), 'Color', colors{kk}, 'LineWidth', 2);
-            titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), mean(results(kk).R2.concat_cond(jj,ii)));
+            if isfield(results(kk).R2, 'concat_cond')
+                R2val = mean(results(kk).R2.concat_cond(jj,ii));
+            else
+                R2val = mean(results(kk).R2.stim(inx,ii));
+            end
+            titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), R2val);
         end
         
         % add title
