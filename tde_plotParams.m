@@ -93,7 +93,10 @@ for jj = 1:size(m_all,1)
 
     subplot(1,3,jj); hold on
     m = squeeze(m_all(jj,:,:));
-
+    
+    if size(m,2) == 1 % If there's just one area, add a dummy column to make sure bars will still be grouped
+        m=cat(2,m,nan(size(m)))';
+    end
     h = bar(m);
     set(h, 'BarWidth', 1); 
 
