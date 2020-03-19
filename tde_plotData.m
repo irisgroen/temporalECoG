@@ -29,10 +29,9 @@ colors = copper(length(opts.stimnames));
 for ii = 1:size(data,3)
     subplot(nRow,nCol,ii); 
     %plot(t,data(:,:,ii), 'LineWidth', 2); colormap(jet);
-    for ss = 1:size(data,2)
-        ecog_plotSingleTimeCourse(t, data(:,ss,ii), [], colors(ss,:));
-    end
-
+    
+    ecog_plotMultipleTimeCourses(t, data(:,:,ii), [], colors);
+    
     if opts.average_elecs
         title(sprintf('%s (n = %d)', ...
             channels.name{ii}, channels.number_of_elecs{ii})); 
@@ -50,10 +49,10 @@ for ii = 1:size(data,3)
     %line([0 0], [yaxlims(1) yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
     %line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
     %setsubplotaxes()
-    if ii == 1 && opts.average_elecs
+    %if ii == 1 && opts.average_elecs
         %legend(opts.stimnames);
-        legend({'ISI 0.017s', 'ISI 0.033s', 'ISI 0.067s', 'ISI 0.133s', 'ISI 0.267s', 'ISI 0.533s'});
-    end
+        %legend({'ISI 0.017s', 'ISI 0.033s', 'ISI 0.067s', 'ISI 0.133s', 'ISI 0.267s', 'ISI 0.533s'});
+    %end
     set(gca, 'FontSize', FontSz);
     
     if ~opts.average_elecs
