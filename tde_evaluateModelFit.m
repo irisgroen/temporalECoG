@@ -57,19 +57,25 @@ for kk = 1:nModels
         end
         
         fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, R2concat(:,ii))
-    end
+    
 
-    %% COMPUTE DERIVED PARAMETERS 
-    for ii = 1:nDatasets % loop over channels or channel averages
+        %% COMPUTE MODELBASED DERIVED PARAMETERS 
         
         % Generate a prediction to a sustained stimulus:
         [derived_prm, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
 
         derivedPrm(1,ii) = derived_prm.t2pk;
         derivedPrm(2,ii) = derived_prm.r_asymp;
-        derivedPred(:,ii)= pred_derived;
-    end
+        derivedPrm(3,ii) = derived_prm.r_double;
+        derivedPrm(4,ii) = derived_prm.t_isi;
 
+        derivedPred(:,ii)= pred_derived;
+    
+    
+        %% COMPUTE DATABASED DERIVED PARAMETERS
+    
+    end
+    
     %% COLLECT RESULTS
     results(kk).model           = objFunction{kk};
 	results(kk).params          = params{kk};
