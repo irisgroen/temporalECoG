@@ -10,11 +10,11 @@ end
 fprintf('[%s] Plotting selected data ... \n',mfilename);
 
 if opts.average_elecs
-    figureName = sprintf('selecteddata_electrodeaverages_%s', opts.stimnames{1}(1:end-2));
+    figureName = sprintf('selecteddata_electrodeaverages');
     FontSz = 20;
     FigSz = [400 200 2000 1200];
 else
-    figureName = sprintf('selecteddata_individualelecs_%s', opts.stimnames{1}(1:end-2));
+    figureName = sprintf('selecteddata_individualelecs');
     FontSz = 12;
     FigSz = get(0, 'Screensize');
 end
