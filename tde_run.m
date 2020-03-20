@@ -10,7 +10,7 @@ opts.average_elecs             = true;
 opts.elec_exclude_depth        = true;
 opts.doplots                   = false;
 opts.elec_selection_method     = 'splithalf';
-opts.areanames                 = 'V1';
+%opts.areanames                 = 'V1';
 %opts.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5'};
 %opts.stimnames                 = {'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6'};
 %opts.stimnames                 = {'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
@@ -81,12 +81,10 @@ tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
 
 saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
-saveDir = [];
 tde_plotParams(results, channels, saveDir);
 
 
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
-saveDir = [];
-tde_plotDerivedPredictions(results,channels,1,1, saveDir);
+tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 
 
