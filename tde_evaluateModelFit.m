@@ -1,19 +1,19 @@
-function [results] = tde_evaluateModelFit(data, objFunction, params, pred, stimcond)
+function [results] = tde_evaluateModelFit(data, objFunction, params, pred, stim_info)
 
 % Inputs: cell arrays with objFunction, params, data, pred
 if ~iscell(objFunction), objFunction = {objFunction}; end
 if ~iscell(params), params = {params}; end
 if ~iscell(pred), pred = {pred}; end
-if ~exist('stimcond','var'), stimcond = []; end
 
 nModels     = size(objFunction,2);
 [~,nStim,nDatasets] = size(data);
+stimcond    = stim_info.condition;
 
 % initialize
 R2stim      = nan(nStim,nDatasets);
 R2concat    = nan(1,nDatasets);
-if ~isempty(stimcond), R2cond = nan(length(unique(stimcond)), nDatasets); end
-    
+R2cond      = nan(length(unique(stimcond)), nDatasets); 
+
 derivedPrm  = nan(2,nDatasets);
 derivedPred = [];
 
@@ -45,14 +45,12 @@ for kk = 1:nModels
         R2concat(:,ii) = computeR2(DATA,MODEL);
         
         % For specific conditions
-        if exist('R2cond', 'var')
-            cond = unique(stimcond); nCond = length(cond);
-            for jj = 1:nCond
-                condInx = find(stimcond == cond(jj));
-                DATA = flatten(data(:,condInx,ii));
-                MODEL = flatten(pred{kk}(:,condInx,ii));
-                R2cond(jj,ii) = computeR2(DATA,MODEL);
-            end
+        cond = unique(stimcond); nCond = length(cond);
+        for jj = 1:nCond
+            condInx = find(stimcond == cond(jj));
+            DATA = flatten(data(:,condInx,ii));
+            MODEL = flatten(pred{kk}(:,condInx,ii));
+            R2cond(jj,ii) = computeR2(DATA,MODEL);
         end
         
         fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
@@ -79,7 +77,7 @@ for kk = 1:nModels
     results(kk).pred            = pred{kk};
     results(kk).R2.stim         = R2stim;
     results(kk).R2.concat_all   = R2concat;
-    if exist('R2cond', 'var'), results(kk).R2.concat_cond = R2cond; end
+    results(kk).R2.concat_cond  = R2cond; 
     results(kk).derived.names   = {'T2peak', 'Rasymptote', 'Rdouble', 'Tisi'};
     results(kk).derived.params  = derivedPrm;
     results(kk).derived.pred    = derivedPred;

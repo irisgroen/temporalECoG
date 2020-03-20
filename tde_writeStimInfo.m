@@ -23,7 +23,9 @@ name = {'CRF-1', ...
         'TWOPULSE-4', ...
         'TWOPULSE-5', ...
         'TWOPULSE-6'}';
-         
+
+condition = [1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3]';
+
 duration = [0.5, ...
             0.5, ...
             0.5, ...
@@ -78,7 +80,7 @@ contrast = [0.0625, ...
             1, ...
             1]';            
 
-T = table(name, duration, ISI, contrast);            
+T = table(name, condition, duration, ISI, contrast);            
 
 if addComputedContrast    
     % make this subject specific so we can make different contrast
@@ -96,7 +98,7 @@ if addComputedContrast
     end
     contrast_rms = round(contrast_rms,3);
     contrast_peak2peak = round(contrast_peak2peak,3);
-    T = table(name, duration, ISI, contrast, contrast_rms, contrast_peak2peak);            
+    T = addvars(T, contrast_rms, contrast_peak2peak);
 end
         
 writetable(T, stimInfo_fname, 'Delimiter','\t', 'FileType', 'text');
