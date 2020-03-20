@@ -20,13 +20,18 @@ derivedPrm.r_asymp = pred(end)/max(pred);
 
 T = 3;
 stim = zeros(T*1000,2);
-stim(1 : 100,1) = 1;
-stim(1 : 200,2) = 1;
+stim(1:20,1) = 1;
+stim(1:40,2) = 1;
 
 [~, pred] = objFunction(prm, [], stim, srate);
 rsp = sum(pred, 1);
 derivedPrm.r_double = rsp(2)/(2*rsp(1));
 
+% % debug
+% figure;plot(stim, 'LineWidth', 2)
+% %hold on; plot(pred./max(pred), 'LineWidth', 2)
+% hold on; plot(pred, 'LineWidth', 2)
+% %ylim([-1 2])
 %% Compute derived parameter Tisi
 
 T = 5;
@@ -40,9 +45,6 @@ thresh = 2-1/exp(1);
 linpred = sum(pred,1);
 
 % compute t_isi
-
- %options = optimoptions(@ga, 'Display', 'off');
- 
 options = gaoptimset('Display', 'off');
     
 [t_isi, ~, exitFlg] = ga(@(x) fit_t_isi(x, prm, thresh, stim, objFunction, srate, linpred), ...
@@ -50,6 +52,25 @@ options = gaoptimset('Display', 'off');
 if exitFlg == 0, t_isi = nan; end
 
 derivedPrm.t_isi = t_isi;
+
+% % debug
+% figure;
+% subplot(2,1,1);hold on
+% plot(stim, 'LineWidth', 2)
+% plot(pred, 'LineWidth', 2)
+% set(gca, 'Xlim', [0 1000]);
+% stim_on  = find(stim == 1);
+% stim_lth = length(stim_on);
+% stim_end = stim_on(end);
+% pulse2_st  = stim_end + t_isi + 1;
+% pulse2_end = stim_end + t_isi + 1 + stim_lth;
+% stim2 = stim;
+% stim2(pulse2_st : pulse2_end) = 1;
+% [~, pred2] = objFunction(prm, [], stim2, srate);
+% subplot(2,1,2);hold on
+% plot(stim2, 'LineWidth', 2)
+% plot(pred2, 'LineWidth', 2)
+% set(gca, 'Xlim', [0 1000]);
 
 end
 
@@ -78,8 +99,8 @@ residual = abs(linpred * thresh - rsp);
 
 %%
 % figure(1), clf
-% plot(linPrd*thresh, 'ro'), hold on
-% plot(rsp, 'bo'), ylim([0, 0.4]), drawnow
+% plot(linpred*thresh, 'ro'), hold on
+% plot(rsp, 'bo'), drawnow
 
 end
 
