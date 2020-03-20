@@ -89,7 +89,7 @@ for ii = 1:nDatasets % loop over channels or channel averages
 
     dset = data(:,:,ii);
     
-    fprintf('[%s] Fitting model for dataset %d \n',mfilename, ii);
+    fprintf('[%s] Fitting model for dataset %d our of %d datasets\n',mfilename, ii, nDatasets);
        
     for jj = 1:nFolds
         

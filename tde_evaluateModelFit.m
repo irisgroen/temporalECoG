@@ -7,9 +7,7 @@ if ~iscell(pred), pred = {pred}; end
 if ~exist('stimcond','var'), stimcond = []; end
 
 nModels     = size(objFunction,2);
-nSamp       = size(data,1);
-nStim       = size(data,2);
-nDatasets   = size(data,3);
+[~,nStim,nDatasets] = size(data);
 
 % initialize
 R2stim      = nan(nStim,nDatasets);
@@ -24,7 +22,8 @@ results = struct;
 
 % Loop over models
 for kk = 1:nModels
-    fprintf('[%s] Evaluating model %s\n', mfilename, func2str(objFunction{kk}))
+    
+    fprintf('[%s] Evaluating model %s for %d datasets\n', mfilename, func2str(objFunction{kk}), nDatasets)
     
     % Loop over channels or channel averages
     for ii = 1:nDatasets
@@ -56,11 +55,12 @@ for kk = 1:nModels
             end
         end
         
-        fprintf('[%s] R2 for concatenated data = %0.2f \n', mfilename, R2concat(:,ii))
+        fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
     
 
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
-        
+        fprintf('[%s] Computing derived parameters...\n', mfilename)
+
         % Generate a prediction to a sustained stimulus:
         [derived_prm, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
 
@@ -70,10 +70,7 @@ for kk = 1:nModels
         derivedPrm(4,ii) = derived_prm.t_isi;
 
         derivedPred(:,ii)= pred_derived;
-    
-    
-        %% COMPUTE DATABASED DERIVED PARAMETERS
-    
+      
     end
     
     %% COLLECT RESULTS
@@ -83,9 +80,10 @@ for kk = 1:nModels
     results(kk).R2.stim         = R2stim;
     results(kk).R2.concat_all   = R2concat;
     if exist('R2cond', 'var'), results(kk).R2.concat_cond = R2cond; end
+    results(kk).derived.names   = {'T2peak', 'Rasymptote', 'Rdouble', 'Tisi'};
     results(kk).derived.params  = derivedPrm;
     results(kk).derived.pred    = derivedPred;
 end
-
+fprintf('[%s] Done!\n', mfilename)
 end
 
