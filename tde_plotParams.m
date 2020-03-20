@@ -29,7 +29,7 @@ if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 %% Plot derived parameters
 
 % Separate figure for each model:
-derivedTitles = {'explained variance', 'time2peak', 'Rasymp'};
+derivedTitles = [{'R2 concatenated'} results.derived.names];
 m_all = [];
 se_all = [];
 
@@ -39,7 +39,7 @@ for kk = 1:nModels
     set(gcf, 'Position', [400 800 2000 600]);
     
     % Plot explained variance
-    subplot(1,3,1); hold on
+    subplot(2,3,1); hold on
     if ~dataWasAveraged
         [m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
         for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
@@ -57,8 +57,9 @@ for kk = 1:nModels
     title(derivedTitles{1}); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
 
     % Plot derived parameters
-    for p = 1:2
-        subplot(1,3,p+1); hold on
+    subplotinx = [2 3 5 6];
+    for p = 1:4
+        subplot(2,3,subplotinx(p)); hold on
         if ~dataWasAveraged
             [m, se, dat] = averageAcrossAreas(results(kk).derived.params(p,:), INX);
             for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
@@ -70,7 +71,11 @@ for kk = 1:nModels
             plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-        if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
+        %if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
+        if p == 1, set(gca, 'Ylim',[0 0.2]); end
+        if p == 2, set(gca, 'Ylim',[0 1]); end
+        if p == 3, set(gca, 'Ylim',[0.5 1]); end
+        if p == 4, set(gca, 'Ylim',[0 250]); end
         title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
         m_all(p+1,:,kk) = squeeze(m);
     end   
@@ -91,7 +96,7 @@ set(gcf, 'Position', [400 800 2000 600]);
 
 for jj = 1:size(m_all,1)
 
-    subplot(1,3,jj); hold on
+    subplot(1,5,jj); hold on
     m = squeeze(m_all(jj,:,:));
     
     if size(m,2) == 1 % If there's just one area, add a dummy column to make sure bars will still be grouped
@@ -123,8 +128,10 @@ for jj = 1:size(m_all,1)
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     title(derivedTitles{jj}); xlabel('visual area'); 
     if jj == 1, legend(modelNames); set(gca, 'Ylim', [0 1]); end
-    if jj == 2, set(gca, 'Ylim', [0 0.2]); end
-    if jj == 3, set(gca, 'Ylim', [0 1]); end
+    if jj == 2, set(gca, 'Ylim',[0 0.2]); end
+    if jj == 3, set(gca, 'Ylim',[0 1]); end
+    if jj == 4, set(gca, 'Ylim',[0.5 1]); end
+	if jj == 5, set(gca, 'Ylim',[0 250]); end
     set(gca, 'fontsize', 16);
 end
 
