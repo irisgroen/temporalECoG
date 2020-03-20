@@ -1,4 +1,4 @@
-function [results] = tde_plotFittedAndDerivedParams(results, channels, saveDir)
+function [results] = tde_plotParams(results, channels, saveDir)
 
 if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 
@@ -29,14 +29,14 @@ if ~isempty(saveDir), saveFig = true; else, saveFig = false; end
 %% Plot derived parameters
 
 % Separate figure for each model:
-derivedTitles = [{'R2 concatenated'} results.derived.names];
+derivedTitles = [{'R2 concatenated'} results(1).derived.names];
 m_all = [];
 se_all = [];
 
 for kk = 1:nModels
     
     figure('Name', sprintf('Derived parameters %s', modelNames{kk})); hold on
-    set(gcf, 'Position', [400 800 2000 600]);
+    set(gcf, 'Position', [400 200 2000 1200]);
     
     % Plot explained variance
     subplot(2,3,1); hold on
