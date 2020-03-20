@@ -1,17 +1,20 @@
-function [params] = tde_computeDerivedParamsData(data,channels,t,stiminfo)
+function [params] = tde_computeDerivedParamsData(data,channels,t,shift,stim_info)
 
-load('/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results/DN_xvalmode0_20200312T134253.mat')
-[nSamp,nStim,nDatasets] = size(data);
+%load('/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG/results/DN_xvalmode0_20200312T134253.mat')
 
+[~,~,nDatasets] = size(data);
 
-stim_idx = contains(stim_info.name, {'ONEPULSE-4', 'TWOPULSE'});
-%shift = 0.05; % get this from fits?
-shift = params(6,:);
+stim_idx = find(contains(stim_info.name, {'ONEPULSE-4', 'TWOPULSE'}));
+nStim = length(stim_idx);
 stimdur = unique(stim_info.duration(stim_idx));
 stimISI = stim_info.ISI(stim_idx);
 
+%shift = ones(nDatasets,1)*0.05;
+
 pulse1_summed = [];
 pulse2_summed = [];
+
+
 for ii = 1:nDatasets
     
     pulse1_tidx = t > shift(ii) & t < shift(ii) + stimdur;
@@ -22,6 +25,12 @@ for ii = 1:nDatasets
     data_tmp2 = data;
     data_tmp2(~pulse2_tidx,:,:) = nan;
     
+   
+end
+
+% plots
+for ii = 1:nDatasets
+
     figure('Name', channels.name{ii}, 'Position',  [360    61   816   637]);
     subplot(2,2,1);
     h = plot(t,data(:,stim_idx,ii), 'LineWidth',2);
@@ -31,7 +40,7 @@ for ii = 1:nDatasets
     xlabel('Time (s)');
 
     subplot(2,2,2);
-    plot(t,data_tmp1(:,stim_idx,ii), 'LineWidth',2);
+    h = plot(t,data_tmp1(:,stim_idx,ii), 'LineWidth',2);
     set(h, {'color'}, num2cell(copper(length(stimISI)), 2));
     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
     xlim([t(1) t(end)]);
@@ -39,7 +48,7 @@ for ii = 1:nDatasets
     xlabel('Time (s)');
 
     subplot(2,2,3);   
-    plot(t,data_tmp2(:,stim_idx,ii), 'LineWidth',2);
+    h = plot(t,data_tmp2(:,stim_idx,ii), 'LineWidth',2);
     set(h, {'color'}, num2cell(copper(length(stimISI)), 2));
     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
     xlim([t(1) t(end)]);
@@ -54,17 +63,19 @@ for ii = 1:nDatasets
     title('summed response to second pulse');
     xlabel('ISI');
     xlim([stimISI(1)-0.1 stimISI(end)+0.1]);
-    legend({'first pulse', 'second pulse'})
+    legend({'first pulse', 'second pulse'}, 'Location', 'SouthEast')
+
 end
-    
+
 figure; hold on;
 h1 = scatter(ones(nDatasets,1)*-0.02,pulse1_summed, 150, parula(nDatasets),'filled');
 set(get(get(h1,'Annotation'),'LegendInformation'),'IconDisplayStyle','off'); 
 h = plot(stimISI,pulse2_summed, '-o','LineWidth',2, 'MarkerSize', 10);
 xlabel('ISI');
-ylabel('summed response to second pulse');
+ylabel('summed response');
 set(h, {'color'}, num2cell(parula(nDatasets), 2));
 xlim([stimISI(1)-0.1 stimISI(end)+0.1]);
 legend(channels.name);
+title('recovery with ISI - all areas');
 
 end

@@ -17,23 +17,25 @@ opts.elec_selection_method     = 'splithalf';
 [data, channels, stimnames, t, srate, opts] = tde_selectData(fulldata, opts);
 
 % plot average response per stimulus for selected data
-savePlot = 0;
-tde_plotData(data, channels, t, opts, savePlot);
+savePlot = 1; 
+saveStr = [];%'CRF';
+tde_plotData(data, channels, t, opts, savePlot, saveStr);
 
 % generate stimulus timecourses
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(opts.stimnames,t);
 
 %% 2. Model fitting
 
-% define model(s)3
+% Define model(s)
 modelfuns = tde_modelTypes();
 modelfun = modelfuns([1 2]); 
 
+% Define options
 options          = [];
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off
 
-% define saveDir (optional)
+% Define saveDir (optional)
 saveDir  = fullfile(analysisRootPath, 'results');
 
 % Fit model(s)
@@ -42,49 +44,42 @@ for ii = 1:size(modelfun,2)
     [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, data, srate, options, saveDir);
 end
 
-%% Or, load saved fits from disk
-
-% define model(s)
-modelfuns = tde_modelTypes();
-modelfun = modelfuns([1]); 
-
-% define model fitting options
-options          = [];
-options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-
-% load in fits
-params = []; pred = [];
-for ii = 1:size(modelfun,2)
-    if opts.average_elecs
-        name = 'electrodeaverages';
-    else
-        name = 'individualelecs';
-    end
-	a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d_%s.mat', func2str(modelfun{ii}), options.xvalmode, name)));
-    params{ii} = a.params;
-    pred{ii} = a.pred;
-end
+% %% Or, load saved fits from disk
+% 
+% % Define model(s)
+% modelfuns = tde_modelTypes();
+% modelfun  = modelfuns([1 2]); 
+% xvalmode  = 0;
+% 
+% [params, pred] = tde_loadSavedModelFit(modelfun, xvalmode, opts);
 
 %% 3. Model evaluation
 
 % Compute R2 and derived parameters
-group_inx = [1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3];
-%group_inx = [1 1 1 1 1];
-[results] = tde_evaluateModelFit(data, modelfun, params, pred, group_inx);
+[results] = tde_evaluateModelFit(data, modelfun, params, pred, stim_info);
 
 %% 4. Plot timecourses and fits
 
 % Provide a directory so save figures (optional)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
-saveDir = [];
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
+%% 5. Plot derived and fitted parameters
 
+% model parameters
 saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
 tde_plotParams(results, channels, saveDir);
 
-
+% model predictions (derived)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
-tde_plotDerivedPredictions(results,channels,2,1, saveDir);
+tde_plotDerivedPredictions(results,channels,2,0, saveDir);
 
+
+%% UNDER DEVELOPMENT
+
+% data params 
+%saveDir = fullfile(analysisRootPath, 'figures', 'data');
+close all;
+shift = params{1}(6,:);
+tde_computeDerivedParamsData(data,channels,t,shift,stim_info);
 
