@@ -10,14 +10,14 @@ opts.average_elecs             = true;
 opts.elec_exclude_depth        = true;
 opts.doplots                   = false;
 opts.elec_selection_method     = 'splithalf';
-%opts.areanames                 = 'V1';
+opts.areanames                 = 'V1';
 %opts.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5'};
 %opts.stimnames                 = {'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6'};
 %opts.stimnames                 = {'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 [data, channels, stimnames, t, srate, opts] = tde_selectData(fulldata, opts);
 
 % plot average response per stimulus for selected data
-savePlot = 1; 
+savePlot = 0; 
 saveStr = [];%'CRF';
 tde_plotData(data, channels, t, opts, savePlot, saveStr);
 
@@ -79,7 +79,7 @@ tde_plotDerivedPredictions(results,channels,2,0, saveDir);
 
 % data params 
 %saveDir = fullfile(analysisRootPath, 'figures', 'data');
-close all;
+%close all;
 shift = params{1}(6,:);
 tde_computeDerivedParamsData(data,channels,t,shift,stim_info);
 
