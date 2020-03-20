@@ -1,7 +1,11 @@
-function tde_plotData(data, channels, t, opts, savePlot)
+function tde_plotData(data, channels, t, opts, savePlot, saveStr)
 
 % Data should be time x trials x channels
 
+
+if ~exist('saveStr', 'var') || isempty(saveStr)
+    saveStr = '';
+end
 if ~exist('savePlot', 'var') || isempty(savePlot)
     savePlot = 0;
 end
@@ -10,11 +14,11 @@ end
 fprintf('[%s] Plotting selected data ... \n',mfilename);
 
 if opts.average_elecs
-    figureName = sprintf('selecteddata_electrodeaverages');
+    figureName = sprintf('selecteddata_electrodeaverages%s', saveStr);
     FontSz = 20;
     FigSz = [400 200 2000 1200];
 else
-    figureName = sprintf('selecteddata_individualelecs');
+    figureName = sprintf('selecteddata_individualelecs%s', saveStr);
     FontSz = 12;
     FigSz = get(0, 'Screensize');
 end
