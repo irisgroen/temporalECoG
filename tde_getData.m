@@ -19,7 +19,7 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sam
 %          task-<taskname> in the input filenames.
 %          default: {'spatialpattern', 'temporalpattern', 'soc'};
 % - epochTime : [t_start t_stop] array defining the epoch window
-%          default: [-0.2 1];
+%          default: [-0.2 1.2];
 % - sampleRate : desired sample rate in Hz for all datasets.
 %          Datasets with rates will be downsampled. default: 512            
 % - saveStr : string to be added to filename for saved out data
@@ -79,7 +79,7 @@ end
 
 % <epochTime>
 if ~exist('epochTime', 'var') || isempty(epochTime)
-    epochTime = [-0.2 1];
+    epochTime = [-0.2 1.2];
 end
 
 % <sampleRate>
