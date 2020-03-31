@@ -20,12 +20,11 @@ for ii = 1:nDatasets
          else
              isi = stimISI(ss);
          end
-%          if ss > 4
-%              isi = stimISI(4);
-%          else
-%              isi = stimISI(ss);
-%          end
-        pulse1_tidx = t > 0 & t < shift(ii) + stimdur + isi;
+         if ss < 5
+            pulse1_tidx = t > 0 & t < shift(ii) + stimdur + isi;
+         else
+            pulse1_tidx = t > 0 & t < shift(ii) + stimdur + isi;
+         end
         pulse2_tidx = t > shift(ii) + stimdur + isi & t < shift(ii) + stimdur + isi + stimdur + 0.3;% shift(ii);        
         data_pulse1(~pulse1_tidx,ss,ii) = nan;
         data_pulse2(~pulse2_tidx,ss,ii) = nan;
