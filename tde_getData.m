@@ -180,8 +180,10 @@ for ii = 1 : length(subjects)
 
             if channels.sampling_frequency(1) ~= sampleRate
                 fprintf('[%s] Step 3: Sample rate does not match requested sample rate. Resampling \n',mfilename);
-                data_v = downsample(data_v', channels.sampling_frequency(1)/sampleRate)';
-                data_b = downsample(data_b', channels.sampling_frequency(1)/sampleRate)';
+                %data_v = downsample(data_v', channels.sampling_frequency(1)/sampleRate)';
+                %data_b = downsample(data_b', channels.sampling_frequency(1)/sampleRate)';
+                data_v = resample(data_v', 1, channels.sampling_frequency(1)/sampleRate)';
+                data_b = resample(data_b', 1, channels.sampling_frequency(1)/sampleRate)';
                 events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/sampleRate));
                 channels.sampling_frequency(:) = sampleRate;
             end
