@@ -75,7 +75,7 @@ for kk = 1:nModels
         if p == 1, set(gca, 'Ylim',[0 0.2]); end
         if p == 2, set(gca, 'Ylim',[0 1]); end
         if p == 3, set(gca, 'Ylim',[0.5 1]); end
-        if p == 4, set(gca, 'Ylim',[0 250]); end
+        if p == 4, set(gca, 'Ylim',[0 1]); end
         title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
         m_all(p+1,:,kk) = squeeze(m);
     end   
@@ -131,7 +131,7 @@ for jj = 1:size(m_all,1)
     if jj == 2, set(gca, 'Ylim',[0 0.2]); end
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
-	if jj == 5, set(gca, 'Ylim',[0 250]); end
+	if jj == 5, set(gca, 'Ylim',[0 1]); end
     set(gca, 'fontsize', 16);
 end
 
