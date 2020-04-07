@@ -71,46 +71,46 @@ isi_samples_part = (pulse2_st(stim_inx_part(1)) - t_on);
 t_isi = isi_samples_full/srate;
 derivedPrm.t_isi = t_isi;
 
-% % % debug
-% figure('Position', [ 354    20   803   540]);%clf
-% subplot(2,2,1);hold on
-% plot(stim, 'LineWidth', 2)
-% plot(pred, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('onepulse 100 ms');
-% 
-% subplot(2,2,2);hold on
-% plot(resp_diff_full, 'LineWidth',2, 'Color','k');
-% plot(stim_inx_full(1),resp_diff_full(stim_inx_full(1)), 'bo', 'LineWidth', 2, 'MarkerSize', 10);
-% plot(stim_inx_part(1),resp_diff_full(stim_inx_part(1)), 'co', 'LineWidth', 2, 'MarkerSize', 10);
-% legend({'difference', '100%', '90%'}, 'Location', 'SouthEast');
-% title('twopulse-(onepulse+thresh*onepulse)');
-% set(gca, 'Xlim', [0 2000]);
-% 
-% stim_on  = find(stim == 1);
-% stim_lth = length(stim_on);
-% stim_end = stim_on(end);
-% subplot(2,2,3);hold on
-% pulse2_st  = stim_end + isi_samples_part + 1;
-% pulse2_end = stim_end + isi_samples_part + 1 + stim_lth;
-% stim2 = stim;
-% stim2(pulse2_st : pulse2_end) = 1;
-% [~, pred2] = objFunction(prm, [], stim2, srate);
-% plot(stim2, 'LineWidth', 2)
-% plot(pred2, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('90% recovery');
-% 
-% subplot(2,2,4);hold on
-% pulse2_st  = stim_end + isi_samples_full + 1;
-% pulse2_end = stim_end + isi_samples_full + 1 + stim_lth;
-% stim2 = stim;
-% stim2(pulse2_st : pulse2_end) = 1;
-% [~, pred2] = objFunction(prm, [], stim2, srate);
-% plot(stim2, 'LineWidth', 2)
-% plot(pred2, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('100% recovery');
+% % debug
+figure('Position', [ 354    20   803   540]);%clf
+subplot(2,2,1);hold on
+plot(stim, 'LineWidth', 2)
+plot(pred, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('onepulse 100 ms');
+
+subplot(2,2,2);hold on
+plot(resp_diff_full, 'LineWidth',2, 'Color','k');
+plot(stim_inx_full(1),resp_diff_full(stim_inx_full(1)), 'bo', 'LineWidth', 2, 'MarkerSize', 10);
+plot(stim_inx_part(1),resp_diff_full(stim_inx_part(1)), 'co', 'LineWidth', 2, 'MarkerSize', 10);
+legend({'difference', '100%', '90%'}, 'Location', 'SouthEast');
+title('twopulse-(onepulse+thresh*onepulse)');
+set(gca, 'Xlim', [0 2000]);
+
+stim_on  = find(stim == 1);
+stim_lth = length(stim_on);
+stim_end = stim_on(end);
+subplot(2,2,3);hold on
+pulse2_st  = stim_end + isi_samples_part + 1;
+pulse2_end = stim_end + isi_samples_part + 1 + stim_lth;
+stim2 = stim;
+stim2(pulse2_st : pulse2_end) = 1;
+[~, pred2] = objFunction(prm, [], stim2, srate);
+plot(stim2, 'LineWidth', 2)
+plot(pred2, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('90% recovery');
+
+subplot(2,2,4);hold on
+pulse2_st  = stim_end + isi_samples_full + 1;
+pulse2_end = stim_end + isi_samples_full + 1 + stim_lth;
+stim2 = stim;
+stim2(pulse2_st : pulse2_end) = 1;
+[~, pred2] = objFunction(prm, [], stim2, srate);
+plot(stim2, 'LineWidth', 2)
+plot(pred2, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('100% recovery');
 
 end
 

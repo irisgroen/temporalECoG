@@ -1,57 +1,46 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = true; 
+reComputeFlag = false; 
 [fulldata] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
-opts = [];
-opts.average_elecs             = true;
-opts.elec_exclude_depth        = true;
-opts.doplots                   = false;
-opts.elec_selection_method     = 'splithalf';
-%opts.areanames                 = 'V1';
-%opts.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5'};
-%opts.stimnames                 = {'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6'};
-%opts.stimnames                 = {'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
-[data, channels, stimnames, t, srate, opts] = tde_selectData(fulldata, opts);
+options = [];
+options.average_elecs             = true;
+options.elec_exclude_depth        = true;
+options.doplots                   = false;
+options.elec_selection_method     = 'splithalf';
+%opts.areanames                   = 'V1';
+%opts.stimnames                   = {'CRF-1','CRF-2', 'CRF-3','CRF-4','CRF-5'}; %{'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4','ONEPULSE-5','ONEPULSE-6'}; %{'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
+[data, channels, stimnames, t, srate, options] = tde_selectData(fulldata, options);
 
 % plot average response per stimulus for selected data
 savePlot = 0; 
 saveStr = [];%'CRF';
-tde_plotData(data, channels, t, opts, savePlot, saveStr);
+tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % generate stimulus timecourses
-[stim_ts, stim_info] = tde_generateStimulusTimecourses(opts.stimnames,t);
+[stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
 
 %% 2. Model fitting
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 2]); 
+modelfun = modelfuns([2]); 
 
 % Define options
-options          = [];
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off
 
-% Define saveDir (optional)
-saveDir  = fullfile(analysisRootPath, 'results');
+LOADFITS = 0; % instead of fitting, load an existing saved model fit
 
-% Fit model(s)
-params = []; pred = [];
-for ii = 1:size(modelfun,2)      
-    [params{ii}, pred{ii}] = tde_fitModel(modelfun{ii}, stim_ts, data, srate, options, saveDir);
+if LOADFITS  
+	% Load model fit(s)
+    [params, pred] = tde_loadModelFits(modelfun, xvalmode, options);
+else    
+    % Compute model fit(s)
+    [params, pred] = tde_doModelFits(modelfun, stim_ts, data, srate, options);
 end
-
-% %% Or, load saved fits from disk
-% 
-% % Define model(s)
-% modelfuns = tde_modelTypes();
-% modelfun  = modelfuns([1 2]); 
-% xvalmode  = 0;
-% 
-% [params, pred] = tde_loadSavedModelFit(modelfun, xvalmode, opts);
 
 %% 3. Model evaluation
 
@@ -60,7 +49,7 @@ end
 
 %% 4. Plot timecourses and fits
 
-% Provide a directory so save figures (optional)
+% Provide a directory to save figures (optional)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
@@ -72,7 +61,7 @@ tde_plotParams(results, channels, saveDir);
 
 % model predictions (derived)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
-tde_plotDerivedPredictions(results,channels,2,0, saveDir);
+tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 
 
 %% UNDER DEVELOPMENT
