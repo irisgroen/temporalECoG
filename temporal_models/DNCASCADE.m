@@ -59,14 +59,12 @@ sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
 stim = stimtmp(1 : size(stim, 1), :);
 
-ncascades = 4;
+ncascades = 2;
 
 rsp = stim;
 for ii = 1:ncascades
     rsp = dncomputeOneLayer(rsp, irf, irf_norm, prm);
 end
-
-
 
 pred = rsp;
 
