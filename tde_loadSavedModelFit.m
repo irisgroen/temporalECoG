@@ -13,7 +13,7 @@ for ii = 1:size(modelfun,2)
     else
         name = 'individualelecs';
     end
-	a = load(fullfile(saveDir, sprintf('%s_results_xvalmode%d_%s.mat', func2str(modelfun{ii}), xvalmode, name)));
+	a = load(fullfile(saveDir, sprintf('%s_xvalmode%d_%s.mat', func2str(modelfun{ii}), xvalmode, name)));
     params{ii} = a.params;
     pred{ii} = a.pred;
 end
