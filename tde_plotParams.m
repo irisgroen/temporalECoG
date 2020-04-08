@@ -58,27 +58,51 @@ for kk = 1:nModels
 
     % Plot derived parameters
     subplotinx = [2 3 5 6];
-    for p = 1:4
+    for p = 1:2
         subplot(2,3,subplotinx(p)); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossAreas(results(kk).derived.params(p,:), INX);
+            [m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
             for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
             errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             se_all(p+1,:,:,kk) = squeeze(se);
         else
-            m = results(kk).derived.params(p,:); 
+            m = results(kk).derived.params{p}; 
             plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-        %if p == 1, set(gca, 'Ylim', [0 0.5]), else, set(gca, 'YLim', [0 1]); end
         if p == 1, set(gca, 'Ylim',[0 0.2]); end
         if p == 2, set(gca, 'Ylim',[0 1]); end
-        if p == 3, set(gca, 'Ylim',[0.5 1]); end
-        if p == 4, set(gca, 'Ylim',[0 1]); end
+        %if p == 3, set(gca, 'Ylim',[0.5 1]); end
+        %if p == 4, set(gca, 'Ylim',[0 1]); end
         title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
         m_all(p+1,:,kk) = squeeze(m);
-    end   
+    end
+    for p = 3:4
+        subplot(2,3,subplotinx(p)); hold on
+        if ~dataWasAveraged
+            [m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
+            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
+            %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            se_all(p+1,:,:,kk) = squeeze(se);
+        else
+            m = results(kk).derived.params{p};
+            if size(m,2) > 1
+                cmap = num2cell(flipud(copper(size(m,2))),2);
+                %cmap = num2cell(parula(length(stimISI)), 2);
+                h = plot(1:nChans, m, 'k.-', 'MarkerSize', 20, 'LineWidth', 2);
+                set(h, {'color'}, cmap);
+            else
+                plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
+            end
+        end        
+        set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
+        if p == 3, set(gca, 'Ylim',[0.5 1]); end
+        if p == 4, set(gca, 'Ylim',[0 1.2]); end
+        title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
+        m_all(p+1,:,kk) = squeeze(m);
+    end
     
     % Save plot
     if saveFig

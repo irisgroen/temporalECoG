@@ -14,8 +14,8 @@ R2stim      = nan(nStim,nDatasets);
 R2concat    = nan(1,nDatasets);
 R2cond      = nan(length(unique(stimcond)), nDatasets); 
 
-derivedPrm  = nan(2,nDatasets);
-derivedPred = [];
+pred_derived = [];
+derivedPrm   = [];
 
 %% COMPUTE SUMMARY METRICS
 results = struct;
@@ -59,16 +59,15 @@ for kk = 1:nModels
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
         fprintf('[%s] Computing derived parameters...\n', mfilename)
 
-        % Generate a prediction to a sustained stimulus:
-        [derived_prm, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
-
-        derivedPrm(1,ii) = derived_prm.t2pk;
-        derivedPrm(2,ii) = derived_prm.r_asymp;
-        derivedPrm(3,ii) = derived_prm.r_double;
-        derivedPrm(4,ii) = derived_prm.t_isi;
-
-        derivedPred(:,ii)= pred_derived;
-      
+        % Compte parameters and generate a prediction to a sustained stimulus:
+        [derived_prm, pred_names, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
+        
+        % Concatenate across datasets
+        for jj = 1:length(derived_prm)
+            derivedPrm{jj}(ii,:) = derived_prm{jj};
+        end
+        derivedPred(:,ii) = pred_derived;
+        
     end
     
     %% COLLECT RESULTS
@@ -78,7 +77,7 @@ for kk = 1:nModels
     results(kk).R2.stim         = R2stim;
     results(kk).R2.concat_all   = R2concat;
     results(kk).R2.concat_cond  = R2cond; 
-    results(kk).derived.names   = {'T2peak', 'Rasymptote', 'Rdouble', 'Tisi'};
+    results(kk).derived.names   = pred_names;
     results(kk).derived.params  = derivedPrm;
     results(kk).derived.pred    = derivedPred;
 end
