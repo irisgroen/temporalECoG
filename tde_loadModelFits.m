@@ -1,4 +1,4 @@
-function [params, pred] = tde_loadModelFits(modelfun, xvalmode, opts, resultsDir)
+function [params, pred] = tde_loadModelFits(modelfun, opts, resultsDir)
 
 % Loads saved model fits for multiple models in a loop 
 
@@ -19,7 +19,7 @@ params = []; pred = [];
 for ii = 1:size(modelfun,2)
     modelName = func2str(modelfun{ii});
     fprintf('[%s] Loading fits for %s for model %s \n', mfilename, dataName, modelName);
-	a = load(fullfile(resultsDir, sprintf('%s_xvalmode%d_%s.mat', modelName, xvalmode, dataName)));
+	a = load(fullfile(resultsDir, sprintf('%s_xvalmode%d_%s.mat', modelName, opts.xvalmode, dataName)));
     params{ii} = a.params;
     pred{ii} = a.pred;
 end
