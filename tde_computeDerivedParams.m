@@ -24,16 +24,22 @@ pred_sustained   = pred;
 
 %% Compute derived parameter Rdouble
 
-T = 1;
+T = 2;
 stimLength = round(T*srate);
-stim = zeros(stimLength,2);
-stim(1:100,1) = 1;
-stim(1:200,2) = 1;
+stim_on = [1 2 4 8 16 32]/60;
+stim = zeros(stimLength,length(stim_on));
 
-[~, pred]        = objFunction(prm, [], stim, srate);
-rsp              = sum(pred, 1);
-derivedPrm{3}    = rsp(2)/(2*rsp(1));
+for ii = 1:length(stim_on)
+    stim_end = round(stim_on(ii)*srate);
+    stim(1:stim_end,ii) = 1;
+end    
+    
+[~, pred] = objFunction(prm, [], stim, srate);
+rsp       = sum(pred, 1);
+linpred   = rsp*2;
+rdub      = rsp(2:end)./linpred(1:end-1);
 
+derivedPrm{3} = rdub;
 % % debug
 %figure;plot(stim, 'LineWidth', 2)
 %hold on; plot(pred, 'LineWidth', 2)
@@ -73,6 +79,7 @@ pred2 = pred2-pred;
 rsp2  = sum(pred2,1);
 
 % compute t_isi
+isi_samples = nan(length(thresh),1);
 for ii = 1:length(thresh)
     % find the 2 pulse condition for which the sum of the 2 pulse stimulus
     % is equal to thresh * the first pulse
