@@ -12,8 +12,7 @@ nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
 stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
 
-% Determine if data was averaged across elecs prior to fit; if not, average
-% derived and fitted parameters now
+% Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
@@ -86,17 +85,17 @@ for ii = 1:nDatasets
     if ~dataWasAveraged
         if isfield(summary(channels), 'bensonarea') 
             if isfield(summary(channels), 'subject_name')
-                figureName = sprintf('%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('fits_%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
                     channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
             else
-                figureName = sprintf('%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('fits_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
                     channels.name{ii}, [l{2:end}]);
             end
         else
-            figureName = sprintf('%s_%s', channels.name{ii}, [l{2:end}]);
+            figureName = sprintf('fits_%s_%s', channels.name{ii}, [l{2:end}]);
         end
     else
-        figureName = sprintf('%s_%s', channels.name{ii}, [l{2:end}]);
+        figureName = sprintf('fits_%s_%s', channels.name{ii}, [l{2:end}]);
     end
     
     set(gcf, 'Name', figureName);

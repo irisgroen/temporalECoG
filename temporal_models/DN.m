@@ -38,7 +38,6 @@ prm      = toSetField([], fields, param);
 
 % HERE I ASSUME THAT THE NEGATIVE PART OF THE IMPULSE RESPONSE HAS A TIME
 % CONSTANT 1.5 TIMES THAT OF THE POSITIVE PART OF THE IMPULSE RESPONSE
-%if x.tau1 > 0.5, warning('tau1>1, the estimation for other parameters may not be accurate'); end
     
 t       = (1:numtimepts)' / srate;
 

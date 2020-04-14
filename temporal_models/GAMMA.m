@@ -1,0 +1,69 @@
+function [err, pred] = GAMMA(param, data, stim, srate)
+%
+% function [err, pred] = GAMMA(param, data, stim, srate)
+% INPUTS  -----------------------------------------------------------------
+% params : 7 fields.
+%          1. tau1 -- time to peak for positive IRF (seconds)
+%          2. n1 -- phase delay for positive IRF (seconds)
+%          3. tau2 -- time to peak for negative IRF (seconds)
+%          4. n2 -- phase delay for negative IRF (seconds)
+%          5. weight -- ratio of negative to positive IRFs 
+%          6. shift -- time between stimulus onset and when the signal reaches
+%               the cortex (seconds)
+%          7. scale -- response gain.
+%
+% data :   matrix, samples x trials
+%
+% stim :   matrix, samples x trial 
+%
+% srate :  sample rate in Hz
+%
+% OUTPUTS -----------------------------------------------------------------
+% err:  sum of squared error
+% pred: predicted time series
+
+
+%% PRE-DEFINED /EXTRACTED VARIABLES
+numtimepts  = size(stim,1);
+
+%% SET UP THE MODEL PARAMETERS
+fields = {'tau1', 'n1', 'tau2', 'n2', 'weight', 'shift', 'scale'};
+prm      = toSetField([], fields, param);
+
+%% COMPUTE THE IMPULSE RESPONSE FUNCTION
+
+t       = (1:numtimepts)' / srate;
+
+% DEFINE THE GAMMA FUNCTION
+gamma = @(t,tau,n) (t ./ tau).^(n-1) .* exp(-t ./ tau) / (tau*factorial(n - 1));
+
+n1 = round(prm.n1); % n has to be an integer
+n2 = round(prm.n2); % n has to be an integer
+irf_pos = gamma(t, prm.tau1, n1);
+irf_neg = gamma(t, prm.tau2, n2);
+irf     = irf_pos - prm.weight.* irf_neg;
+
+%% COMPUTE THE RESPONSE
+
+% ADD SHIFT TO THE STIMULUS -------------------------------------------
+sft     = round(prm.shift * srate);
+stimtmp = padarray(stim, [sft, 0], 0, 'pre');
+stim    = stimtmp(1 : size(stim, 1), :);
+
+% COMPUTE THE CONVOLUTION
+linrsp  = conv2(stim, irf, 'full');         % convolve
+linrsp  = linrsp(1:numtimepts,:);           % cut
+
+% SCALE WITH GAIN
+rsp = prm.scale .* linrsp;                    % scale
+
+pred = rsp;
+
+%% COMPUTE ERROR
+
+if isempty(data)
+    err = []; 
+else
+    err = sum((pred(:) - data(:)).^2);
+end
+end

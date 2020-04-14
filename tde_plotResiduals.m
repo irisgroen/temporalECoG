@@ -83,17 +83,17 @@ for ii = 1:nDatasets
     if ~dataWasAveraged
         if isfield(summary(channels), 'bensonarea') 
             if isfield(summary(channels), 'subject_name')
-                figureName = sprintf('resid_%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('residuals_%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
                     channels.name{ii}, channels.subject_name{ii}, [l{:}]);
             else
-                figureName = sprintf('resid_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('residuals_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
                     channels.name{ii}, [l{:}]);
             end
         else
-            figureName = sprintf('resid_%s_%s', channels.name{ii}, [l{:}]);
+            figureName = sprintf('residuals_%s_%s', channels.name{ii}, [l{:}]);
         end
     else
-        figureName = sprintf('resid_%s_%s', channels.name{ii}, [l{:}]);
+        figureName = sprintf('residuals_%s_%s', channels.name{ii}, [l{:}]);
     end
     
     set(gcf, 'Name', figureName);

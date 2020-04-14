@@ -10,8 +10,8 @@ options.average_elecs             = true;
 options.elec_exclude_depth        = true;
 options.doplots                   = false;
 options.elec_selection_method     = 'splithalf';
-%opts.areanames                   = 'V1';
-%opts.stimnames                   = {'CRF-1','CRF-2', 'CRF-3','CRF-4','CRF-5'}; %{'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4','ONEPULSE-5','ONEPULSE-6'}; %{'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
+%options.areanames                 = 'V1';
+%options.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4','CRF-5'}; %{'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4','ONEPULSE-5','ONEPULSE-6'}; %{'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 [data, channels, stimnames, t, srate, options] = tde_selectData(fulldata, options);
 
 % plot average response per stimulus for selected data
@@ -26,17 +26,17 @@ tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([2]); 
+modelfun = modelfuns([1]); 
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off
 
-LOADFITS = 0; % instead of fitting, load an existing saved model fit
+LOADFITS = 1; % instead of fitting, load an existing saved model fit
 
 if LOADFITS  
 	% Load model fit(s)
-    [params, pred] = tde_loadModelFits(modelfun, xvalmode, options);
+    [params, pred] = tde_loadModelFits(modelfun, options);
 else    
     % Compute model fit(s)
     [params, pred] = tde_doModelFits(modelfun, stim_ts, data, srate, options);
@@ -50,8 +50,10 @@ end
 %% 4. Plot timecourses and fits
 
 % Provide a directory to save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+%saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = [];
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
+tde_plotResiduals(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
 %% 5. Plot derived and fitted parameters
 
@@ -62,7 +64,6 @@ tde_plotParams(results, channels, saveDir);
 % model predictions (derived)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
 tde_plotDerivedPredictions(results,channels,2,1, saveDir);
-
 
 %% UNDER DEVELOPMENT
 

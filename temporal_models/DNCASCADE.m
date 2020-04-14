@@ -35,12 +35,7 @@ normSum = @(x) x./sum(x);
 fields = {'tau1', 'weight', 'tau2', 'n', 'sigma', 'shift', 'scale'};
 prm      = toSetField([], fields, param);
 
-%% COMPUTE THE IMPULSE RESPONSE FUNCTION
-
-% HERE I ASSUME THAT THE NEGATIVE PART OF THE IMPULSE RESPONSE HAS A TIME
-% CONSTANT 1.5 TIMES THAT OF THE POSITIVE PART OF THE IMPULSE RESPONSE
-if prm.tau1 > 0.5, warning('tau1>1, the estimation for other parameters may not be accurate'); end
-    
+%% COMPUTE THE IMPULSE RESPONSE FUNCTION   
 t       = (1:numtimepts)' / srate;
 
 irf_pos = gammaPDF(t, prm.tau1, 2);
@@ -57,7 +52,7 @@ irf_norm = normSum(exp(-t/prm.tau2));
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
 sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
-stim = stimtmp(1 : size(stim, 1), :);
+stim      = stimtmp(1 : size(stim, 1), :);
 
 ncascades = 2;
 
