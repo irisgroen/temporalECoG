@@ -10,7 +10,7 @@ options.average_elecs             = true;
 options.elec_exclude_depth        = true;
 options.doplots                   = false;
 options.elec_selection_method     = 'splithalf';
-%options.areanames                 = 'V1';
+options.areanames                 = 'V1';
 %options.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4','CRF-5'}; %{'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4','ONEPULSE-5','ONEPULSE-6'}; %{'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 [data, channels, stimnames, t, srate, options] = tde_selectData(fulldata, options);
 
@@ -26,13 +26,15 @@ tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1]); 
+modelfun = modelfuns([1 4]); 
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'off';  % 'iter' 'final' 'off
+options.display  = 'final';  % 'iter' 'final' 'off'
+%options.algorithm = 'fminsearch';
+%options.maxiter = 100000;
 
-LOADFITS = 1; % instead of fitting, load an existing saved model fit
+LOADFITS = 0; % instead of fitting, load an existing saved model fit
 
 if LOADFITS  
 	% Load model fit(s)
@@ -50,8 +52,8 @@ end
 %% 4. Plot timecourses and fits
 
 % Provide a directory to save figures (optional)
-%saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
-saveDir = [];
+saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+%saveDir = [];
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 tde_plotResiduals(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
@@ -69,5 +71,8 @@ tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 
 % data params 
 close all;
-tde_computeDerivedParamsData(data,channels,t,stim_info);
+tde_plotDerivedParamsData(data,channels,t,stim_info)
+
+
+%tde_computeDerivedParamsData(data,channels,t,stim_info);
 

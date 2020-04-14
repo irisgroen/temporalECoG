@@ -56,7 +56,7 @@ thresh = [0.8 0.9 0.95 1];
 
 % compute summed response to first pulse
 [~, pred] = objFunction(prm, [], stim, srate);
-rsp = sum(pred,1);
+rsp = sum(pred(1:1000),1);
 
 % create set of new stimuli with a second pulse 
 stim2 = repmat(stim,1,stimLength-2*t_on);
@@ -69,14 +69,18 @@ end
 [~, pred2] = objFunction(prm, [], stim2, srate);
 
 % % debug
-% figure;
-% subplot(2,1,1);plot(pred2); yl = get(gca, 'YLim');
-% subplot(2,1,2);plot(pred2-pred); set(gca, 'YLim', yl);
-% 
+figure;
+subplot(2,1,1);plot(pred2); yl = get(gca, 'YLim');
+subplot(2,1,2);plot(pred2-pred); set(gca, 'YLim', yl);
+ 
 % subtract the response to first pulse
 pred2 = pred2-pred;
-% compute sum
-rsp2  = sum(pred2,1);
+% compute sum over matched windows relative to stimulus onset
+rsp2 = [];
+for ii = 1:size(pred2,2)-1000
+    rsp2(ii) = sum(pred2(pulse2_st(ii):pulse2_st(ii)+1000,ii),1);
+end
+%rsp2  = sum(pred2,1);
 
 % compute t_isi
 isi_samples = nan(length(thresh),1);
@@ -92,51 +96,51 @@ end
 t_isi = isi_samples./srate;
 derivedPrm{4} = t_isi;
 
-% % % debug
-% stim_inx = isi_samples+t_on;
-% resp_diff = rsp2-(rsp+rsp*thresh(1));
-% 
-% figure('Position', [ 354    20   803   540]);%clf
-% subplot(2,2,1);hold on
-% plot(stim, 'LineWidth', 2)
-% plot(pred, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('onepulse 100 ms');
-% 
-% subplot(2,2,2);hold on
-% plot(resp_diff, 'LineWidth',2, 'Color','k');
-% plot(stim_inx(1),resp_diff(stim_inx(1)), 'bo', 'LineWidth', 2, 'MarkerSize', 10);
-% plot(stim_inx(2),resp_diff(stim_inx(2)), 'co', 'LineWidth', 2, 'MarkerSize', 10);
-% plot(stim_inx(3),resp_diff(stim_inx(3)), 'mo', 'LineWidth', 2, 'MarkerSize', 10);
-% plot(stim_inx(4),resp_diff(stim_inx(4)), 'ro', 'LineWidth', 2, 'MarkerSize', 10);
-% legend({'difference', '80%', '90%', '95%', '100%'}, 'Location', 'SouthEast');
-% title('sum(pulse 2) - sum(pulse 1)');
-% set(gca, 'Xlim', [0 2000]);
-% 
-% stim_on  = find(stim == 1);
-% stim_lth = length(stim_on);
-% stim_end = stim_on(end);
-% subplot(2,2,3);hold on
-% pulse2_st  = stim_end + isi_samples(1) + 1;
-% pulse2_end = stim_end + isi_samples(1) + 1 + stim_lth;
-% stim2 = stim;
-% stim2(pulse2_st : pulse2_end) = 1;
-% [~, pred2] = objFunction(prm, [], stim2, srate);
-% plot(stim2, 'LineWidth', 2)
-% plot(pred2, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('80% recovery');
-% 
-% subplot(2,2,4);hold on
-% pulse2_st  = stim_end + isi_samples(4) + 1;
-% pulse2_end = stim_end + isi_samples(4) + 1 + stim_lth;
-% stim2 = stim;
-% stim2(pulse2_st : pulse2_end) = 1;
-% [~, pred2] = objFunction(prm, [], stim2, srate);
-% plot(stim2, 'LineWidth', 2)
-% plot(pred2, 'LineWidth', 2)
-% set(gca, 'Xlim', [0 2000]);
-% title('100% recovery');
+% % debug
+stim_inx = isi_samples+t_on;
+resp_diff = rsp2-(rsp*thresh(1));
+
+figure('Position', [ 354    20   803   540]);%clf
+subplot(2,2,1);hold on
+plot(stim, 'LineWidth', 2)
+plot(pred, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('onepulse 100 ms');
+
+subplot(2,2,2);hold on
+plot(resp_diff, 'LineWidth',2, 'Color','k');
+plot(stim_inx(1),resp_diff(stim_inx(1)), 'bo', 'LineWidth', 2, 'MarkerSize', 10);
+plot(stim_inx(2),resp_diff(stim_inx(2)), 'co', 'LineWidth', 2, 'MarkerSize', 10);
+plot(stim_inx(3),resp_diff(stim_inx(3)), 'mo', 'LineWidth', 2, 'MarkerSize', 10);
+plot(stim_inx(4),resp_diff(stim_inx(4)), 'ro', 'LineWidth', 2, 'MarkerSize', 10);
+legend({'difference', '80%', '90%', '95%', '100%'}, 'Location', 'SouthEast');
+title('sum(pulse 2) - sum(pulse 1)');
+set(gca, 'Xlim', [0 2000]);
+
+stim_on  = find(stim == 1);
+stim_lth = length(stim_on);
+stim_end = stim_on(end);
+subplot(2,2,3);hold on
+pulse2_st  = stim_end + isi_samples(1) + 1;
+pulse2_end = stim_end + isi_samples(1) + 1 + stim_lth;
+stim2 = stim;
+stim2(pulse2_st : pulse2_end) = 1;
+[~, pred2] = objFunction(prm, [], stim2, srate);
+plot(stim2, 'LineWidth', 2)
+plot(pred2, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('80% recovery');
+
+subplot(2,2,4);hold on
+pulse2_st  = stim_end + isi_samples(4) + 1;
+pulse2_end = stim_end + isi_samples(4) + 1 + stim_lth;
+stim2 = stim;
+stim2(pulse2_st : pulse2_end) = 1;
+[~, pred2] = objFunction(prm, [], stim2, srate);
+plot(stim2, 'LineWidth', 2)
+plot(pred2, 'LineWidth', 2)
+set(gca, 'Xlim', [0 2000]);
+title('100% recovery');
 
 end
 

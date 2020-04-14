@@ -82,7 +82,7 @@ for kk = 1:nModels
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         if p == 1, set(gca, 'Ylim',[0 0.2]); end
         if p == 2, set(gca, 'Ylim',[0 1]); end
-        if p == 3, set(gca, 'Ylim',[0.5 1.2]); end
+        if p == 3, set(gca, 'Ylim',[0.5 1.5]); end
         if p == 4, set(gca, 'Ylim',[0 1.2]); end
         title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
         m_all(p+1,:,kk) = squeeze(m);
