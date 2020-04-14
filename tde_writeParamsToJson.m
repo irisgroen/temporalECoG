@@ -35,12 +35,31 @@ switch modelName
      case {'HEEGER92', 'HEEGER93'}
         
         opts.params = 'tau1,shift,sigma,alpha,rmax';
-        opts.x0   = [0.02,   0.06, 0.1, 0.01,  10];  % starting point
+        opts.x0   = [0.02,  0.06, 0.1, 0.01,  10];  % starting point
         opts.lb   = [0.01,  0,    0,   0,     0.01]; % lower bounds
         opts.ub   = [1,     0.1,  2,   1,     200];  % upper bounds
         opts.plb  = [0.1,   0.01, 0.01,0,     0.1];  % plausible lower bound (required for bads search algorithm)
         opts.pub  = [0.9,   0.08, 2,   1,     50];   % plausible upper bound (required for bads search algorithm)
-       
+     
+    case {'FIR'} 
+        
+        n = 300;
+        opts.params = '';
+        opts.x0   = zeros(1,n); % starting point
+        opts.lb   = opts.x0-100;
+        opts.ub   = opts.x0+100;
+        opts.plb   = opts.x0-100;
+        opts.pub   = opts.x0+100;
+        
+     case {'GAMMA'} 
+         
+        opts.params = 'tau1, n1, tau2, n2,  weight, shift, scale';
+        opts.x0     = [0.03, 2,  0.03, 2,   0,     0.06,   2];    % starting point
+        opts.lb     = [0.01, 0,  0.01, 0,   0,     0,      0.01]; % lower bounds
+        opts.ub     = [10,   20, 10,   20,  1,     0.1,    200];  % upper bounds
+        opts.plb    = [0.1,  0,  0.1,  0,   0.01,  0.01,   0.5];  % plausible lower bound (required for bads search algorithm)
+        opts.pub    = [0.9,  10, 0.9,  10,  0.5,   0.08,   100];  % plausible upper bound (required for bads search algorithm)
+    
 end
 
 %% write out json
