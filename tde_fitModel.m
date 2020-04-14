@@ -56,7 +56,7 @@ end
 
 % Set optimization options
 searchopts = optimset('Display',options.display);
-%searchopts.MaxFunEvals = options.maxiter;
+if isfield(options,'maxiter'), searchopts.MaxFunEvals = options.maxiter;end
 
 %% FIT THE temporal model
 
@@ -111,7 +111,8 @@ for ii = 1:nDatasets % loop over channels or channel averages
             case 'bads'
                 prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
             case 'fminsearch'
-                prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
+                %prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
+                prm = fminsearch(@(x) objFunction(x, data2fit, stim2fit, srate), x0, searchopts);
         end
         
         % Save params from full model fit
