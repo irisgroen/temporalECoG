@@ -4,9 +4,9 @@ function [err, pred] = GAMMA(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 7 fields.
 %          1. tau1 -- time to peak for positive IRF (seconds)
-%          2. n1 -- phase delay for positive IRF (seconds)
+%          2. n1 -- phase delay for positive IRF 
 %          3. tau2 -- time to peak for negative IRF (seconds)
-%          4. n2 -- phase delay for negative IRF (seconds)
+%          4. n2 -- phase delay for negative IRF 
 %          5. weight -- ratio of negative to positive IRFs 
 %          6. shift -- time between stimulus onset and when the signal reaches
 %               the cortex (seconds)
