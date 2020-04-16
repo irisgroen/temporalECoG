@@ -59,6 +59,8 @@ linrsp  = linrsp(1:numtimepts,:);           % cut
 numrsp  = abs(linrsp);                      % full wave rectification
 numrsp  = numrsp.^prm.n;                    % exponentiate
 
+% CREATE EXPONENTIAL DECAY FILTER
+normSum = @(x) x./sum(x);
 irf_norm = normSum(exp(-t/prm.tau_a));
 
 % COMPUTE THE NORMALIZED RESPONSE

@@ -59,7 +59,8 @@ numrsp  = max(linrsp,0);                    % half wave rectification
 numrsp  = numrsp.^prm.n;                    % exponentiate
 
 % COMPUTE THE NORMALIZED RESPONSE
-demrsp  = prm.sigma.^prm.n + abs(linrsp).^prm.n; % semi-sat + exponentiate
+%demrsp  = prm.sigma.^prm.n + abs(linrsp).^prm.n; % semi-sat + exponentiate
+demrsp  = prm.sigma.^prm.n + max(linrsp,0).^prm.n; % semi-sat + exponentiate
 normrsp = numrsp./demrsp;                        % divide 
 
 % SCALE WITH GAIN

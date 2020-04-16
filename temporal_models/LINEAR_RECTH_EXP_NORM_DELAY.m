@@ -59,12 +59,15 @@ linrsp  = linrsp(1:numtimepts,:);           % cut
 numrsp  = max(linrsp,0);                    % half wave rectification
 numrsp  = numrsp.^prm.n;                    % exponentiate
 
+% CREATE EXPONENTIAL DECAY FILTER
+normSum = @(x) x./sum(x);
 irf_norm = normSum(exp(-t/prm.tau_a));
 
 % COMPUTE THE NORMALIZED RESPONSE
 poolrsp = conv2(linrsp, irf_norm, 'full');  % convolve
 poolrsp = poolrsp(1:numtimepts,:);          % cut
-demrsp  = prm.sigma.^prm.n + abs(poolrsp).^prm.n; % semi-sat + exponentiate
+%demrsp  = prm.sigma.^prm.n + abs(poolrsp).^prm.n; % semi-sat + exponentiate
+demrsp  = prm.sigma.^prm.n + max(poolrsp,0).^prm.n; % semi-sat + exponentiate
 normrsp = numrsp./demrsp;                        % divide 
 
 % SCALE WITH GAIN
