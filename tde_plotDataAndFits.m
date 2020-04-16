@@ -72,12 +72,13 @@ for ii = 1:nDatasets
 %         else
 %             set(gca, 'XTickLabel', stim_info.ISI(inx))
 %         end
-        set(gca, 'FontSize', 16);
+        ylim([-5 25]);
+        set(gca, 'FontSize', 14);
         xlabel('stimulus');
         ylabel('response');
         
         % add legend
-        if jj == 1, legend(l); end
+        %if jj == 1, legend(l); end
     end
     set(gcf, 'Position', [400 200 1800 1200]);
     

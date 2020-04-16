@@ -16,7 +16,7 @@ options.areanames                 = 'V1';
 
 % plot average response per stimulus for selected data
 savePlot = 0; 
-saveStr = [];%'CRF';
+saveStr = [];%e.g. 'CRF';
 tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % generate stimulus timecourses
@@ -26,15 +26,13 @@ tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([4]); 
+modelfun = modelfuns([1 6 7 8 9 10 11 12 13 14]); 
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'iter';  % 'iter' 'final' 'off'
-%options.algorithm = 'fminsearch';
-%options.maxiter = 10000;
+options.display  = 'off';  % 'iter' 'final' 'off'
 
-LOADFITS = 0; % instead of fitting, load an existing saved model fit
+LOADFITS = 1; % instead of fitting, load an existing saved model fit
 
 if LOADFITS  
 	% Load model fit(s)
@@ -54,17 +52,22 @@ end
 % Provide a directory to save figures (optional)
 %saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
 saveDir = [];
-tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
-tde_plotResiduals(results, data, channels, stim_ts, stim_info, t, [], saveDir)
+for ii = 1: length(results)
+    tde_plotDataAndFits(results(ii), data, channels, stim_ts, stim_info, t, [], saveDir)
+end
+
+%tde_plotResiduals(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
 %% 5. Plot derived and fitted parameters
 
+saveDir = [];
+
 % model parameters
-saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
-tde_plotParams(results, channels, saveDir);
+%saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
+tde_plotParams(results, channels, saveDir);close;
 
 % model predictions (derived)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
+%saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
 tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 
 %% UNDER DEVELOPMENT
