@@ -1,6 +1,6 @@
-function [err, pred] = GAMMA(param, data, stim, srate)
+function [err, pred] = LINEAR_RECTH_EXP(param, data, stim, srate)
 %
-% function [err, pred] = GAMMA(param, data, stim, srate)
+% function [err, pred] = LINEAR_RECTH_EXP(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 7 fields.
 %          1. tau1 -- time to peak for positive IRF (seconds)
@@ -11,6 +11,7 @@ function [err, pred] = GAMMA(param, data, stim, srate)
 %          6. shift -- time between stimulus onset and when the signal reaches
 %               the cortex (seconds)
 %          7. scale -- response gain.
+%          8. n -- exponent 
 %
 % data :   matrix, samples x trials
 %
@@ -27,7 +28,7 @@ function [err, pred] = GAMMA(param, data, stim, srate)
 numtimepts  = size(stim,1);
 
 %% SET UP THE MODEL PARAMETERS
-fields = {'tau1', 'n1', 'tau2', 'n2', 'weight', 'shift', 'scale'};
+fields = {'tau1', 'n1', 'tau2', 'n2', 'weight', 'shift', 'scale', 'n'};
 prm      = toSetField([], fields, param);
 
 %% COMPUTE THE IMPULSE RESPONSE FUNCTION
@@ -53,8 +54,8 @@ stim    = stimtmp(1 : size(stim, 1), :);
 % COMPUTE THE CONVOLUTION
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
-%linrsp  = max(linrsp,0);
-linrsp  = abs(linrsp);
+linrsp  = max(linrsp,0); % half wave rectification
+linrsp  = linrsp.^prm.n; % exponentiate
 
 % SCALE WITH GAIN
 rsp = prm.scale .* linrsp;                    % scale
