@@ -99,7 +99,7 @@ irf_transient = xi*(irf_sustained - h(tau2, n2, t));
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
 sft       = round(prm.shift * srate);
 stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
-stim = stimtmp(1 : size(stim, 1), :);
+stim      = stimtmp(1 : size(stim, 1), :);
   
 % COMPUTE THE TRANSIENT RESPONSE --------------------------------------
 rsp_transient = conv2(stim, irf_transient, 'full'); % convolve

@@ -59,7 +59,7 @@ for kk = 1:nModels
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
         fprintf('[%s] Computing derived parameters...\n', mfilename)
 
-        % Compte parameters and generate a prediction to a sustained stimulus:
+        % Compute parameters and generate a prediction to a sustained stimulus:
         [derived_prm, pred_names, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
         
         % Concatenate across datasets

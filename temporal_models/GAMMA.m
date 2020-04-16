@@ -34,13 +34,13 @@ prm      = toSetField([], fields, param);
 
 t       = (1:numtimepts)' / srate;
 
-% DEFINE THE GAMMA FUNCTION
-gamma = @(t,tau,n) (t ./ tau).^(n-1) .* exp(-t ./ tau) / (tau*factorial(n - 1));
-
+% COMPUTE THE IRF
 n1 = round(prm.n1); % n has to be an integer
 n2 = round(prm.n2); % n has to be an integer
-irf_pos = gamma(t, prm.tau1, n1);
-irf_neg = gamma(t, prm.tau2, n2);
+if n2 == 0, n2 = 1; end
+if n1 == 0, n1 = 1; end
+irf_pos = gammaPDF(t, prm.tau1, n1);
+irf_neg = gammaPDF(t, prm.tau2, n2);
 irf     = irf_pos - prm.weight.* irf_neg;
 
 %% COMPUTE THE RESPONSE
@@ -53,6 +53,8 @@ stim    = stimtmp(1 : size(stim, 1), :);
 % COMPUTE THE CONVOLUTION
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
+%linrsp  = max(linrsp,0);
+linrsp  = abs(linrsp);
 
 % SCALE WITH GAIN
 rsp = prm.scale .* linrsp;                    % scale

@@ -26,13 +26,13 @@ tde_plotData(data, channels, t, options, savePlot, saveStr);
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 4]); 
+modelfun = modelfuns([4]); 
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'final';  % 'iter' 'final' 'off'
+options.display  = 'iter';  % 'iter' 'final' 'off'
 %options.algorithm = 'fminsearch';
-%options.maxiter = 100000;
+%options.maxiter = 10000;
 
 LOADFITS = 0; % instead of fitting, load an existing saved model fit
 
@@ -52,8 +52,8 @@ end
 %% 4. Plot timecourses and fits
 
 % Provide a directory to save figures (optional)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
-%saveDir = [];
+%saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
+saveDir = [];
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 tde_plotResiduals(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
