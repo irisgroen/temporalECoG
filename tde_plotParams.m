@@ -1,5 +1,7 @@
 function [results] = tde_plotParams(results, channels, saveDir)
 
+% Plot derived and fitted parameters for models in results
+
 if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 
 %% Prep
@@ -135,17 +137,17 @@ for jj = 1:size(m_all,1)
     end
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     title(derivedTitles{jj}); xlabel('visual area'); 
-    if jj == 1, legend(modelNames); set(gca, 'Ylim', [0 1]); end
+    if jj == 1, set(gca, 'Ylim', [0 1]); end
     if jj == 2, set(gca, 'Ylim',[0 0.2]); end
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
-	if jj == 5, set(gca, 'Ylim',[0 1]); end
+	if jj == 5, set(gca, 'Ylim',[0 1]); legend(modelNames, 'Location', 'NorthEast'); end
     set(gca, 'fontsize', 16);
 end
 
 % Save plot
 if saveFig
-    figName = sprintf('derivedParams_%s_allmodels', [modelNames{:}]);
+    figName = sprintf('derivedParams_allmodels');
     savePlot(figName, saveDir, dataWasAveraged)
 end
 
