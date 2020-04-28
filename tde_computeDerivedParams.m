@@ -89,8 +89,12 @@ for ii = 1:length(thresh)
     % is equal to thresh * the first pulse
     resp_diff = rsp2-(rsp*thresh(ii));
     stim_inx = find(round(resp_diff)>=0);
+    if any(stim_inx) 
     % compute t_isi (gap between offset of pulse 1 and onset of pulse 2)
-    isi_samples(ii) = (pulse2_st(stim_inx(1)) - t_on);
+        isi_samples(ii) = (pulse2_st(stim_inx(1)) - t_on);
+    else
+        isi_samples(ii) = nan;
+    end
 end
 
 t_isi = isi_samples./srate;

@@ -44,13 +44,13 @@ for kk = 1:nModels
     subplot(2,3,1); hold on
     if ~dataWasAveraged
         [m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
-        for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
+        for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
         %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-        errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         se_all(1,:,:,kk) = squeeze(se);
     else
         m = results(kk).R2.concat_all; 
-        plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
+        plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
     end
     m_all(1,:,kk) = squeeze(m);
     
@@ -64,9 +64,10 @@ for kk = 1:nModels
         subplot(2,3,subplotinx(p)); hold on
         if ~dataWasAveraged
             [m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
-            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
+            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}(1,:), 30, [0.7 0.7 0.7], 'filled');end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            m = m(1,:); se = se(1,:,:);
+            errorbar(1:nChans, m, m-se(1,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             se_all(p+1,:,:,kk) = squeeze(se);
         else
             m = results(kk).derived.params{p};
@@ -78,7 +79,7 @@ for kk = 1:nModels
                 if p == 4, m = m(:,3); end % 95%
                 if p == 3, m = m(:,4); end % 0.267s vs 0.133s 
             else
-                plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
+                plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
             end
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
@@ -103,10 +104,10 @@ figure('Name', 'Derived parameters - all models'); hold on
 set(gcf, 'Position', [400 800 2000 600]);
 
 %colors = parula(nModels);
+nSubPlot = 3;%size(m_all,1)
+for jj = 1:nSubPlot
 
-for jj = 1:size(m_all,1)
-
-    subplot(1,5,jj); hold on
+    subplot(1,nSubPlot,jj); hold on
     m = squeeze(m_all(jj,:,:));
     
     if size(m,2) == 1 % If there's just one area, add a dummy column to make sure bars will still be grouped
@@ -141,7 +142,8 @@ for jj = 1:size(m_all,1)
     if jj == 2, set(gca, 'Ylim',[0 0.2]); end
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
-	if jj == 5, set(gca, 'Ylim',[0 1]); legend(modelNames, 'Location', 'NorthEast'); end
+	if jj == 5, set(gca, 'Ylim',[0 1]); end
+    if jj == nSubPlot, legend(modelNames, 'Location', 'NorthEast'); end
     set(gca, 'fontsize', 16);
 end
 
@@ -168,12 +170,12 @@ for kk = 1:nModels
         subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
             [m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
-            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 40, [0.5 0.5 0.5], 'filled');end
+            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         else
             m = results(kk).params(p,:); 
-            plot(1:nChans, m, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none')
+            plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
         end
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
         title(paramNames{p}); xlabel('visual area'); ylabel('parameter value');set(gca, 'fontsize', 16);

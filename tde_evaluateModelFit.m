@@ -64,7 +64,7 @@ for kk = 1:nModels
         
         % Concatenate across datasets
         for jj = 1:length(derived_prm)
-            derivedPrm{jj}(ii,:) = derived_prm{jj};
+            derivedPrm{jj}(:,ii) = derived_prm{jj};
         end
         derivedPred(:,ii) = pred_derived;
         
