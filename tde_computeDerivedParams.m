@@ -1,4 +1,4 @@
-function [derivedPrm, paramNames,pred_sustained, t] = tde_computeDerivedParams(objFunction, prm)
+function [derivedPrm, paramNames, pred_sustained, t] = tde_computeDerivedParams(objFunction, prm)
 % Simulate model response to a long sustained stimulus
 % Extract four summary statistics:
 % - t2pk    = time to peak 
@@ -11,7 +11,7 @@ derivedPrm = cell(length(paramNames),1);
 
 %% Compute derived parameters Time2Peak and Rasymptote
 
-t    = 0.001 : 0.001 : 10;
+t    = 0.001 : 0.001 : 2;
 stim = ones(length(t),1);
 srate = 1/median(diff(t)); % samples per second
 

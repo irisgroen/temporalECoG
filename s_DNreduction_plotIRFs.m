@@ -39,22 +39,23 @@ for ii = 1:nROI
     l{1} = [tau n];
     % RECTF
     tau = results(2).params(1,ii);
-    n = max(round(results(2).params(2,ii)),1);
+    %n = max(round(results(2).params(3,ii)),1);
+    n = max(round(results(2).params(3,ii)),2);
     y = gammaPDF(t,tau,n);
     plot(t,y,'r', 'LineWidth', 2);
     l{2} = [tau n];
-    % RECTH
-    tau = results(3).params(1,ii);
-    n = max(round(results(3).params(2,ii)),1);
-    y = gammaPDF(t,tau,n);
-    plot(t,y,'g', 'LineWidth', 2);
-    l{3} = [tau n];
+%     % RECTH
+%     tau = results(3).params(1,ii);
+%     n = max(round(results(3).params(2,ii)),1);
+%     y = gammaPDF(t,tau,n);
+%     plot(t,y,'g', 'LineWidth', 2);
+%     l{3} = [tau n];
     legend({sprintf('tau1 = %0.2f n1 = %d', l{1}(1),l{1}(2)), ...
-            sprintf('tau1 = %0.2f n1 = %d', l{2}(1),l{2}(2)), ...
-            sprintf('tau1 = %0.2f n1 = %d', l{3}(1),l{3}(2))});
+            sprintf('tau1 = %0.2f n1 = %d',l{2}(1),l{2}(2))});%, ...
+            %sprintf('tau1 = %0.2f n1 = %d', l{3}(1),l{3}(2))});
 	title(channels.name{ii});
-    xlim([0 0.5]);
-    ylim([0 0.02]);
+    xlim([0 1]);
+    ylim([-0.01 0.03]);
 end
 set(gcf, 'Position', [ 25 25 1250 750]);
 
@@ -74,24 +75,25 @@ for ii = 1:nROI
     plot(t,y,'b', 'LineWidth', 2);
     l{1} = [tau n w];
     % RECTF
-    tau = results(2).params(3,ii);
-    n = max(round(results(2).params(4,ii)),1);
-	w = results(2).params(5,ii);
+    tau = results(2).params(2,ii);
+    %n = max(round(results(2).params(3,ii)),1);
+    n = max(round(results(2).params(3,ii)),2);
+	w = results(2).params(4,ii);
     y = -w .* gammaPDF(t,tau,n);
     plot(t,y,'r', 'LineWidth', 2);
     l{2} = [tau n w];
-    % RECTH
-    tau = results(3).params(3,ii);
-    n = max(round(results(3).params(4,ii)),1);
-	w = results(3).params(5,ii);
-    y = -w .* gammaPDF(t,tau,n);
-    plot(t,y,'g', 'LineWidth', 2);
-    l{3} = [tau n w];
+%     % RECTH
+%     tau = results(3).params(3,ii);
+%     n = max(round(results(3).params(4,ii)),1);
+% 	w = results(3).params(5,ii);
+%     y = -w .* gammaPDF(t,tau,n);
+%     plot(t,y,'g', 'LineWidth', 2);
+%     l{3} = [tau n w];
     legend({sprintf('tau2 = %0.2f n2 = %d w = %0.2f', l{1}(1),l{1}(2), l{1}(3)), ...
-            sprintf('tau2 = %0.2f n2 = %d w = %0.2f', l{2}(1),l{2}(2), l{2}(3)), ...
-            sprintf('tau2 = %0.2f n2 = %d w = %0.2f', l{3}(1),l{3}(2), l{3}(3))});
+            sprintf('tau2 = %0.2f n2 = %d w = %0.2f', l{2}(1),l{2}(2), l{2}(3))});%, ...
+            %sprintf('tau2 = %0.2f n2 = %d w = %0.2f', l{3}(1),l{3}(2), l{3}(3))});
 	title(channels.name{ii});
-    xlim([0 0.5]);
+    xlim([0 1]);
 	ylim([-0.005 0.005]);
 
 end
@@ -115,25 +117,27 @@ for ii = 1:nROI
     plot(t,y,'b', 'LineWidth', 2);
     % RECTF
     tau1 = results(2).params(1,ii);
-    tau2 = results(2).params(3,ii);
-    n1 = max(round(results(2).params(2,ii)),1);
-	n2 = max(round(results(2).params(4,ii)),1);
-	w = results(2).params(5,ii);
-    irf_pos = gammaPDF(t, tau1, n1);
-    irf_neg = gammaPDF(t, tau2, n2);
+    tau2 = results(2).params(2,ii);
+    %n1 = max(round(results(2).params(2,ii)),1);
+	%n2 = max(round(results(2).params(4,ii)),1);
+    n_irf = max(round(results(2).params(3,ii)),2);
+	w = results(2).params(4,ii);
+    irf_pos = gammaPDF(t, tau1, n_irf);
+    irf_neg = gammaPDF(t, tau2, n_irf);
     y = irf_pos - w.* irf_neg;
     plot(t,y,'r', 'LineWidth', 2);
-    % RECTH
-    tau1 = results(3).params(1,ii);
-    tau2 = results(3).params(3,ii);
-    n1 = max(round(results(3).params(2,ii)),1);
-	n2 = max(round(results(3).params(4,ii)),1);
-	w = results(3).params(5,ii);
-    irf_pos = gammaPDF(t, tau1, n1);
-    irf_neg = gammaPDF(t, tau2, n2);
-    y = irf_pos - w.* irf_neg;
-    plot(t,y,'g', 'LineWidth', 2);
-    if ii==1, legend('DN', 'LINEAR_RECTF_EXP_NORM_DELAY', 'LINEAR_RECTH_EXP_NORM_DELAY');end
+%     % RECTH
+%     tau1 = results(3).params(1,ii);
+%     tau2 = results(3).params(3,ii);
+%     n1 = max(round(results(3).params(2,ii)),1);
+% 	n2 = max(round(results(3).params(4,ii)),1);
+% 	w = results(3).params(5,ii);
+%     irf_pos = gammaPDF(t, tau1, n1);
+%     irf_neg = gammaPDF(t, tau2, n2);
+%     y = irf_pos - w.* irf_neg;
+%     plot(t,y,'g', 'LineWidth', 2);
+    %if ii==1, legend('DN', 'LINEAR_RECTF_EXP_NORM_DELAY', 'LINEAR_RECTH_EXP_NORM_DELAY');end
+    if ii==1, legend('DN', 'LINEAR_RECTF_EXP_NORM_DELAY');end
 	title(channels.name{ii});
     xlim([0 1]);
     ylim([-0.005 0.02]);

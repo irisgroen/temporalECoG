@@ -28,7 +28,7 @@ l = cell(1,nModels);
 for kk = 1:nModels, l{kk} = func2str(results(kk).model); end
 
 % Loop over channels or channel averages
-for ii = 1:nDatasets
+for ii = 1:3%nDatasets
     
     figure;
     
@@ -70,7 +70,11 @@ for ii = 1:nDatasets
 %         else
 %             set(gca, 'XTickLabel', stim_info.ISI(inx))
 %         end
-        set(gca, 'FontSize', 16);
+        if ii == 1, ylim([-5 25]); end
+        if ii == 2, ylim([-5 15]); end
+        if ii == 3, ylim([-2 8]); end
+
+        set(gca, 'FontSize', 14);
         xlabel('stimulus');
         ylabel('response');
         

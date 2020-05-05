@@ -71,19 +71,19 @@ for kk = 1:nModels
             se_all(p+1,:,:,kk) = squeeze(se);
         else
             m = results(kk).derived.params{p};
-            if size(m,2) > 1
-                cmap = num2cell(flipud(gray(size(m,2)+1)),2);
+            if size(m,1) > 1
+                cmap = num2cell(flipud(gray(size(m,1)+1)),2);
                 h = plot(1:nChans, m, 'k.-', 'MarkerSize', 20, 'LineWidth', 2);
                 set(h, {'color'}, cmap(2:end));
                 %if p == 4, legend({'80%', '90%', '95%', '100%'},'Location', 'NorthWest'); end
-                if p == 4, m = m(:,3); end % 95%
-                if p == 3, m = m(:,4); end % 0.267s vs 0.133s 
+                if p == 4, m = m(3,:); end % 95%
+                if p == 3, m = m(4,:); end % 0.267s vs 0.133s 
             else
                 plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
             end
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-        if p == 1, set(gca, 'Ylim',[0 0.2]); end
+        if p == 1, set(gca, 'Ylim',[0 0.8]); end
         if p == 2, set(gca, 'Ylim',[0 1]); end
         if p == 3, set(gca, 'Ylim',[0.5 1.5]); end
         if p == 4, set(gca, 'Ylim',[0 1.2]); end
@@ -100,14 +100,15 @@ end
 
 % All models together in one plot:
 
-figure('Name', 'Derived parameters - all models'); hold on
+%figure('Name', 'Derived parameters - all models'); hold on
 set(gcf, 'Position', [400 800 2000 600]);
 
 %colors = parula(nModels);
 nSubPlot = 3;%size(m_all,1)
 for jj = 1:nSubPlot
 
-    subplot(1,nSubPlot,jj); hold on
+    %subplot(1,nSubPlot,jj); hold on
+    figure('Name', sprintf('allModels %s', derivedTitles{jj}));hold on;
     m = squeeze(m_all(jj,:,:));
     
     if size(m,2) == 1 % If there's just one area, add a dummy column to make sure bars will still be grouped
@@ -139,19 +140,22 @@ for jj = 1:nSubPlot
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     title(derivedTitles{jj}); xlabel('visual area'); 
     if jj == 1, set(gca, 'Ylim', [0 1]); end
-    if jj == 2, set(gca, 'Ylim',[0 0.2]); end
+    if jj == 2, set(gca, 'Ylim',[0 0.8]); end
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
 	if jj == 5, set(gca, 'Ylim',[0 1]); end
-    if jj == nSubPlot, legend(modelNames, 'Location', 'NorthEast'); end
+    %if jj == nSubPlot, legend(modelNames, 'Location', 'NorthEast'); end
     set(gca, 'fontsize', 16);
+    
+    % Save plot
+    if saveFig
+        %figName = sprintf('derivedParams_allmodels');
+        figName = strrep(get(gcf,'Name'),' ','_');
+        savePlot(figName, saveDir, dataWasAveraged)
+    end
 end
 
-% Save plot
-if saveFig
-    figName = sprintf('derivedParams_allmodels');
-    savePlot(figName, saveDir, dataWasAveraged)
-end
+
 
 %% Plot fitted parameters
 
