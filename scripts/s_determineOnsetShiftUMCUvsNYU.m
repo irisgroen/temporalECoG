@@ -2,7 +2,7 @@
 %
 % Purpose of this script:
 %
-% Visual comparison of the broadband responses from V1 electrodes in the
+% Visual comparison of the broadband responses from V1/V2 electrodes in the
 % UMCU patient (sub-chaam) and NYU patients suggested a systematic offset
 % in the onset of the visual response between the two sites.
 %
@@ -76,7 +76,7 @@ for ii = 1 : length(subjectList)
         fprintf('[%s] This is a umcu patient: resampling \n',mfilename);
 
         % Resample data; assuming desired sample rate of 512
-        subdata = downsample(subdata', channels.sampling_frequency(1)/512)';
+        subdata = resample(subdata', 1, channels.sampling_frequency(1)/512)';
         events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/512));
         channels.sampling_frequency(:) = 512;
         
@@ -168,6 +168,7 @@ for ii = 1 : length(subjectList)
 	title(subjectList{ii});
     xlabel('time');ylabel('ERP amplitude');
     set(gca,'FontSize', 14);
+    axis tight
 end
 set(gcf, 'Position', [800 750 1750 600]);
 
@@ -242,7 +243,7 @@ for ii = 1 : length(chanTypes)
     l = line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
     l.Annotation.LegendInformation.IconDisplayStyle = 'off';
     xlabel('Time (ms)'); ylabel('ERP amplitude (normalized)');
-
+    axis tight
 end
 
 % Shifted data
@@ -269,6 +270,7 @@ for ii = 1 : length(chanTypes)
     l.Annotation.LegendInformation.IconDisplayStyle = 'off';
     set(gca, 'XLim', epochTime);
     xlabel('Time (ms)'); ylabel('ERP amplitude (normalized)');
+    axis tight
 end
 
 
