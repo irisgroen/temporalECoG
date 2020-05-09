@@ -34,7 +34,7 @@
 
 subjectList             = {'chaam', 'som708', 'som692'}; 
 inputDir                = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR'); % where the evoked data are
-tasks                   = {'spatialpattern', 'temporalpattern', 'soc'};
+tasks                   = {'spatialpattern', 'temporalpattern'};
 description             = 'reref';
 epochTime               = [-0.1 0.5];
 baselineTime            = [-0.1 0];
