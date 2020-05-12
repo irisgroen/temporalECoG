@@ -122,16 +122,7 @@ for ii = 1 : length(subjects)
     else
         
         fprintf('[%s] Computing data for subject %s \n',mfilename, subject);
-
-        %% STEP 0: GET visual area matches for this subject
-        fprintf('[%s] Step 0: Computing matches with visual atlases...\n',mfilename);
-        
-        specs = [];
-        specs.pID           = subject; 
-        specs.plotmesh      = 'none';
-        BIDSformatted       = 1;
-        visualelectrodes    = electrode_to_nearest_node(specs, BIDSformatted);
- 
+  
         %% STEP 1: GET THE DATA
         fprintf('[%s] Step 1: Loading data...\n',mfilename);
         
@@ -147,18 +138,32 @@ for ii = 1 : length(subjects)
         [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband');
         if isempty(data_b), warning('No broadband data found for subject %s!', subject); end
 
-        %% STEP 2: SELECT A SUBSET OF CHANNELS 
+        % Read in electrode data and match to atlas
+        dataDir = fullfile(bidsRootPath);
+        atlasName = {'benson14_varea',  'wang15_mplbl', 'wang15_fplbl', 'benson14_eccen', 'benson14_angle', 'benson14_sigma'};
+        [electrodes] = bidsEcogMatchElectrodesToAtlas(dataDir, subject, session, atlasName, [], 0);
         
+        % Reduce data to electrodes with coordinates only
+        chan_idx = ecog_matchChannels(electrodes.name, channels.name);        
+        data_v = data_v(chan_idx,:);
+        data_b = data_b(chan_idx,:);
+        channels = channels(chan_idx,:);
+        
+        % Add electrode atlas info to channels
+        assert(height(electrodes) == height(channels));
+        assert(isequal(electrodes.name, channels.name));
+        col_idx = ~contains(electrodes.Properties.VariableNames, channels.Properties.VariableNames);
+        channels = [channels electrodes(:,col_idx)];
+        
+        %% STEP 2: SELECT A SUBSET OF CHANNELS 
+           
         if ~isempty(data_v) && ~isempty(data_b)
             
-            % Add atlas names Wang and Benson + Benson ecc, angle, sigma to channels table
-            [channels] = bair_addVisualAtlasNamesToChannelTable(channels,visualelectrodes);
-
             % Make selection on visual only, index into data + channels
             fprintf('[%s] Step 2: Selecting channels with visual matches \n',mfilename);
             
-            chan_idx1 = find(~contains(channels.wangarea, 'none') & contains(channels.status, 'good'));
-            chan_idx2 = find(~contains(channels.bensonarea, 'none') & contains(channels.status, 'good'));        
+            chan_idx1 = find(~contains(channels.benson14_varea, 'none') & contains(channels.status, 'good'));
+            chan_idx2 = find(~contains(channels.wang15_mplbl, 'none') & contains(channels.status, 'good'));        
             chan_idx = unique([chan_idx1; chan_idx2]);
 
             if ~isempty(chan_idx)
@@ -180,8 +185,6 @@ for ii = 1 : length(subjects)
 
             if channels.sampling_frequency(1) ~= sampleRate
                 fprintf('[%s] Step 3: Sample rate does not match requested sample rate. Resampling \n',mfilename);
-                %data_v = downsample(data_v', channels.sampling_frequency(1)/sampleRate)';
-                %data_b = downsample(data_b', channels.sampling_frequency(1)/sampleRate)';
                 data_v = resample(data_v', 1, channels.sampling_frequency(1)/sampleRate)';
                 data_b = resample(data_b', 1, channels.sampling_frequency(1)/sampleRate)';
                 events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/sampleRate));
@@ -216,20 +219,22 @@ for ii = 1 : length(subjects)
             [epochs_v, ~] = ecog_makeEpochs(data_v, events.event_sample, epochTime, channels.sampling_frequency(1));  
             [epochs_b, t] = ecog_makeEpochs(data_b, events.event_sample, epochTime, channels.sampling_frequency(1));  
             
-
             fprintf('[%s] Step 4: Found %d epochs across %d runs and %d sessions \n', ...
                 mfilename, size(epochs_b,2), length(unique(events.run_name)), length(unique(events.session_name)));
 
             %% STEP 5: Save out a single preproc file for each subject 
 
-            % Remove irrelevant/redundant columns from channels and events tables 
+            % Remove irrelevant/redundant columns from events table
             if isfield(summary(events),'onset'), events = removevars(events,'onset');end
             if isfield(summary(events),'event_sample'), events = removevars(events,'event_sample');end
             if isfield(summary(events),'stim_file'), events = removevars(events,'stim_file');end
+            % Remove irrelevant/redundant columns from channels table
             if isfield(summary(channels),'notch'), channels = removevars(channels,'notch');end
             if isfield(summary(channels),'status'), channels = removevars(channels,'status');end
             if isfield(summary(channels),'description'), channels = removevars(channels,'description');end
             if isfield(summary(channels),'status_description'), channels = removevars(channels,'status_description');end
+            if isfield(summary(channels),'size'), channels = removevars(channels,'size');end
+            if isfield(summary(channels),'material'), channels = removevars(channels,'material');end
 
             % Add a subject index column to channels and events tables:
             events.subject_name = repmat({subject}, [height(events),1]);
