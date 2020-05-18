@@ -24,8 +24,10 @@ if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
     dataWasAveraged = false;
-    [chan_idx, channels] = groupElecsByVisualArea(channels);  
-    nChans = size(chan_idx,2);
+    [chan_idx1, channels1] = groupElecsByVisualArea(channels);  
+	[chan_idx2] = groupElecsByVisualArea(channels, 'probabilisticresample');  
+    channels = channels1;
+    nChans = height(channels);
 end
 
 % Are we saving figures?
@@ -43,41 +45,28 @@ for kk = 1:nModels
     figure('Name', sprintf('Derived parameters %s', modelNames{kk})); hold on
     set(gcf, 'Position', [400 200 2000 1200]);
     
-    % Plot explained variance
-    subplot(1,3,1); hold on
-    if ~dataWasAveraged
-        %[m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
-        [m, se, dat] = averageAcrossElecsWithinArea(results(kk).R2.concat_all, chan_idx);
-        if opts.plotindivpoints
-            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
-        end
-        errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-        se_all(1,:,:,kk) = squeeze(se);
-    else
-        m = results(kk).R2.concat_all; 
-        plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
-    end
-    m_all(1,:,kk) = squeeze(m);
-    
-    set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-    set(gca, 'Ylim', [0 1]);
-    title(derivedTitles{1}); xlabel('visual area');  ylabel('R2'); set(gca, 'fontsize', 16);
-
-    % Plot derived parameters
-    subplotinx = [2 3 5 6];
+    % Collect the data to plot
+    data{1} = results(kk).R2.concat_all;
     for p = 1:2
-        subplot(1,3,subplotinx(p)); hold on
+        data{p+1} = results(kk).derived.params{p};
+    end
+       
+    % Plot 
+    subplotinx = [1 2 3 5 6];
+    for dd = 1:length(data)
+        subplot(1,3,subplotinx(dd)); hold on
         if ~dataWasAveraged
-            %[m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
-            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).derived.params{p}, chan_idx);
+            %[m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
+            [m, se, dat] = averageAcrossElecsWithinArea(data{dd}, chan_idx1);
             if opts.plotindivpoints
-                for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}(1,:), 30, [0.7 0.7 0.7], 'filled');end
+                for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             end
-            m = m(1,:); se = se(1,:,:);
-            errorbar(1:nChans, m, m-se(1,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-            se_all(p+1,:,:,kk) = squeeze(se);
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
+            [m, se] = averageAcrossElecsWithinArea(data{dd}, chan_idx2);
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            se_all(dd,:,:,kk) = squeeze(se);
         else
-            m = results(kk).derived.params{p};
+            m = results(kk).R2.concat_all; 
             if size(m,1) > 1
                 cmap = num2cell(flipud(gray(size(m,1)+1)),2);
                 h = plot(1:nChans, m, 'k.-', 'MarkerSize', 20, 'LineWidth', 2);
@@ -88,15 +77,19 @@ for kk = 1:nModels
             else
                 plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
             end
-        end        
+        end
+        m_all(dd,:,kk) = squeeze(m);
+        
+        % set axes and axes labels
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-        if p == 1, set(gca, 'Ylim',[0 0.2]); end
-        if p == 2, set(gca, 'Ylim',[0 1]); end
-        if p == 3, set(gca, 'Ylim',[0.5 1.5]); end
-        if p == 4, set(gca, 'Ylim',[0 1.2]); end
-        title(derivedTitles{p+1}); xlabel('visual area');  ylabel('parameter value'); set(gca, 'fontsize', 16);
-        m_all(p+1,:,kk) = squeeze(m);
-    end
+        set(gca, 'Ylim', [0 1]);
+        title(derivedTitles{dd}); xlabel('visual area'); set(gca, 'fontsize', 16);
+        if dd == 1, set(gca, 'Ylim',[0 1]); end
+        if dd == 2, set(gca, 'Ylim',[0 0.2]); end
+        if dd == 3, set(gca, 'Ylim',[0 1]); end
+        if dd == 4, set(gca, 'Ylim',[0.5 1.5]); end
+        if dd == 5, set(gca, 'Ylim',[0 1.2]); end
+    end   
     
     % Save plot
     if saveFig
@@ -107,15 +100,15 @@ end
 
 % All models together in one plot:
 
-%figure('Name', 'Derived parameters - all models'); hold on
+figure('Name', 'Derived parameters - all models'); hold on
 set(gcf, 'Position', [400 800 2000 600]);
 
 %colors = parula(nModels);
 nSubPlot = 3;%size(m_all,1)
 for jj = 1:nSubPlot
 
-    %subplot(1,nSubPlot,jj); hold on
-    figure('Name', sprintf('allModels %s', derivedTitles{jj}));hold on;
+    subplot(1,nSubPlot,jj); hold on
+    %figure('Name', sprintf('allModels %s', derivedTitles{jj}));hold on;
     m = squeeze(m_all(jj,:,:));
     
     if size(m,2) == 1 % If there's just one area, add a dummy column to make sure bars will still be grouped
@@ -151,7 +144,7 @@ for jj = 1:nSubPlot
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
 	if jj == 5, set(gca, 'Ylim',[0 1]); end
-    %if jj == nSubPlot, legend(modelNames, 'Location', 'NorthEast'); end
+    if jj == nSubPlot, legend(modelNames, 'Location', 'NorthEast'); end
     set(gca, 'fontsize', 16);
     
     % Save plot
@@ -181,12 +174,14 @@ for kk = 1:nModels
         subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
             %[m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
-            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx);
+            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx1);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
+            [m, se] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx2);
+            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         else
             m = results(kk).params(p,:); 
             plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
@@ -226,6 +221,7 @@ end
 
 % plot saving
 function savePlot(figName, saveDir, dataWasAveraged)
+    if ~exist(saveDir), mkdir(saveDir); end
     if ~dataWasAveraged
         figDir = fullfile(saveDir, 'individualelectrodes');
     else

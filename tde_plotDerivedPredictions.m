@@ -25,8 +25,8 @@ if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
     dataWasAveraged = false;
-    [INX, channels] = groupElecsByVisualArea(channels);  
-    nChans = size(INX,2);
+    [chan_idx, channels] = groupElecsByVisualArea(channels);  
+    nChans = height(channels);
 end
 
 % Are we saving figures?
@@ -62,7 +62,7 @@ if plotType == 1
                 %h = ciplot(se(kk,:,ii,1), se(kk,:,ii,2), [], colors{kk}, 0.25);
                 %h.Annotation.LegendInformation.IconDisplayStyle = 'off';        
                 %[m(kk,:,:), se(kk,:,:)] = averageAcrossAreas(results(kk).derivedPred, INX);
-                m = results(kk).derived.pred(:,INX{ii});
+                m = results(kk).derived.pred(:,chan_idx(:,ii));
                 %mp = averageAcrossAreas(results(kk).derivedPrm, INX);
                 %l{kk} = sprintf('%s median t2p = %0.2f median rasymp = %0.2f', ...
                 %    func2str(results(kk).model), mp(kk,1,ii), mp(kk,2,ii));
@@ -121,7 +121,7 @@ if plotType == 2
         % Plot multiple areas together in one plot
         for ii = 1:nChans
             if ~dataWasAveraged
-                m = mean(results(kk).derived.pred(:,INX{ii}),2, 'omitnan');
+                m = mean(results(kk).derived.pred(:,chan_idx(:,ii)),2, 'omitnan');
                 %se = std(results(kk).derived.pred(:,INX{ii}),0,2, 'omitnan');
                 %h = ciplot(m-se, m+se, [], colors(ii,:), 0.25);
                 %h.Annotation.LegendInformation.IconDisplayStyle = 'off';              
