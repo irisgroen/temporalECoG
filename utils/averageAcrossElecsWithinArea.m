@@ -29,12 +29,12 @@ if nResamples == 1
 else
     
     % resample use based on wang probabilities (new method)
-    
-    % generate nresample copies of the data 
-    data_resampled = repmat(data', [1 nResamples]);
-       
+        
     for ii = 1:nAreas
+        % get index of channels for this area
         inx = squeeze(chan_idx(:,ii,:)); 
+        % generate nresample copies of the data 
+        data_resampled = repmat(data', [1 nResamples]);
         % set non-included resamples to nan
         data_resampled(~inx) = nan;
         % take mean across the electrodes nresample times
