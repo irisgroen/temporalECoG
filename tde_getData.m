@@ -235,6 +235,7 @@ for ii = 1 : length(subjects)
             if isfield(summary(channels),'status_description'), channels = removevars(channels,'status_description');end
             if isfield(summary(channels),'size'), channels = removevars(channels,'size');end
             if isfield(summary(channels),'material'), channels = removevars(channels,'material');end
+            if isfield(summary(channels),'manufacturer'), channels = removevars(channels,'manufacturer');end
 
             % Add a subject index column to channels and events tables:
             events.subject_name = repmat({subject}, [height(events),1]);
