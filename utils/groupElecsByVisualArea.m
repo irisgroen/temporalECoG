@@ -6,14 +6,15 @@ function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, grou
 %
 % Input
 %     channels:         BIDSformatted channels table (matlab table)
-%     groupingMethod:   either 'fixedassignment' (string; requires
-%                       wang_15_mplbl and benson14_varea column in channel
-%                       table), or 'probabilisticresample' (string;
-%                       requires wang_15_fplbl column in channel table)
-%                           default: 'fixedassignment'
+%     groupingMethod:   electrode grouping method (string). options
+%                           - 'fixedassignment'; requires wang_15_mplbl and
+%                               benson14_varea column in channel table
+%                           - 'probabilisticresample'; requires
+%                               wang_15_fplbl column in channel table
+%                               default: 'fixedassignment'
 %     areaNames:        list of areas to group (cell array of string)
-%                           default: {'V1', 'V2', 'V3', 'V3a','V3b',...
-%                                     'LO1','LO2','TO1','IPS'};
+%                               default: {'V1', 'V2', 'V3', 'V3a','V3b',...
+%                                         'LO1','LO2','TO1','IPS'};
 %
 % Input
 %     chan_idx:         for 'fixedassignment':
