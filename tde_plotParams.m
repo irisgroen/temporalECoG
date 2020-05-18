@@ -18,14 +18,13 @@ for kk = 1:nModels
     modelNames{kk} = func2str(results(kk).model);
 end
 
-% Determine if data was averaged across elecs prior to fit; if not, average
-% derived and fitted parameters now
+% Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
     dataWasAveraged = false;
-    [chan_idx1, channels1] = groupElecsByVisualArea(channels);  
-	[chan_idx2] = groupElecsByVisualArea(channels, 'probabilisticresample');  
+    [chan_idx1, channels1] = groupElecsByVisualArea(channels, 'fixedassignment');  
+	[chan_idx2, channels2] = groupElecsByVisualArea(channels, 'probabilisticresample');  
     channels = channels1;
     nChans = height(channels);
 end
@@ -56,7 +55,6 @@ for kk = 1:nModels
     for dd = 1:length(data)
         subplot(1,3,subplotinx(dd)); hold on
         if ~dataWasAveraged
-            %[m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
             [m, se, dat] = averageAcrossElecsWithinArea(data{dd}, chan_idx1);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
@@ -149,7 +147,6 @@ for jj = 1:nSubPlot
     
     % Save plot
     if saveFig
-        %figName = sprintf('derivedParams_allmodels');
         figName = strrep(get(gcf,'Name'),' ','_');
         savePlot(figName, saveDir, dataWasAveraged)
     end
@@ -173,7 +170,6 @@ for kk = 1:nModels
     for p = 1:nParams
         subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
-            %[m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
             [m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx1);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
