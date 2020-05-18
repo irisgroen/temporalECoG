@@ -18,7 +18,8 @@ if isfield(summary(channels), 'number_of_elecs')
 else
     dataWasAveraged = false;
 end
-%% plot data and predictions
+
+%% Plot data and predictions
 colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
@@ -27,7 +28,7 @@ l{1} = 'data';
 for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 
 % Loop over channels or channel averages
-for ii = 1:3%nDatasets
+for ii = 1:nDatasets
     
     figure;
     
@@ -87,12 +88,12 @@ for ii = 1:3%nDatasets
     
     % Determine how to name the plot 
     if ~dataWasAveraged
-        if isfield(summary(channels), 'bensonarea') 
+        if isfield(summary(channels), 'benson14_varea') && isfield(summary(channels), 'wang15_mplbl')
             if isfield(summary(channels), 'subject_name')
-                figureName = sprintf('fits_%s_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('fits_%s_%s_%s_%s_%s', channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
                     channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
             else
-                figureName = sprintf('fits_%s_%s_%s_%s', channels.bensonarea{ii}, channels.wangarea{ii}, ...
+                figureName = sprintf('fits_%s_%s_%s_%s', channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
                     channels.name{ii}, [l{2:end}]);
             end
         else
