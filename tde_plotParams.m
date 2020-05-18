@@ -1,8 +1,11 @@
-function [results] = tde_plotParams(results, channels, saveDir)
+function [results] = tde_plotParams(results, channels, saveDir, opts)
 
 % Plot derived and fitted parameters for models in results
 
 if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
+if ~exist('opts', 'var') || isempty(opts), opts = struct(); end
+
+if ~isfield(opts, 'plotindivpoints'), opts.plotindivpoints = false;end
 
 %% Prep
 
@@ -21,8 +24,8 @@ if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
     dataWasAveraged = false;
-    [INX, channels] = groupElecsByVisualArea(channels);  
-    nChans = size(INX,2);
+    [chan_idx, channels] = groupElecsByVisualArea(channels);  
+    nChans = size(chan_idx,2);
 end
 
 % Are we saving figures?
@@ -41,11 +44,13 @@ for kk = 1:nModels
     set(gcf, 'Position', [400 200 2000 1200]);
     
     % Plot explained variance
-    subplot(2,3,1); hold on
+    subplot(1,3,1); hold on
     if ~dataWasAveraged
-        [m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
-        for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
-        %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        %[m, se, dat] = averageAcrossAreas(results(kk).R2.concat_all, INX);
+        [m, se, dat] = averageAcrossElecsWithinArea(results(kk).R2.concat_all, chan_idx);
+        if opts.plotindivpoints
+            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
+        end
         errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         se_all(1,:,:,kk) = squeeze(se);
     else
@@ -60,12 +65,14 @@ for kk = 1:nModels
 
     % Plot derived parameters
     subplotinx = [2 3 5 6];
-    for p = 1:4
-        subplot(2,3,subplotinx(p)); hold on
+    for p = 1:2
+        subplot(1,3,subplotinx(p)); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
-            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}(1,:), 30, [0.7 0.7 0.7], 'filled');end
-            %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2,'LineStyle', 'none', 'CapSize', 0)
+            %[m, se, dat] = averageAcrossAreas(results(kk).derived.params{p}, INX);
+            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).derived.params{p}, chan_idx);
+            if opts.plotindivpoints
+                for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}(1,:), 30, [0.7 0.7 0.7], 'filled');end
+            end
             m = m(1,:); se = se(1,:,:);
             errorbar(1:nChans, m, m-se(1,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             se_all(p+1,:,:,kk) = squeeze(se);
@@ -83,7 +90,7 @@ for kk = 1:nModels
             end
         end        
         set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
-        if p == 1, set(gca, 'Ylim',[0 0.8]); end
+        if p == 1, set(gca, 'Ylim',[0 0.2]); end
         if p == 2, set(gca, 'Ylim',[0 1]); end
         if p == 3, set(gca, 'Ylim',[0.5 1.5]); end
         if p == 4, set(gca, 'Ylim',[0 1.2]); end
@@ -173,8 +180,11 @@ for kk = 1:nModels
     for p = 1:nParams
         subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
-            for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
+            %[m, se, dat] = averageAcrossAreas(results(kk).params(p,:), INX);
+            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx);
+            if opts.plotindivpoints
+                for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
+            end
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         else
