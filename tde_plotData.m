@@ -41,7 +41,7 @@ for ii = 1:size(data,3)
             channels.name{ii}, channels.number_of_elecs{ii})); 
     else
         title(sprintf('%s %s %s %s', ...
-            channels.bensonarea{ii}, channels.wangarea{ii}, channels.subject_name{ii}, channels.name{ii})); 
+            channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, channels.subject_name{ii}, channels.name{ii})); 
     end
     if ii == 1
         ylabel('x-fold increase in broadband power');

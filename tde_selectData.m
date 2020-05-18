@@ -348,7 +348,7 @@ srate = channels.sampling_frequency(1);
 % Sort electrodes on visual area (rather than subjectID)?
 if opts.sort_channels
     % sort on benson area
-    [~,I] = sortVisualAreaNames(channels.bensonarea);
+    [~,I] = sortVisualAreaNames(channels.benson14_varea);
     channels = channels(I,:);
     epochs = epochs(:,:,I);
 end
@@ -389,11 +389,11 @@ end
 % Data averaging
 function [data, channels] = average_elecs(data, channels, opts)
     
-    [INX, channels] = groupElecsByVisualArea(channels, opts.areanames);
+    [chan_idx, channels] = groupElecsByVisualArea(channels, opts.areanames);
     avdata = nan(size(data,1), size(data,2), height(channels));
     
-    for ii = 1:length(INX)
-        mdata = mean(data(:,:,INX{ii}),3);
+    for ii = 1:length(chan_idx,2)
+        mdata = mean(data(:,:,chan_idx(:,ii)),3);
         if opts.normalize_data     
             % another normalization step from Jings code, necessary?
             maxmdata = max(mdata(:));
