@@ -1,4 +1,4 @@
-function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot)
+function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot, savePlot, saveStr)
 
 % For each channel in the data, compute 4 things:
 % - contrast response function (based on CRF trials)
@@ -7,32 +7,34 @@ function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot)
 % - time to recovery (based on TWOPULSE trials)
 
 if ~exist('chan_to_plot', 'var'), chan_to_plot = []; end
-
-[nSamp, nStim, nChan] = size(data);
+if ~exist('savePlot', 'var') || isempty(savePlot), savePlot = false; end
+if ~exist('saveStr', 'var'), saveStr = datestr(now,30); end
 
 % Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
+	figureName = sprintf('datasummary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
     [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
-    nChan = height(channels);
+	figureName = sprintf('datasummary_individualelecs_%s', saveStr);
 end
 
 % Determine if we're plotting all channels or just a subset
 if ~isempty(chan_to_plot) 
     if ~iscell(chan_to_plot), chan_to_plot = {chan_to_plot};end
-    chan_plot_idx = nan(length(chan_to_plot));
+    chan_plot_idx = nan(length(chan_to_plot),1);
     for ii = 1:length(chan_to_plot)
-        chan_plot_idx(ii) = ecog_matchChannels(chan_to_plot{ii}, channels.name);
-        nChan = length(chan_plot_idx);
+        %chan_plot_idx(ii) = ecog_matchChannels(chan_to_plot{ii}, channels.name);
+        chan_plot_idx(ii) = find(matchAreaNameToAtlas(chan_to_plot{ii}, channels.name));
     end 
 else
-    chan_plot_idx = nChan:-1:1;
+    chan_plot_idx = height(channels):-1:1;
 end
 
 % Set plotting specs
-figure('Position', [360    44   879   654]); hold on;
+%figure('Position', [360    44   879   654]); hold on;
+figure('Name', figureName, 'Position', get(0, 'ScreenSize')); hold on;
 colors = flipud(copper(length(chan_plot_idx))); 
 
 % CONTRAST CONDITION PLOTS (3)
@@ -61,8 +63,9 @@ startpoint = [1];
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
 
 % format axes
-xlabel('contrast level'); ylabel('summed broadband (0-0.5s)'); title('contrast response functions'); 
-legend off; axis square;
+xlabel('contrast level'); ylabel('summed broadband (0-0.5s)'); title('contrast: contrast response function'); 
+axis square;
+legend(channels.name(chan_plot_idx), 'Location', 'SouthEast');
 
 % 2. peak latency
 subplot(2,3,2); hold on
@@ -70,20 +73,21 @@ subplot(2,3,2); hold on
 % compute peak across trial window
 m = squeeze(data(:,stim_inx,:)); se = [];
 [~,I] = max(m,[],1);
+m = squeeze(t(I));
 
 % plot data
 if ~dataWasAveraged 
-    [t_peak, se] = averageWithinArea(squeeze(t(I)), chan_idx);
+    [m, se] = averageWithinArea(m, chan_idx);
 end
-t_peak = t_peak*1000; % convert to ms
+m = m*1000; % convert to ms
 se = se * 1000;
 formula_to_fit = 'a * x ^ -b';
 startpoint = [1 1];
-[y] = plotData(x,t_peak,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
 
 % format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
-xlabel('contrast level'); ylabel('peak latency (ms)'); title('latency shift'); 
+xlabel('contrast level'); ylabel('peak latency (ms)'); title('contrast: latency shift'); 
 legend off; axis square;
 
 % 3. ratio of offset to peak
@@ -104,7 +108,7 @@ startpoint = [1 1 1];
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
 
 % format axes
-xlabel('contrast level'); ylabel('ratio offset to peak'); title('transient to sustained ratio'); 
+xlabel('contrast level'); ylabel('ratio offset to peak'); title('contrast: transient to sustained ratio'); 
 legend off; axis square;
 
 % DURATION CONDITION PLOTS (1)
@@ -133,7 +137,7 @@ startpoint = 0;
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
 
 % format axes
-xlabel('stimulus duration (ms)'); ylabel('summed broadband (0-0.5s)'); title('temporal summation with duration'); 
+xlabel('stimulus duration (ms)'); ylabel('summed broadband (0-0.5s)'); title('duration: temporal summation'); 
 legend off; axis square;
 
 
@@ -164,7 +168,7 @@ h0 = line([x(1) x(end)], [y(1) y(1)], 'LineStyle', '--', 'LineWidth', 2, 'Color'
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % format axes
-xlabel('ISI (ms)'); ylabel('summed broadband (0-1.2s)'); title('temporal summation with ISI'); 
+xlabel('ISI (ms)'); ylabel('summed broadband (0-1.2s)'); title('ISI: temporal summation'); 
 legend off; axis square;
 
 % 2. response recovery with ISI
@@ -172,7 +176,7 @@ subplot(2,3,6); hold on
 
 [m] = tde_computeISIrecovery(data,t,stim_info);
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx, @mean);
+    [m, se] = averageWithinArea(m, chan_idx);
 end
 formula_to_fit = 'a * x ^ b + c';
 startpoint = [1 1 1];
@@ -183,10 +187,18 @@ h0 = line([x(1) x(end)], [100 100], 'LineStyle', '--', 'LineWidth', 2, 'Color', 
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % format axes
-xlabel('ISI (ms)'); ylabel('% of first pulse'); title('recovery with ISI'); 
+xlabel('ISI (ms)'); ylabel('% of first pulse'); title('ISI: recovery of second pulse'); 
 ylim([0 100]);
-legend(channels.name(chan_plot_idx));
+axis square; legend off;
+%legend(channels.name(chan_plot_idx));
 
+% save Plot?
+if savePlot
+    saveDir = fullfile(analysisRootPath, 'figures', 'datasummary');
+    if ~exist(saveDir, 'dir'), mkdir(saveDir);end
+    fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
+    saveas(gcf, fullfile(saveDir, figureName), 'png');
+end
 end
 
 %%% SUBFUNCTIONS %%%
@@ -211,7 +223,7 @@ for ii = 1:length(chan_plot_idx)
     y = m(:,chan_plot_idx(ii));
     if ~isempty(se)
         y_se = se(:,chan_plot_idx(ii),:);
-        errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
+        %errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
     else
         plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
     end
@@ -223,7 +235,7 @@ for ii = 1:length(chan_plot_idx)
         else
             h0 = plot(f);
         end
-        set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        %set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
     end
 end
 y = ally;
