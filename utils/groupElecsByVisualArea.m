@@ -91,6 +91,7 @@ switch groupingMethod
         % Normalize probabilities by the sum (i.e. exclude 'none')
         probvals = channels(:,idx).Variables;
         probvals_norm = probvals./sum(probvals,2);
+        probvals_norm(isnan(probvals_norm)) = 0;
         
         % Group wang ROIs into bigger groups (e.g. V1v + V1d -> V1)
         atlasLabels = getAtlasLabels(atlasName);        

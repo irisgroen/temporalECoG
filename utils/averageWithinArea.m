@@ -1,8 +1,15 @@
-function [m, se, indiv_points] = averageAcrossElecsWithinArea(data, chan_idx)
+function [m, se, indiv_points] = averageWithinArea(data, chan_idx)
     
 % data: e.g. params * channels (last dim should be channels)
 % chan_idx: as outputted by groupElecsByVisualArea.m
 
+if ndims(data) == 3
+    multiDimData = true;
+    dataSz = size(data);
+    data = reshape(data, [dataSz(1) * dataSz(2) dataSz(3)]);
+else
+    multiDimData = false;
+end
 
 [~, nAreas, nResamples] = size(chan_idx);
 
@@ -18,12 +25,11 @@ if nResamples == 1
         elec_idx = chan_idx(:,ii);
         %[m(:,ii),se(:,ii,:)] = calcmdsepct(data(:,elec_index),2);
         d = data(:,elec_idx);
-        m(:,ii) = median(d);
-        func = @(x) median(x,'omitnan');
-        mdata = bootstrp(numboot,func,d);
-        se(:,ii,:) = prctile(mdata, [15.87 84.13]);   
+        m(:,ii) = median(d,2);
+        func = @(x) median(x,2,'omitnan');
+        mdata = bootstrp(numboot,func,d)';
+        se(:,ii,:) = squeeze(prctile(mdata, [15.87 84.13],2));   
         indiv_points{ii} = data(:,elec_idx);
-
     end
         
 else
@@ -31,24 +37,29 @@ else
     % resample use based on wang probabilities (new method)
         
     for ii = 1:nAreas
+        fprintf('[%s] computing probabilistic average for area %d \n', mfilename, ii);
         % get index of channels for this area
         inx = squeeze(chan_idx(:,ii,:)); 
-        % generate nresample copies of the data 
-        data_resampled = repmat(data', [1 nResamples]);
+        % generate nresample copies of the data
+        data_resampled = repmat(data, [ones(1, ndims(data)) nResamples]);
         % set non-included resamples to nan
-        data_resampled(~inx) = nan;
-        % take mean across the electrodes nresample times
-        mdata = median(data_resampled,'omitnan');
+        data_resampled(:,~inx) = nan;
+        % take mean across the electrodes nresample times        
+        mdata = squeeze(median(data_resampled,2,'omitnan'));
         % take median and 68% confidence interval of resampled
         % distribution of electrode means
-        m(:,ii) = median(mdata, 'omitnan');
-        se(:,ii,:) = prctile(mdata, [15.87 84.13]);  
+        m(:,ii) = median(mdata,2, 'omitnan');
+        se(:,ii,:) = prctile(mdata,[15.87 84.13],2);         
         % include any included electrode in the individual points
         elec_idx = any(inx,2);
         indiv_points{ii} = data(:,elec_idx);
     end    
 end
 
+if multiDimData
+    m = reshape(m, [dataSz(1) dataSz(2) nAreas]); 
+    se = reshape(se, [dataSz(1) dataSz(2) 2 nAreas]);
+end
 % debug
 
 % figure;hold on
