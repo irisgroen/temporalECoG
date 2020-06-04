@@ -72,7 +72,7 @@ for kk = 1:nDatasets
     pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
 
     % Compute recovery
-    ISIrecover(:,kk) = pulse2_summed./pulse1_mn_summed;
+    ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed) * 100; % in percentage
 
 %     % Debug:
 % 
