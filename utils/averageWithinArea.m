@@ -1,7 +1,11 @@
-function [m, se, indiv_points] = averageWithinArea(data, chan_idx)
+function [m, se, indiv_points] = averageWithinArea(data, chan_idx, fun)
     
 % data: e.g. params * channels (last dim should be channels)
 % chan_idx: as outputted by groupElecsByVisualArea.m
+
+if ~exist('fun','var') || isempty(fun)
+    fun = @median;
+end
 
 if ndims(data) == 3
     multiDimData = true;
@@ -44,8 +48,8 @@ else
         data_resampled = repmat(data, [ones(1, ndims(data)) nResamples]);
         % set non-included resamples to nan
         data_resampled(:,~inx) = nan;
-        % take mean across the electrodes nresample times        
-        mdata = squeeze(median(data_resampled,2,'omitnan'));
+        % take mean/median across the electrodes nresample times        
+        mdata = squeeze(fun(data_resampled,2,'omitnan'));
         % take median and 68% confidence interval of resampled
         % distribution of electrode means
         m(:,ii) = median(mdata,2, 'omitnan');
