@@ -83,6 +83,7 @@ for kk = 1:nSub
 %     if normalize, set(gca, 'Ylim', [-0.1 1.1]);end
 % 
 %     set(gcf, 'Position', [600 700 1600 600]);
+ set(gca, 'YLim', [0 40]);
 end
 set(findall(gcf,'-property','FontSize'),'FontSize',14)
 set(gcf, 'Position', [400 200 2000 1200]);
