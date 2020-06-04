@@ -1,16 +1,21 @@
-function tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, conditionsOfInterest, saveDir)
+function tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, saveDir, conditionsOfInterest, timepointsOfInterest)
 
 % potentially change this to tde_generateReport 
 
+
+if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
 if ~exist('conditionsOfInterest', 'var') || isempty(conditionsOfInterest)
     conditionsOfInterest = {'CRF', 'ONEPULSE', 'TWOPULSE'};
 end
-if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = []; end
+if ~exist('timepointsOfInterest', 'var') || isempty(timepointsOfInterest)
+    timepointsOfInterest = [t(1) t(end)];
+end
 
 nModels     = size(results,2);
 nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
 stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
+t_ind       = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 
 % Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
@@ -20,7 +25,7 @@ else
 end
 
 %% Plot data and predictions
-colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
+colors = {'r', 'g', 'c', 'm', 'b', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
 l = cell(1,nModels+1);
@@ -28,11 +33,11 @@ l{1} = 'data';
 for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 
 % Loop over channels or channel averages
-for ii = 1:nDatasets
+for ii = 1%1:1%nDatasets
     
     figure;
     
-    d = data(:,:,ii);
+    d = data(t_ind,:,ii);
     maxresp = max(d(:)); % scale stimulus to max across dataset
     
     % Loop over conditions 
@@ -41,7 +46,7 @@ for ii = 1:nDatasets
         inx = contains(stim_info.name, conditionsOfInterest{jj});
         
         % plot stimulus
-        h = plot(flatten(stim_ts(:,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+        h = plot(flatten(stim_ts(t_ind,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
         h.Annotation.LegendInformation.IconDisplayStyle = 'off';
         
         % plot data
@@ -50,22 +55,23 @@ for ii = 1:nDatasets
         
         % plot models
         for kk = 1:nModels           
-            pred = results(kk).pred(:,inx,ii);
+            pred = results(kk).pred(t_ind,inx,ii);
             plot(flatten(pred), 'Color', colors{kk}, 'LineWidth', 2);
-            if isfield(results(kk).R2, 'concat_cond')
-                R2val = mean(results(kk).R2.concat_cond(jj,ii));
-            else
+            %if isfield(results(kk).R2, 'concat_cond')
+            %    R2val = mean(results(kk).R2.concat_cond(jj,ii));
+            %else
                 R2val = mean(results(kk).R2.stim(inx,ii));
-            end
+            %end
             titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), R2val);
         end
         
         % add title
-        title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
+        % title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
         
         % set axes
-        axis tight   
-        set(gca, 'XTick',1:length(t):length(find(inx))*length(t), 'XTickLabel', []);
+       % axis tight   
+        set(gca, 'XTick',1:size(d,1):length(find(inx))*size(d,1), 'XTickLabel', []);
+        axis tight
 %         if contains(conditionsOfInterest{jj}, 'CRF')
 %             set(gca, 'XTickLabel', stim_info.contrast(inx))
 %         elseif contains(conditionsOfInterest{jj}, 'ONEPULSE')
@@ -73,13 +79,13 @@ for ii = 1:nDatasets
 %         else
 %             set(gca, 'XTickLabel', stim_info.ISI(inx))
 %         end
-        if ii == 1, ylim([-5 25]); end
+        if ii == 1, ylim([-5 20]); end
         if ii == 2, ylim([-5 15]); end
         if ii == 3, ylim([-2 8]); end
 
-        set(gca, 'FontSize', 14);
-        xlabel('stimulus');
-        ylabel('response');
+        set(gca, 'FontSize', 20);
+        %xlabel('stimulus');
+        %ylabel('broadband power');
         
         % add legend
         %if jj == 1, legend(l); end
