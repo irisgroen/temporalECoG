@@ -1,124 +1,105 @@
-function [ISIrecover] = tde_computeISIrecovery(data,channels,t,stim_info)
+function [ISIrecover] = tde_computeISIrecovery(data,t,stim_info)
 
 
+[nSamp,~,nDatasets] = size(data);
 
-[~,~,nDatasets] = size(data);
+% Set parameters
 
-% Trecover
-stim_idx = find(contains(stim_info.name, {'ONEPULSE-4','ONEPULSE-5','TWOPULSE'}));
-nStim = length(stim_idx);
-stimdur = unique(stim_info.duration(stim_idx(1)));
-stimISI = stim_info.ISI(stim_idx);
-shift = ones(nDatasets,1)*0.05;
+w = 0.3; % window for computing sum
+shift = 0;
+stimdur = 0.133;
+conditionsOfInterest = {'ONEPULSE-4','ONEPULSE-5','TWOPULSE'};
 
-data_pulse1 = data(:,stim_idx,:);
-data_pulse2 = data(:,stim_idx,:);
+ISIrecover = [];
+for kk = 1:nDatasets
 
-for ii = 1:nDatasets
-     for ss = 1:nStim
-         if ss == 1
-             isi = stimISI(5);
-         else
-             isi = stimISI(ss);
-         end
-         if ss < 5
-            pulse1_tidx = t > 0 & t < shift(ii) + stimdur + isi;
-         else
-            pulse1_tidx = t > 0 & t < shift(ii) + stimdur + isi;
-         end
-        pulse2_tidx = t > shift(ii) + stimdur + isi & t < shift(ii) + stimdur + isi + stimdur + 0.3;% shift(ii);        
-        data_pulse1(~pulse1_tidx,ss,ii) = nan;
-        data_pulse2(~pulse2_tidx,ss,ii) = nan;
-    end 
+    % Get the data
+    stim_idx = find(contains(stim_info.name, conditionsOfInterest));
+    D = data(:,stim_idx,kk);
+    stimNames = stim_info.name(stim_idx)';
+
+    % Get onsets for each pulse for each stimulus
+    nStim = length(stim_idx);
+    pulse1_onset = zeros(nStim,1);
+    pulse2_onset = stim_info.ISI(stim_idx) + stimdur;
+    pulse2_onset(1) = w; % ONEPULSE-4 has no second stimulus
+
+    % Compute response to first stimulus
+    pulse1 = D;
+    for ii = 1:nStim
+        t_idx = t <= pulse2_onset(ii) + shift;
+        pulse1(~t_idx,ii) = nan;
+    end
+
+    pulse1_mn = mean(pulse1,2,'omitnan');
+    % figure;hold on;
+    % plot(t,pulse1, 'LineWidth', 1);
+    % plot(t,pulse1_mn, 'k', 'LineWidth', 2);
+    % legend([stimNames 'mean']);
+
+    % Compute response to second stimulus
+    pulse2 = D;
+
+    % Omit ONEPULSE-4 which has no second stimulus
+    pulse2 = pulse2(:,2:end); 
+    stimNames = stimNames(2:end);
+    pulse2_onset = pulse2_onset(2:end);
+    nStim = length(stimNames);
+
+    % Subtract the mean response to pulse 1 from pulse 2
+    pulse1_mn_to_subtract = pulse1_mn;
+    pulse1_mn_to_subtract(isnan(pulse1_mn)) = 0;
+    pulse2_sub = pulse2 - pulse1_mn_to_subtract;
+
+    % figure;hold on;
+    % plot(t,pulse2_sub, 'LineWidth', 2);
+    % legend(stimNames);
+
+    % Compute the sum over mean of pulse 1
+    t_idx1 = t > pulse1_onset(1) + shift & t<= pulse1_onset(1) + w + shift;
+    pulse1_mn_summed = sum(pulse1_mn(t_idx1), 'omitnan');
+
+    % Compute the sum over each second pulse 
+    t_idx2 = [];
+    for ii = 1:nStim
+        t_idx2(:,ii) = t > pulse2_onset(ii) + shift & t<= pulse2_onset(ii) + w + shift;
+    end
+    t_idx2 = logical(t_idx2);
+
+    % Sum pulse 2
+    pulse2_to_sum = pulse2_sub;
+    pulse2_to_sum(~t_idx2) = 0;
+    pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
+
+    % Compute recovery
+    ISIrecover(:,kk) = pulse2_summed./pulse1_mn_summed;
+
+%     % Debug:
+% 
+%     % Plot pulse 1 mean + window
+%     figure('Position', get(0, 'ScreenSize'));hold on;
+%     subplot(round(nStim/2),2,1); hold on;
+%     tmp = zeros(nSamp,1);
+%     tmp(t_idx1) = 10;
+%     plot(t,pulse1_mn, 'r','LineWidth', 2); 
+%     plot(t,tmp, 'k');
+%     title('mean pulse 1');
+% 
+%      % Plot pulse 2 + window
+%     for ii = 1:nStim
+%         tmp = zeros(nSamp,1);
+%         tmp(t_idx2(:,ii)) = 10;
+%         subplot(round(nStim/2),2, ii+1); hold on
+%         plot(t,pulse2(:,ii),'b', 'LineWidth', 2);
+%         plot(t,pulse2_sub(:,ii),'m:', 'LineWidth', 2);
+%         plot(t,tmp, 'k');    
+%         plot(t,pulse1_mn, 'r', 'LineWidth', 2);
+%         title(stimNames{ii});
+%     end
+%     
+%     % Plot recovery
+%     figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
+     
 end
 
-% subtract first pulse from second pulse
-data_pulse1_mn = mean(data_pulse1,2,'omitnan');
-data_pulse1_mn_to_subtract = data_pulse1_mn;
-data_pulse1_mn_to_subtract(isnan(data_pulse1_mn)) = 0;
-data_pulse2_sub = data_pulse2 - data_pulse1_mn_to_subtract;
-%data_pulse2_sub = data(:,stim_idx,:) - data_pulse1_mn_to_subtract;
-
-% compute one pulse baseline
-pulse1_mn_tidx = t>0&t<0.55;
-pulse1_mn_summed = squeeze(sum(data_pulse1_mn(pulse1_mn_tidx,:,:),1, 'omitnan'))';
-data_pulse1_mn(~pulse1_mn_tidx,:,:)=nan; % for plotting
-
-% plots
-cmap = num2cell(parula(length(stimISI)), 2);
-pulse2_summed = squeeze(sum(data_pulse2_sub(:,2:end,:),1, 'omitnan'));
-
-ISIrecover = pulse2_summed(2:end,:)./pulse1_mn_summed;
-
 end
-%pulse2_summed = [];
-% for ii = 1:nDatasets
-% 
-%     figure('Name', channels.name{ii}, 'Position',  [78 61 1098 637]);
-%     subplot(2,3,1);
-%     h = plot(t,data(:,stim_idx,ii), 'LineWidth',2);
-%     set(h, {'color'}, cmap);
-%     ylims = get(gca, 'YLim'); set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
-%     title('selected conditions');
-%     xlabel('Time (s)');
-% 
-%     subplot(2,3,2);
-%     h = plot(t,data_pulse1(:,:,ii), 'LineWidth',2);
-%     set(h, {'color'}, cmap);
-%     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
-%     xlim([t(1) t(end)]);
-%     title('response to first pulse');
-%     xlabel('Time (s)');
-%     
-%     subplot(2,3,3);
-%     h = plot(t,data_pulse1_mn(:,:,ii), 'k', 'LineWidth',2);
-%     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
-%     xlim([t(1) t(end)]);
-%     title('response to first pulse averaged');
-%     xlabel('Time (s)');
-% 
-%     subplot(2,3,4);   
-%     h = plot(t,data_pulse2(:,2:end,ii), 'LineWidth',2);
-%     set(h, {'color'}, cmap(2:end,:));
-%     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
-%     xlim([t(1) t(end)]);
-%     title('response to second pulse');
-%     xlabel('Time (s)');
-%     legend(stim_info.name(stim_idx(2:end)));
-%     
-%     subplot(2,3,5);   
-%     h = plot(t,data_pulse2_sub(:,2:end,ii), 'LineWidth',2);
-%     set(h, {'color'}, cmap(2:end,:));
-%     set(gca, 'YLim',[-0.5 ylims(2)+0.1*ylims(2)]);
-%     xlim([t(1) t(end)]);
-%     title('response to second pulse - first pulse');
-%     xlabel('Time (s)');
-% 
-%     subplot(2,3,6);hold on
-%     %pulse1_summed(ii) = squeeze(sum(data_pulse1(:,1,ii),1, 'omitnan'));
-%     pulse2_summed(:,ii) = squeeze(sum(data_pulse2_sub(:,2:end,ii),1, 'omitnan'));
-%     %line([stimISI(1) stimISI(end)], [pulse1_mn_summed(ii) pulse1_mn_summed(ii)],'Color','r', 'LineStyle', '-', 'LineWidth',2)
-% 	%line([stimISI(1) stimISI(end)], [pulse1_summed(ii) pulse1_summed(ii)],'Color','r', 'LineStyle', '--', 'LineWidth',2)
-%     plot(stimISI(2:end),pulse2_summed(:,ii)/pulse1_mn_summed(ii), '-ko','LineWidth',2, 'MarkerSize', 10, 'MarkerFaceColor', 'k');
-%     title('summed response to second pulse');
-%     xlabel('ISI (s)');
-%     xlim([stimISI(1)-0.1 stimISI(end)+0.1]);
-%     ylim([0 1]);
-%     %legend({'first pulse mean', 'first pulse ONEPULSE-4', 'second pulse'}, 'Location', 'SouthEast')
-% 
-% end
-% 
-% figure; hold on;
-% %h1 = scatter(ones(nDatasets,1)*-0.02,pulse1_summed, 150, parula(nDatasets),'filled');
-% %set(get(get(h1,'Annotation'),'LegendInformation'),'IconDisplayStyle','off'); 
-% ind = nDatasets:-1:1;
-% h = plot(stimISI(2:end),pulse2_summed(:,ind)./pulse1_mn_summed(ind), '.-','LineWidth',2, 'MarkerSize', 50);
-% xlabel('ISI (s)');
-% ylabel('summed response');
-% set(h, {'color'}, num2cell(flipud(parula(nDatasets)), 2));
-% xlim([stimISI(1)-0.1 stimISI(end)+0.1]);
-% ylim([0 1]);
-% legend(channels.name(ind), 'Location', 'SouthEast');
-% title('recovery with ISI - all areas');
-
-%end
