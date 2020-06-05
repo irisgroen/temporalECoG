@@ -13,11 +13,11 @@ if ~exist('saveStr', 'var'), saveStr = datestr(now,30); end
 % Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
-	figureName = sprintf('datasummary_electrodeaverages_%s', saveStr);
+	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
     [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
-	figureName = sprintf('datasummary_individualelecs_%s', saveStr);
+	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 
 % Determine if we're plotting all channels or just a subset
@@ -57,7 +57,7 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
-[m, se] = normalizeData(m,se);
+[m, se] = normalizeData(m,se,length(x));
 formula_to_fit = 'x ./ (a + x)';
 startpoint = [1];
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
@@ -90,14 +90,14 @@ l = get(gca, 'YLim'); ylim([50 l(2)]);
 xlabel('contrast level'); ylabel('peak latency (ms)'); title('contrast: latency shift'); 
 legend off; axis square;
 
-% 3. ratio of offset to peak
+% 3. ratio of sustained to  transient
 subplot(2,3,3); hold on
-m = squeeze(data(:,stim_inx,:));
-m = m./max(m);
-[M] = max(m,[],1);
-t_off = t == 0.5;
-O = m(t_off,:,:);
-R = M./O;
+m = squeeze(data(:,stim_inx,:)); % timecourse
+m = m./max(m); % normalize timecourse to peak
+[M] = max(m,[],1); % value at peak
+t_off = t == 0.5; % offset timepoint
+O = m(t_off,:,:); % value at offset
+R = M./O; % divide value at offset with value of peak
 
 % plot data
 if ~dataWasAveraged 
@@ -131,7 +131,7 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
-[m, se] = normalizeData(m,se);
+[m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'x ./ (a + x)';
 startpoint = 0;
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
@@ -158,7 +158,7 @@ m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = [];
 if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
-[m, se] = normalizeData(m,se);
+[m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'b + x ./ (a + x)';
 startpoint = [1 1];
 [y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
@@ -188,13 +188,13 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % format axes
 xlabel('ISI (ms)'); ylabel('% of first pulse'); title('ISI: recovery of second pulse'); 
-ylim([0 100]);
+ylim([0 120]);
 axis square; legend off;
 %legend(channels.name(chan_plot_idx));
 
 % save Plot?
 if savePlot
-    saveDir = fullfile(analysisRootPath, 'figures', 'datasummary');
+    saveDir = fullfile(analysisRootPath, 'figures', 'summary');
     if ~exist(saveDir, 'dir'), mkdir(saveDir);end
     fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
     saveas(gcf, fullfile(saveDir, figureName), 'png');
@@ -203,8 +203,9 @@ end
 
 %%% SUBFUNCTIONS %%%
 
-function [m_norm, se_norm] = normalizeData(m,se)
-    m_norm  = m./max(m);
+function [m_norm, se_norm] = normalizeData(m,se,cond)
+    %m_norm  = m./max(m);
+    m_norm = m./m(cond,:);
     if ~isempty(se)
         se_norm = nan(size(se));
         for cc = 1:2
@@ -217,29 +218,28 @@ end
 
 
 function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint)
-if ~exist('startpoint', 'var'), startpoint = []; end
-ally = nan(length(x), length(chan_plot_idx));
-for ii = 1:length(chan_plot_idx)
-    y = m(:,chan_plot_idx(ii));
-    if ~isempty(se)
-        y_se = se(:,chan_plot_idx(ii),:);
-        %errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-    else
-        plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
-    end
-    ally(:,ii) = y;
-    if ~isempty(formula_to_fit)
-        f = fit(x, y, formula_to_fit, 'StartPoint', startpoint);
-        if length(chan_plot_idx) > 1
-            h0 = plot(x,f(x), 'Color', colors(ii,:), 'LineWidth', 2); 
+    if ~exist('startpoint', 'var'), startpoint = []; end
+    ally = nan(length(x), length(chan_plot_idx));
+    for ii = 1:length(chan_plot_idx)
+        y = m(:,chan_plot_idx(ii));
+        if ~isempty(se)
+            y_se = se(:,chan_plot_idx(ii),:);
+            errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
         else
-            h0 = plot(f);
+            plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
         end
-        %set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        ally(:,ii) = y;
+        if ~isempty(formula_to_fit)
+            f = fit(x, y, formula_to_fit, 'StartPoint', startpoint);
+            if length(chan_plot_idx) > 1
+                h0 = plot(x,f(x), 'Color', colors(ii,:), 'LineWidth', 2); 
+            else
+                h0 = plot(f);
+            end
+            set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        end
     end
-end
-y = ally;
-% format axes
-set(gca, 'XTick', x,'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y(:))+0.1*max(y(:))], 'XTickLabelRotation', 45);
-
+    y = ally;
+    % format axes
+    set(gca, 'XTick', x,'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y(:))+0.1*max(y(:))], 'XTickLabelRotation', 45);
 end
