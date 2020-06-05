@@ -50,6 +50,7 @@ else
         data_resampled(:,~inx) = nan;
         % take mean/median across the electrodes nresample times        
         mdata = squeeze(fun(data_resampled,2,'omitnan'));
+        if size(mdata,2) == 1, mdata = mdata'; end     
         % take median and 68% confidence interval of resampled
         % distribution of electrode means
         m(:,ii) = median(mdata,2, 'omitnan');
