@@ -1,7 +1,7 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = false; 
+reComputeFlag = true; 
 [fulldata] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
@@ -52,11 +52,12 @@ end
 
 % Provide a directory to save figures (optional)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelfits');
-%saveDir = [];
+saveDir = [];
 for ii = 1 : length(results)
     tde_plotDataAndFits(results(ii), data, channels, stim_ts, stim_info, t, [], saveDir)
     tde_plotResiduals(results(ii), data, channels, stim_ts, stim_info, t, [], saveDir)
 end
+tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, [], saveDir)
 
 %% 5. Plot derived and fitted parameters
 
