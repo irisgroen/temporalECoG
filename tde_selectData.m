@@ -392,7 +392,7 @@ function [data, channels] = average_elecs(data, channels, opts)
     [chan_idx, channels] = groupElecsByVisualArea(channels, opts.areanames);
     avdata = nan(size(data,1), size(data,2), height(channels));
     
-    for ii = 1:length(chan_idx,2)
+    for ii = 1:size(chan_idx,2)
         mdata = mean(data(:,:,chan_idx(:,ii)),3);
         if opts.normalize_data     
             % another normalization step from Jings code, necessary?
