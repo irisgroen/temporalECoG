@@ -1,12 +1,12 @@
 %% 1: Load the ECoG data and stimulus description
 
 % load or (re)compute the processed data
-reComputeFlag = true; 
+reComputeFlag = false; 
 [fulldata] = tde_getData(reComputeFlag);
 
 % select epochs and channels, average trials within stimulus condition 
 options = [];
-options.average_elecs             = true;
+options.average_elecs             = false;
 options.elec_exclude_depth        = true;
 options.doplots                   = false;
 options.elec_selection_method     = 'splithalf';
@@ -33,7 +33,7 @@ options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 
 LOADFITS = 1; % instead of fitting, load an existing saved model fit
-saveStr = 'nirf';
+saveStr = [];%'nirf';
 
 if LOADFITS  
 	% Load model fit(s)
@@ -74,9 +74,10 @@ tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 %% UNDER DEVELOPMENT
 
 % data params 
-close all;
-tde_plotDerivedParamsData(data,channels,t,stim_info)
+%close all;
+tde_plotDerivedParamsData(data,channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
 
+tde_plotDerivedParamsData(pred{5},channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
 
 %tde_computeDerivedParamsData(data,channels,t,stim_info);
 
