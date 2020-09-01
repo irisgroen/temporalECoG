@@ -1,4 +1,4 @@
-function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot, savePlot, saveStr)
+function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot, fits_only, savePlot, saveStr)
 
 % For each channel in the data, compute 4 things:
 % - contrast response function (based on CRF trials)
@@ -7,6 +7,7 @@ function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot, save
 % - time to recovery (based on TWOPULSE trials)
 
 if ~exist('chan_to_plot', 'var'), chan_to_plot = []; end
+if ~exist('fits_only', 'var') || isempty(fits_only), fits_only = false; end
 if ~exist('savePlot', 'var') || isempty(savePlot), savePlot = false; end
 if ~exist('saveStr', 'var'), saveStr = datestr(now,30); end
 
@@ -16,7 +17,7 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
+    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
 	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 
@@ -27,7 +28,8 @@ if ~isempty(chan_to_plot)
     for ii = 1:length(chan_to_plot)
         %chan_plot_idx(ii) = ecog_matchChannels(chan_to_plot{ii}, channels.name);
         chan_plot_idx(ii) = find(matchAreaNameToAtlas(chan_to_plot{ii}, channels.name));
-    end 
+    end
+    chan_plot_idx = sort(chan_plot_idx, 'descend');
 else
     chan_plot_idx = height(channels):-1:1;
 end
@@ -60,7 +62,7 @@ end
 [m, se] = normalizeData(m,se,length(x));
 formula_to_fit = 'x ./ (a + x)';
 startpoint = [1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
 
 % format axes
 xlabel('contrast level'); ylabel('summed broadband (0-0.5s)'); title('contrast: contrast response function'); 
@@ -83,7 +85,7 @@ m = m*1000; % convert to ms
 se = se * 1000;
 formula_to_fit = 'a * x ^ -b';
 startpoint = [1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
 
 % format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
@@ -95,7 +97,7 @@ subplot(2,3,3); hold on
 m = squeeze(data(:,stim_inx,:)); % timecourse
 m = m./max(m); % normalize timecourse to peak
 [M] = max(m,[],1); % value at peak
-t_off = t == 0.5; % offset timepoint
+t_off = (t == 0.5); % offset timepoint
 O = m(t_off,:,:); % value at offset
 R = M./O; % divide value at offset with value of peak
 
@@ -105,7 +107,7 @@ if ~dataWasAveraged
 end
 formula_to_fit = 'a * x ^ b + c';
 startpoint = [1 1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint,fits_only);
 
 % format axes
 xlabel('contrast level'); ylabel('ratio offset to peak'); title('contrast: transient to sustained ratio'); 
@@ -134,7 +136,7 @@ end
 [m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'x ./ (a + x)';
 startpoint = 0;
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
 
 % format axes
 xlabel('stimulus duration (ms)'); ylabel('summed broadband (0-0.5s)'); title('duration: temporal summation'); 
@@ -145,7 +147,7 @@ legend off; axis square;
 
 % 1. temporal summation
 stim_inx = find(contains(stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
-stim_on = t>0 & t(end); % compute sum over entire epoch, we don't miss the second pulse; 
+stim_on = t>0 & t(end); % compute sum over entire epoch, so we don't miss the second pulse; 
 x = stim_info.ISI(stim_inx) * 1000; % in ms
 
 % 1. temporal summation
@@ -161,7 +163,7 @@ end
 [m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'b + x ./ (a + x)';
 startpoint = [1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
 
 % plot linear prediction 
 h0 = line([x(1) x(end)], [y(1) y(1)], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
@@ -180,7 +182,7 @@ if ~dataWasAveraged
 end
 formula_to_fit = 'a * x ^ b + c';
 startpoint = [1 1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint);
+[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint, fits_only);
 
 % plot linear prediction 
 h0 = line([x(1) x(end)], [100 100], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
@@ -217,16 +219,18 @@ function [m_norm, se_norm] = normalizeData(m,se,cond)
 end
 
 
-function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint)
+function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint,fits_only)
     if ~exist('startpoint', 'var'), startpoint = []; end
     ally = nan(length(x), length(chan_plot_idx));
     for ii = 1:length(chan_plot_idx)
         y = m(:,chan_plot_idx(ii));
-        if ~isempty(se)
-            y_se = se(:,chan_plot_idx(ii),:);
-            errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-        else
-            plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
+        if ~fits_only
+            if ~isempty(se)
+                y_se = se(:,chan_plot_idx(ii),:);
+                errorbar(x, y, y-y_se(:,:,1), y_se(:,:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
+            else
+                plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
+            end
         end
         ally(:,ii) = y;
         if ~isempty(formula_to_fit)
@@ -236,7 +240,9 @@ function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoin
             else
                 h0 = plot(f);
             end
-            set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+            if ~fits_only
+                set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+            end
         end
     end
     y = ally;
