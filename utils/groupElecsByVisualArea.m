@@ -60,7 +60,7 @@ switch groupingMethod
             assert(any(contains(channels.Properties.VariableNames, atlasNames{ii})))
         end
         
-        % For each atlas, determine with ROIs match the requested areaNames
+        % For each atlas, determine which ROIs match the requested areaNames
         for ii = 1:nAtlases
             atlasLabels{ii} = getAtlasLabels(atlasNames{ii});
             for jj = 1:nAreas
