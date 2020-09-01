@@ -7,6 +7,12 @@ if strcmpi(areaName, 'V3')
     area_idx = contains(atlasLabels, 'V3') & ~contains(atlasLabels, {'V3a', 'V3b'});
 elseif strcmpi(areaName, 'IPS')
     area_idx = contains(atlasLabels, {'IPS0', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5'});
+elseif strcmpi(areaName, 'V3ab')
+    area_idx = contains(atlasLabels, {'V3a', 'V3b'});
+elseif strcmpi(areaName, 'LOTO')
+    area_idx = contains(atlasLabels, {'LO1', 'LO2', 'TO1', 'TO2'});
+elseif strcmpi(areaName, 'higher')
+    area_idx = contains(atlasLabels, {'V3a', 'V3b','LO1', 'LO2', 'TO1', 'TO2', 'IPS0', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5'});
 else
     area_idx = contains(atlasLabels, areaName); 
 end
