@@ -1,10 +1,35 @@
 function [m, se, indiv_points] = averageWithinArea(data, chan_idx, fun)
-    
-% data: e.g. params * channels (last dim should be channels)
-% chan_idx: as outputted by groupElecsByVisualArea.m
+% Averages data across electrodes belonging to individual areas. The
+% assignment to areas is based on the output and method specified in groupElecsByVisualArea.m
+%
+% [m, se, indiv_points] = averageWithinArea(data, chan_idx, [fun])
+%
+% Input
+%     data:             The to be averaged data, e.g. a list of fitted
+%                       parameters for each channel. Can be multi-
+%                       dimensional (e.g. a time-course for each channel),
+%                       but the last dimension should be channels.
+%     chan_idx:         Index as outputted by groupElecsByVisualArea.m. 
+%                       Depending on the method specified, shaped as: 
+%                       for 'fixedassignment':
+%                               channels * areas mask (logicals) indicating
+%                               which channels to include in which areas
+%                       for 'probabilistic resample':
+%                               channels * areas * 100 mask indicating
+%                               which channels to include in which areas
+%                               for 100 resamples of the channels
+%     fun:              (optional) Averaging function (default: @median).
+%
+% Output
+%     m:                estimated area average (default median).
+%     se:               68% confidence interval.
+%     indiv_points:     individual channel values. For 'probabilistic
+%                       resample', this will return any included channel.
+%
+% IG 2020
 
 if ~exist('fun','var') || isempty(fun)
-    fun = @median;
+	fun = @(x) median(x,2,'omitnan');
 end
 
 if ndims(data) == 3
@@ -23,22 +48,32 @@ indiv_points = cell(nAreas,1);
 
 if nResamples == 1
     
-    % bootstrap across electrodes
+    % bootstrap across electrodes (fixed assignment)
+    
     numboot = 1000;
     for ii = 1:nAreas
-        elec_idx = chan_idx(:,ii);
-        %[m(:,ii),se(:,ii,:)] = calcmdsepct(data(:,elec_index),2);
+        elec_idx = chan_idx(:,ii);  
         d = data(:,elec_idx);
-        m(:,ii) = median(d,2);
-        func = @(x) median(x,2,'omitnan');
-        mdata = bootstrp(numboot,func,d)';
-        se(:,ii,:) = squeeze(prctile(mdata, [15.87 84.13],2));   
+        % take true median across the channels for this area
+        m(:,ii) = fun(d); 
+        % generate a distribution of medians through bootstrapping
+        mdata = bootstrp(numboot,fun,d)';
+        % take 68% confidence interval of resampled
+        % distribution of electrode means
+        se(:,ii,:) = squeeze(prctile(mdata, [15.87 84.13],2));
+        % also return the individual channel values
         indiv_points{ii} = data(:,elec_idx);
+        
+         % debug:
+        % I compared this with kkutils function:
+        %   [m(:,ii),se(:,ii,:)] = calcmdsepct(data(:,elec_index),2);
+        % which gives the same result but uses parpool which is slow to
+        % start up.
     end
         
 else
     
-    % resample use based on wang probabilities (new method)
+    % resample based on wang probabilities (probabilistic resample)
         
     for ii = 1:nAreas
         fprintf('[%s] computing probabilistic average for area %d \n', mfilename, ii);
@@ -49,11 +84,11 @@ else
         % set non-included resamples to nan
         data_resampled(:,~inx) = nan;
         % take mean/median across the electrodes nresample times        
-        mdata = squeeze(fun(data_resampled,2,'omitnan'));
+        mdata = squeeze(fun(data_resampled));
         if size(mdata,2) == 1, mdata = mdata'; end     
         % take median and 68% confidence interval of resampled
         % distribution of electrode means
-        m(:,ii) = median(mdata,2, 'omitnan');
+        m(:,ii) = fun(mdata);
         se(:,ii,:) = prctile(mdata,[15.87 84.13],2);         
         % include any included electrode in the individual points
         elec_idx = any(inx,2);
@@ -65,6 +100,7 @@ if multiDimData
     m = reshape(m, [dataSz(1) dataSz(2) nAreas]); 
     se = reshape(se, [dataSz(1) dataSz(2) 2 nAreas]);
 end
+
 % debug
 
 % figure;hold on
