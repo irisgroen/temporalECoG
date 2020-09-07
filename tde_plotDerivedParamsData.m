@@ -1,4 +1,4 @@
-function tde_plotDerivedParamsData(data,channels,t,stim_info, chan_to_plot, fits_only, savePlot, saveStr)
+function tde_plotDerivedParamsData(data,channels,t,stim_info,chan_to_plot, fits_only, savePlot, saveStr)
 
 % For each channel in the data, compute 4 things:
 % - contrast response function (based on CRF trials)
@@ -17,7 +17,8 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
+    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
+    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
 	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 
@@ -39,7 +40,7 @@ end
 figure('Name', figureName, 'Position', get(0, 'ScreenSize')); hold on;
 colors = flipud(copper(length(chan_plot_idx))); 
 
-% CONTRAST CONDITION PLOTS (3)
+% CONTRAST CONDITION (3 PLOTS)
 
 stim_inx = find(contains(stim_info.name, 'CRF'));
 stim_on = t>0 & t<0.55;
@@ -61,8 +62,10 @@ if ~dataWasAveraged
 end
 [m, se] = normalizeData(m,se,length(x));
 formula_to_fit = 'x ./ (a + x)';
-startpoint = [1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
+sp = 1;
+lb = 0;
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb);
+plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % format axes
 xlabel('contrast level'); ylabel('summed broadband (0-0.5s)'); title('contrast: contrast response function'); 
@@ -84,8 +87,9 @@ end
 m = m*1000; % convert to ms
 se = se * 1000;
 formula_to_fit = 'a * x ^ -b';
-startpoint = [1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
+sp = [1 1];
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
@@ -106,8 +110,9 @@ if ~dataWasAveraged
     [m, se] = averageWithinArea(squeeze(R), chan_idx);
 end
 formula_to_fit = 'a * x ^ b + c';
-startpoint = [1 1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint,fits_only);
+sp = [1 1 1];
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % format axes
 xlabel('contrast level'); ylabel('ratio offset to peak'); title('contrast: transient to sustained ratio'); 
@@ -135,8 +140,10 @@ if ~dataWasAveraged
 end
 [m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'x ./ (a + x)';
-startpoint = 0;
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
+sp = 1;
+lb = 0;
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb);
+plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % format axes
 xlabel('stimulus duration (ms)'); ylabel('summed broadband (0-0.5s)'); title('duration: temporal summation'); 
@@ -156,17 +163,49 @@ subplot(2,3,5); hold on
 % compute sum across stim_on window
 m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
 
+% subtract off the 0 ISI condition
+%m = m-m(1,:);
+
 % plot data
 if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
-[m, se] = normalizeData(m,se, length(x));
-formula_to_fit = 'b + x ./ (a + x)';
-startpoint = [1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit, startpoint, fits_only);
+
+% % subtract off the 0 ISI condition
+% c_min = m(1,:);
+% c_max = m(length(x),:);
+% c = c_min./c_max;
+% m = m-c_min;
+% for cc = 1:2
+%     se(:,:,cc) = se(:,:,cc)-c_min;
+% end
+
+[m, se] = normalizeData(m,se,length(x));
+
+% formula_to_fit = 'x ./ (a + x) + b ';
+% sp = [1 1];
+% lb = [0 -10];
+% ub = [nan 0];
+% [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
+
+% formula_to_fit = 'a * x ^ b + c';
+% sp = [1 1 1];
+% [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+
+%formula_to_fit = 'x .^ b ./ (max(x) .^ b)';
+formula_to_fit = '(c + (x .^ b)) ./ (c + (max(x) .^ b))';
+sp = [1 0];
+lb = [0 -inf];
+ub = [inf inf];
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
+
+[y] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
+
+% set ylim 
+%ylim([-1.5 1.5]);
 
 % plot linear prediction 
-h0 = line([x(1) x(end)], [y(1) y(1)], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+%h0 = line([x(1) x(end)], [0 0], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % format axes
@@ -181,8 +220,9 @@ if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
 formula_to_fit = 'a * x ^ b + c';
-startpoint = [1 1 1];
-[y] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint, fits_only);
+sp = [1 1 1];
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+[y] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % plot linear prediction 
 h0 = line([x(1) x(end)], [100 100], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
@@ -211,19 +251,29 @@ function [m_norm, se_norm] = normalizeData(m,se,cond)
     if ~isempty(se)
         se_norm = nan(size(se));
         for cc = 1:2
-            se_norm(:,:,cc) = se(:,:,cc)./max(m);
+            se_norm(:,:,cc) = se(:,:,cc)./m(cond,:);
         end
     else
         se_norm = [];
     end
 end
 
-
-function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint,fits_only)
-    if ~exist('startpoint', 'var'), startpoint = []; end
-    ally = nan(length(x), length(chan_plot_idx));
+function [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub)
+    if ~exist('sp', 'var'), sp = []; end
+    if ~exist('lb', 'var'), lb = []; end
+    if ~exist('ub', 'var'), ub = []; end
     for ii = 1:length(chan_plot_idx)
         y = m(:,chan_plot_idx(ii));
+        f{ii} = fit(x, y, formula_to_fit, 'StartPoint', sp, 'Lower', lb, 'Upper', ub);
+    end
+end
+
+function [y,h0] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only,c)  
+    if ~exist('c', 'var'), c = zeros(1,length(chan_plot_idx)); end % constants to add to each channel
+    ally = nan(length(x), length(chan_plot_idx)); % to use for scaling y-axis
+    for ii = 1:length(chan_plot_idx)
+        y = m(:,chan_plot_idx(ii))+ c(ii);
+        % plot data
         if ~fits_only
             if ~isempty(se)
                 y_se = se(:,chan_plot_idx(ii),:);
@@ -233,19 +283,18 @@ function [y,h0] = plotData(x,m,se,chan_plot_idx,colors,formula_to_fit,startpoint
             end
         end
         ally(:,ii) = y;
-        if ~isempty(formula_to_fit)
-            f = fit(x, y, formula_to_fit, 'StartPoint', startpoint);
-            if length(chan_plot_idx) > 1
-                h0 = plot(x,f(x), 'Color', colors(ii,:), 'LineWidth', 2); 
-            else
-                h0 = plot(f);
-            end
+        % plot fits
+        if ~isempty(f)
+            f1 = f{ii};
+            x1 = x(1):max(x)/1000:max(x);
+            y1 = f1(x1) + c(ii);
+            h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
             if ~fits_only
                 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
             end
         end
     end
-    y = ally;
     % format axes
-    set(gca, 'XTick', x,'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y(:))+0.1*max(y(:))], 'XTickLabelRotation', 45);
+    y = ally(:);
+    set(gca, 'XTick', x,'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y)+0.1*max(y)], 'XTickLabelRotation', 45);
 end
