@@ -1,8 +1,8 @@
 function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, groupingMethod, areaNames)
-% Groups electrodes in a channel table based on atlas values
+% Groups electrodes in a channel table based on atlas assignment
 %
 % [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels,
-% [groupingMethod], [areaNames])
+%                                       [groupingMethod], [areaNames])
 %
 % Input
 %     channels:         BIDSformatted channels table (matlab table)
@@ -16,7 +16,7 @@ function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, grou
 %                               default: {'V1', 'V2', 'V3', 'V3a','V3b',...
 %                                         'LO1','LO2','TO1','IPS'};
 %
-% Input
+% Output
 %     chan_idx:         for 'fixedassignment':
 %                               channels * areas mask (logicals) indicating
 %                               which channels to include in which areas
@@ -28,11 +28,10 @@ function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, grou
 %                       instead of individual channels, and new columns
 %                       'subject_name' (indicating which subjects were
 %                       included in which area) and 'number_of_elecs'
-%                       (indicating how many electrodes were included
+%                       (indicating how many electrodes were included).
 %                       NOTE: for 'probabilisticresample', the subject_name
-%                       and nelecs columns contain ANY subject included in
-%                       any area, and the MAXIMUM number of included elecs
-%                       in each area
+%                       and nelecs columns contain ANY subject and the 
+%                       MAXIMUM number of included elecs in each area
 %     areaNames:        list of areas used for grouping 
 %
 % IG 2020
