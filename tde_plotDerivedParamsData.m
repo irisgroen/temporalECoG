@@ -1,10 +1,12 @@
 function tde_plotDerivedParamsData(data,channels,t,stim_info,chan_to_plot, fits_only, savePlot, saveStr)
 
-% For each channel in the data, compute 4 things:
-% - contrast response function (based on CRF trials)
-% - subadditive temporal responses (based on ONEPULSE trials)
-% - subadditive temporal responses (based on TWOPULSE trials)
-% - time to recovery (based on TWOPULSE trials)
+% For each channel in the data, plot 6 things:
+% 1. contrast response function (based on CRF trials)
+% 2. contrast peak latency (based on CRF trials)
+% 3. contrast transient to sustained ratio (based on CRF trials)
+% 4. subadditive temporal responses (based on ONEPULSE trials)
+% 5. subadditive temporal responses (based on TWOPULSE trials)
+% 6. time to recovery (based on TWOPULSE trials)
 
 if ~exist('chan_to_plot', 'var'), chan_to_plot = []; end
 if ~exist('fits_only', 'var') || isempty(fits_only), fits_only = false; end
@@ -17,7 +19,7 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
+    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'});   
     [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
 	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
@@ -43,7 +45,7 @@ colors = flipud(copper(length(chan_plot_idx)));
 % CONTRAST CONDITION (3 PLOTS)
 
 stim_inx = find(contains(stim_info.name, 'CRF'));
-stim_on = t>0 & t<0.55;
+stim_on = t>0.05 & t<0.70;
 x = stim_info.contrast(stim_inx) * 100; 
 
 % 1. contrast response function
@@ -61,7 +63,8 @@ if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
 [m, se] = normalizeData(m,se,length(x));
-formula_to_fit = 'x ./ (a + x)';
+%formula_to_fit = 'x ./ (a + x) * (a+1)';
+formula_to_fit = 'x ./ (a + x) * (a+max(x))/max(x)';
 sp = 1;
 lb = 0;
 [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb);
@@ -99,7 +102,7 @@ legend off; axis square;
 % 3. ratio of sustained to  transient
 subplot(2,3,3); hold on
 m = squeeze(data(:,stim_inx,:)); % timecourse
-m = m./max(m); % normalize timecourse to peak
+%m = m./max(m); % normalize timecourse to peak
 [M] = max(m,[],1); % value at peak
 t_off = (t == 0.5); % offset timepoint
 O = m(t_off,:,:); % value at offset
@@ -139,7 +142,7 @@ if ~dataWasAveraged
     [m, se] = averageWithinArea(m, chan_idx);
 end
 [m, se] = normalizeData(m,se, length(x));
-formula_to_fit = 'x ./ (a + x)';
+formula_to_fit = 'x ./ (a + x) * (a+max(x))/max(x)';
 sp = 1;
 lb = 0;
 [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb);
@@ -164,7 +167,7 @@ subplot(2,3,5); hold on
 m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
 
 % subtract off the 0 ISI condition
-%m = m-m(1,:);
+% m = m-m(1,:);
 
 % plot data
 if ~dataWasAveraged
@@ -286,7 +289,7 @@ function [y,h0] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only,c)
         % plot fits
         if ~isempty(f)
             f1 = f{ii};
-            x1 = x(1):max(x)/1000:max(x);
+            x1 = 0:max(x)/1000:max(x);
             y1 = f1(x1) + c(ii);
             h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
             if ~fits_only
