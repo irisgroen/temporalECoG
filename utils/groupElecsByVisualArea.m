@@ -81,7 +81,7 @@ switch groupingMethod
         
         atlasName = 'wang15_fplbl';
         
-        % Check that the requested atlast column is present
+        % Check that the requested atlas column is present
         assert(any(contains(channels.Properties.VariableNames, atlasName)));
         
         % Get the wang probability values
@@ -125,7 +125,7 @@ switch groupingMethod
         
         chan_idx_mask = probn>0;        
         % NOTE: this means that the subjects and nelecs columns in the
-        % channels table below will contain ANY subject include in any
+        % channels table below will contain ANY subject included in any
         % area, and the MAXIMUM number of included elecs in each area
        
 end

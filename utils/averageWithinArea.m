@@ -32,6 +32,7 @@ if ~exist('fun','var') || isempty(fun)
 	fun = @(x) median(x,2,'omitnan');
 end
 
+% if there are more than one dimension per channel, vectorize data
 if ndims(data) == 3
     multiDimData = true;
     dataSz = size(data);
@@ -40,11 +41,14 @@ else
     multiDimData = false;
 end
 
+% pre-allocate
 [~, nAreas, nResamples] = size(chan_idx);
 
 m = nan(size(data,1), nAreas); 
 se = nan(size(data,1), nAreas, 2);
 indiv_points = cell(nAreas,1);
+
+% generate averages
 
 if nResamples == 1
     
@@ -65,7 +69,7 @@ if nResamples == 1
         indiv_points{ii} = data(:,elec_idx);
         
          % debug:
-        % I compared this with kkutils function:
+        % I compared this with knkutils function:
         %   [m(:,ii),se(:,ii,:)] = calcmdsepct(data(:,elec_index),2);
         % which gives the same result but uses parpool which is slow to
         % start up.
@@ -96,6 +100,7 @@ else
     end    
 end
 
+% reshape back to original shape
 if multiDimData
     m = reshape(m, [dataSz(1) dataSz(2) nAreas]); 
     se = reshape(se, [dataSz(1) dataSz(2) 2 nAreas]);
