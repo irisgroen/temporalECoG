@@ -83,7 +83,7 @@ else
         data_resampled = repmat(data, [ones(1, ndims(data)) nResamples]);
         % set non-included resamples to nan
         data_resampled(:,~inx) = nan;
-        % take mean/median across the electrodes nresample times        
+        % take median across the electrodes nresample times        
         mdata = squeeze(fun(data_resampled));
         if size(mdata,2) == 1, mdata = mdata'; end     
         % take median and 68% confidence interval of resampled
