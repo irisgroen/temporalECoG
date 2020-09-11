@@ -1,8 +1,9 @@
-function [epochs, channels, stimnames, t, srate, opts] = tde_selectData(data, opts)
+function [epochs, channels, stimnames, t, srate, opts, epochs_se, epochs_indiv] = tde_selectData(data, opts)
 
 % Description
 %
-% [epochs, channels, stimNames, t] = tde_selectData(data, [opts])
+% [epochs, channels, stimnames, t, srate, ...
+%   opts, epochs_se, epochs_indiv] = tde_selectData(data, [opts])
 % 
 % Outputs reduced version of data after following steps:
 %
@@ -360,7 +361,10 @@ end
 
 % Average elecs within area?
 if opts.average_elecs
-    [epochs, channels] = average_elecs(epochs, channels, opts);
+    [epochs, channels, epochs_se, epochs_indiv] = average_elecs(epochs, channels, opts);
+else
+    epochs_se = [];
+    epochs_indiv = [];
 end
 
 % Add an index column to channels
@@ -387,20 +391,9 @@ function [data] = normalize_data(data)
 end
 
 % Data averaging
-function [data, channels] = average_elecs(data, channels, opts)
+function [data, channels, se, indiv_points] = average_elecs(data, channels)
     
-    [chan_idx, channels] = groupElecsByVisualArea(channels, opts.areanames);
-    avdata = nan(size(data,1), size(data,2), height(channels));
-    
-    for ii = 1:size(chan_idx,2)
-        mdata = mean(data(:,:,chan_idx(:,ii)),3);
-        if opts.normalize_data     
-            % another normalization step from Jings code, necessary?
-            maxmdata = max(mdata(:));
-            mdata    = mdata ./maxmdata;
-        end       
-        avdata(:,:,ii) = mdata;
-    end
-    data = avdata;
-        
+    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');
+    fun = @(x) mean(x,2,'omitnan');
+    [data, se, indiv_points] = averageWithinArea(data, chan_idx, fun);   
 end
