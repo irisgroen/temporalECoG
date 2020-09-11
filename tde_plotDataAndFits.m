@@ -25,7 +25,7 @@ else
 end
 
 %% Plot data and predictions
-colors = {'r', 'g', 'c', 'm', 'b', 'y'}; % assuming we'll never plot >6 model fits at a time
+colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
 l = cell(1,nModels+1);
@@ -33,7 +33,7 @@ l{1} = 'data';
 for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 
 % Loop over channels or channel averages
-for ii = 1%1:1%nDatasets
+for ii = 1:nDatasets
     
     figure;
     
