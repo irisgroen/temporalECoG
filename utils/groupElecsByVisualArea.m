@@ -1,4 +1,4 @@
-function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, groupingMethod, areaNames)
+function [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, groupingMethod, areaNames)
 % Groups electrodes in a channel table based on atlas assignment
 %
 % [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels,
@@ -32,7 +32,6 @@ function [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels, grou
 %                       NOTE: for 'probabilisticresample', the subject_name
 %                       and nelecs columns contain ANY subject and the 
 %                       MAXIMUM number of included elecs in each area
-%     areaNames:        list of areas used for grouping 
 %
 % IG 2020
 
@@ -76,6 +75,7 @@ switch groupingMethod
         end
         chan_idx = logical(chan_idx);
         chan_idx_mask = chan_idx;
+        group_prob = [];
         
     case 'probabilisticresample' 
         
@@ -99,9 +99,11 @@ switch groupingMethod
             area_idx = matchAreaNameToAtlas(areaNames{ii}, atlasLabels);
             probvals_norm_grouped(:,ii) = sum(probvals_norm(:,area_idx),2);
         end
-          
+        
+        group_prob = probvals_norm_grouped;
+
         % Generate nResamples channel indices for each area
-        nResamples = 100;
+        nResamples = 1000;
         probn = round(probvals_norm_grouped*nResamples);
         
         % Generate a set of resampled assignments

@@ -19,8 +19,10 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'});   
-    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');   
+    [chan_idx, channels, areaNames, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'});   
+    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
+    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'fixedassignment', {'V1'});   
+    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1'});   
 	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 
@@ -29,7 +31,6 @@ if ~isempty(chan_to_plot)
     if ~iscell(chan_to_plot), chan_to_plot = {chan_to_plot};end
     chan_plot_idx = nan(length(chan_to_plot),1);
     for ii = 1:length(chan_to_plot)
-        %chan_plot_idx(ii) = ecog_matchChannels(chan_to_plot{ii}, channels.name);
         chan_plot_idx(ii) = find(matchAreaNameToAtlas(chan_to_plot{ii}, channels.name));
     end
     chan_plot_idx = sort(chan_plot_idx, 'descend');
@@ -55,12 +56,12 @@ subplot(2,3,1); hold on
 m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
 
 % plot linear prediction 
-h0 = line([x(1) x(end)], [0 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+h0 = line([0 x(end)], [0 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % plot data
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx);
+    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
 end
 [m, se] = normalizeData(m,se,length(x));
 %formula_to_fit = 'x ./ (a + x) * (a+1)';
@@ -85,7 +86,7 @@ m = squeeze(t(I));
 
 % plot data
 if ~dataWasAveraged 
-    [m, se] = averageWithinArea(m, chan_idx);
+    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
 end
 m = m*1000; % convert to ms
 se = se * 1000;
@@ -110,11 +111,13 @@ R = M./O; % divide value at offset with value of peak
 
 % plot data
 if ~dataWasAveraged 
-    [m, se] = averageWithinArea(squeeze(R), chan_idx);
+    [m, se] = averageWithinArea(squeeze(R), chan_idx, [], group_prob);
 end
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1];
-[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+lb = [0 -inf 1];
+ub = [inf inf 1];
+[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
 plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % format axes
@@ -134,12 +137,12 @@ subplot(2,3,4); hold on
 m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
 
 % plot linear prediction 
-h0 = line([x(1) x(end)], [0 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+h0 = line([0 x(end)], [0 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % plot data
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx);
+    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
 end
 [m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'x ./ (a + x) * (a+max(x))/max(x)';
@@ -155,72 +158,68 @@ legend off; axis square;
 
 % ISI CONDITION PLOTS (2)
 
-% 1. temporal summation
 stim_inx = find(contains(stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
 stim_on = t>0 & t(end); % compute sum over entire epoch, so we don't miss the second pulse; 
 x = stim_info.ISI(stim_inx) * 1000; % in ms
 
-% 1. temporal summation
-subplot(2,3,5); hold on
-
-% compute sum across stim_on window
-m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
-
-% subtract off the 0 ISI condition
-% m = m-m(1,:);
-
-% plot data
-if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx);
-end
-
+% % 1. temporal summation
+% subplot(2,3,5); hold on
+% 
+% % compute sum across stim_on window
+% m = squeeze(sum(data(stim_on, stim_inx, :),1)); se = []; 
+% 
 % % subtract off the 0 ISI condition
-% c_min = m(1,:);
-% c_max = m(length(x),:);
-% c = c_min./c_max;
-% m = m-c_min;
-% for cc = 1:2
-%     se(:,:,cc) = se(:,:,cc)-c_min;
+% % m = m-m(1,:);
+% 
+% % plot data
+% if ~dataWasAveraged
+%     [m, se] = averageWithinArea(m, chan_idx);
 % end
-
-[m, se] = normalizeData(m,se,length(x));
-
-% formula_to_fit = 'x ./ (a + x) + b ';
-% sp = [1 1];
-% lb = [0 -10];
-% ub = [nan 0];
+% 
+% % % subtract off the 0 ISI condition
+% % c_min = m(1,:);
+% % c_max = m(length(x),:);
+% % c = c_min./c_max;
+% % m = m-c_min;
+% % for cc = 1:2
+% %     se(:,:,cc) = se(:,:,cc)-c_min;
+% % end
+% 
+% [m, se] = normalizeData(m,se,length(x));
+% 
+% % formula_to_fit = 'x ./ (a + x) + b ';
+% % sp = [1 1];
+% % lb = [0 -10];
+% % ub = [nan 0];
+% % [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
+% 
+% % formula_to_fit = 'a * x ^ b + c';
+% % sp = [1 1 1];
+% % [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
+% 
+% %formula_to_fit = 'x .^ b ./ (max(x) .^ b)';
+% formula_to_fit = '(c + (x .^ b)) ./ (c + (max(x) .^ b))';
+% sp = [1 0];
+% lb = [0 -inf];
+% ub = [inf inf];
 % [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
-
-% formula_to_fit = 'a * x ^ b + c';
-% sp = [1 1 1];
-% [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp);
-
-%formula_to_fit = 'x .^ b ./ (max(x) .^ b)';
-formula_to_fit = '(c + (x .^ b)) ./ (c + (max(x) .^ b))';
-sp = [1 0];
-lb = [0 -inf];
-ub = [inf inf];
-[f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub);
-
-[y] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
-
-% set ylim 
-%ylim([-1.5 1.5]);
-
-% plot linear prediction 
-%h0 = line([x(1) x(end)], [0 0], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
-set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-% format axes
-xlabel('ISI (ms)'); ylabel('summed broadband (0-1.2s)'); title('ISI: temporal summation'); 
-legend off; axis square;
+% 
+% [y] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
+% 
+% % plot linear prediction 
+% %h0 = line([x(1) x(end)], [0 0], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+% set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+% 
+% % format axes
+% xlabel('ISI (ms)'); ylabel('summed broadband (0-1.2s)'); title('ISI: temporal summation'); 
+% legend off; axis square;
 
 % 2. response recovery with ISI
-subplot(2,3,6); hold on
+subplot(2,3,5); hold on
 
 [m] = tde_computeISIrecovery(data,t,stim_info);
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx);
+    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
 end
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1];

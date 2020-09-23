@@ -55,7 +55,7 @@ for kk = 1:nModels
     for dd = 1:length(data)
         subplot(1,3,subplotinx(dd)); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossElecsWithinArea(data{dd}, chan_idx1);
+            [m, se, dat] = averageWithinArea(data{dd}, chan_idx1);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             end

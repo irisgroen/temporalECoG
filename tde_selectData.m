@@ -361,10 +361,10 @@ end
 
 % Average elecs within area?
 if opts.average_elecs
-    [epochs, channels, epochs_se, epochs_indiv] = average_elecs(epochs, channels, opts);
+    fprintf('[%s] Averaging electrodes...\n', mfilename);
+    [epochs, channels, epochs_se] = average_elecs(epochs, channels);
 else
     epochs_se = [];
-    epochs_indiv = [];
 end
 
 % Add an index column to channels
@@ -391,9 +391,10 @@ function [data] = normalize_data(data)
 end
 
 % Data averaging
-function [data, channels, se, indiv_points] = average_elecs(data, channels)
+function [data, channels, se] = average_elecs(data, channels)
     
-    [chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample');
-    fun = @(x) mean(x,2,'omitnan');
-    [data, se, indiv_points] = averageWithinArea(data, chan_idx, fun);   
+    area_names = {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'};
+    [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', area_names);
+    fun = @mean;
+    [data, se] = averageWithinArea(data, group_prob, fun);   
 end
