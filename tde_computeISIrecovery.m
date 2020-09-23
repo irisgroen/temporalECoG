@@ -1,7 +1,7 @@
 function [ISIrecover] = tde_computeISIrecovery(data,t,stim_info)
 
 
-[nSamp,~,nDatasets] = size(data);
+[~,~,nDatasets] = size(data);
 
 % Set parameters
 
@@ -11,6 +11,7 @@ stimdur = 0.133;
 conditionsOfInterest = {'ONEPULSE-4','ONEPULSE-5','TWOPULSE'};
 
 ISIrecover = [];
+
 for kk = 1:nDatasets
 
     % Get the data
