@@ -29,7 +29,7 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sam
 %
 % OUTPUT
 % A cell array with for each cell a struct with the following fields:
-% - subject  (str with subjectname)
+% - subject  (string with subjectname)
 % - epochs_v (time x events x channels matrix with voltage data)
 % - epochs_b (time x events x channels matrix with broadband data)
 % - channels (bids-formatted channel table)
@@ -40,10 +40,11 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sam
 % - Data should be bids-formatted.
 % - Function will perform the following steps:
 %   STEP 0: Match electrode positions to wang and benson atlases
-%   STEP 1: Read in the time series data: both broadband and voltage
+%   STEP 1: Read in the time series data: both broadband and voltage; also
+%           resample if sample rate does not match SampleRate argument
 %   STEP 2: Select channels with a visual match to either of the atlases.
-%   STEP 3: Downsample data (if higher sample rate than SampleRate) and
-%           shift onsets for UMCU patients.
+%   STEP 3: Deal with UMCU patients: shift onsets and remove bad elecs not
+%           marked in the channels file.
 %   STEP 4: Epoch the data according to the onsets in the events.tsv files
 %           found in the dataDir according to epochTime
 %   STEP 5: Save out data for each subject in the saveDir.
@@ -130,12 +131,12 @@ for ii = 1 : length(subjects)
 
         % Read in voltage data
         dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
-        [data_v, ~, ~] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'reref');
+        [data_v, ~, ~] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'reref', sampleRate);
         if isempty(data_v), warning('No voltage data found for subject %s!', subject); end
 
         % Read in broadband data
         dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
-        [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband');
+        [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband', sampleRate);
         if isempty(data_b), warning('No broadband data found for subject %s!', subject); end
 
         % Read in electrode data and match to atlas
@@ -179,17 +180,7 @@ for ii = 1 : length(subjects)
             data_b = data_b(chan_idx,:);
             channels = channels(chan_idx,:);
             
-            %% STEP 3: CHECK SAMPLE RATES ANDS SHIFT DATA
-
-            fprintf('[%s] Step 3: Checking sample rates...\n',mfilename);
-
-            if channels.sampling_frequency(1) ~= sampleRate
-                fprintf('[%s] Step 3: Sample rate does not match requested sample rate. Resampling \n',mfilename);
-                data_v = resample(data_v', 1, channels.sampling_frequency(1)/sampleRate)';
-                data_b = resample(data_b', 1, channels.sampling_frequency(1)/sampleRate)';
-                events.event_sample = round(events.event_sample/(channels.sampling_frequency(1)/sampleRate));
-                channels.sampling_frequency(:) = sampleRate;
-            end
+            %% STEP 3: DEAL WITH UMCU DATA (shift onsets and exclude bad electrodes)
 
             % SHIFT the UMCU data 
             if contains(subject, {'chaam', 'beilen'}) % SHOULD BE READ FROM participants.tsv, if site column = umcu
@@ -197,14 +188,15 @@ for ii = 1 : length(subjects)
 
                 % Shift onsets
                 shiftInSeconds = 0.072; % 72 ms; determined through cross correlation, see s_determineOnsetShiftUMCUvsNYU.m
-                shiftInSamples = round(shiftInSeconds*channels.sampling_frequency(1)); 
+                %shiftInSamples = round(shiftInSeconds*channels.sampling_frequency(1)); 
                 events.onset = events.onset + shiftInSeconds;
-                events.event_sample = events.event_sample + shiftInSamples; 
+                %events.event_sample = events.event_sample + shiftInSamples; 
 
                 % Remove electrodes identified as epileptic % TEMPORARY UNTIL GIO
                 % FIXES BIDS FORMATTING FOR THIS PATIENT AFTER WHICH THESE
                 % ELECTRODES SHOULD BE INDICATED AS "BAD" IN THE ELECTRODES FILES
                 if contains(subject,'chaam')
+                    fprintf('[%s] Step 3: This is a umcu patient. Excluding bad electrodes \n',mfilename);
                     chan_idx = find(~contains(channels.name, {'Oc12', 'Oc13', 'Oc21', 'Oc22'}));
                     data_b = data_b(chan_idx,:);
                     data_v = data_v(chan_idx,:);
@@ -216,8 +208,8 @@ for ii = 1 : length(subjects)
 
             fprintf('[%s] Step 4: Epoching data \n',mfilename);
 
-            [epochs_v, ~] = ecog_makeEpochs(data_v, events.event_sample, epochTime, channels.sampling_frequency(1));  
-            [epochs_b, t] = ecog_makeEpochs(data_b, events.event_sample, epochTime, channels.sampling_frequency(1));  
+            [epochs_v, ~] = ecog_makeEpochs(data_v, events.onset, epochTime, channels.sampling_frequency(1));  
+            [epochs_b, t] = ecog_makeEpochs(data_b, events.onset, epochTime, channels.sampling_frequency(1));  
             
             fprintf('[%s] Step 4: Found %d epochs across %d runs and %d sessions \n', ...
                 mfilename, size(epochs_b,2), length(unique(events.run_name)), length(unique(events.session_name)));
@@ -226,8 +218,8 @@ for ii = 1 : length(subjects)
 
             % Remove irrelevant/redundant columns from events table
             if isfield(summary(events),'onset'), events = removevars(events,'onset');end
-            if isfield(summary(events),'event_sample'), events = removevars(events,'event_sample');end
             if isfield(summary(events),'stim_file'), events = removevars(events,'stim_file');end
+            
             % Remove irrelevant/redundant columns from channels table
             if isfield(summary(channels),'notch'), channels = removevars(channels,'notch');end
             if isfield(summary(channels),'status'), channels = removevars(channels,'status');end
