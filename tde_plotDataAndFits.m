@@ -38,8 +38,9 @@ for ii = 1:nDatasets
     figure;
     
     d = data(t_ind,:,ii);
-    maxresp = max(d(:)); % scale stimulus to max across dataset
-    
+    %maxresp = max(d(:)); % scale stimulus to max across dataset
+	maxresp = max(max(d(:,1:5))); % scale stimulus to max across CRF conditions
+
     % Loop over conditions 
     for jj = 1:length(conditionsOfInterest)
         subplot(nCond,1,jj); hold on
@@ -81,7 +82,10 @@ for ii = 1:nDatasets
 %         end
         if ii == 1, ylim([-5 20]); end
         if ii == 2, ylim([-5 15]); end
-        if ii == 3, ylim([-2 8]); end
+        if ii == 3, ylim([-2 10]); end
+        if ii == 4, ylim([-0.5 5.5]); end
+        if ii == 5, ylim([-0.5 2]); end
+        if ii == 6, ylim([-0.5 2.5]); end
 
         set(gca, 'FontSize', 20);
         %xlabel('stimulus');
@@ -120,7 +124,7 @@ for ii = 1:nDatasets
         end
         if ~exist(figDir, 'dir'), mkdir(figDir), end
         saveas(gcf, fullfile(figDir, figureName), 'png'); 
-        %saveas(gcf, fullfile(figDir, figureName), 'fig'); 
+        saveas(gcf, fullfile(figDir, figureName), 'fig'); 
         close;
     end
 end
