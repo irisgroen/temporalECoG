@@ -19,11 +19,8 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    [chan_idx, channels, areaNames, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'});   
-    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'higher'});   
-    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'fixedassignment', {'V1'});   
-    %[chan_idx, channels] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1'});   
-	figureName = sprintf('summary_individualelecs_%s', saveStr);
+    [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample');   
+  	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 
 % Determine if we're plotting all channels or just a subset
@@ -61,7 +58,7 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % plot data
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
+    [m, se] = averageWithinArea(m, group_prob);
 end
 [m, se] = normalizeData(m,se,length(x));
 %formula_to_fit = 'x ./ (a + x) * (a+1)';
@@ -86,7 +83,7 @@ m = squeeze(t(I));
 
 % plot data
 if ~dataWasAveraged 
-    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
+    [m, se] = averageWithinArea(m, group_prob);
 end
 m = m*1000; % convert to ms
 se = se * 1000;
@@ -111,7 +108,7 @@ R = M./O; % divide value at offset with value of peak
 
 % plot data
 if ~dataWasAveraged 
-    [m, se] = averageWithinArea(squeeze(R), chan_idx, [], group_prob);
+    [m, se] = averageWithinArea(squeeze(R), group_prob);
 end
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1];
@@ -142,7 +139,7 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % plot data
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
+    [m, se] = averageWithinArea(m, group_prob);
 end
 [m, se] = normalizeData(m,se, length(x));
 formula_to_fit = 'x ./ (a + x) * (a+max(x))/max(x)';
@@ -219,7 +216,7 @@ subplot(2,3,5); hold on
 
 [m] = tde_computeISIrecovery(data,t,stim_info);
 if ~dataWasAveraged
-    [m, se] = averageWithinArea(m, chan_idx, [], group_prob);
+    [m, se] = averageWithinArea(m, group_prob);
 end
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1];

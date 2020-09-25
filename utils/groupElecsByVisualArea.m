@@ -150,6 +150,8 @@ subject_name       = subjects;
 number_of_elecs    = nelecs;
 
 channels = table(name, type, units, sampling_frequency, subject_name, number_of_elecs);
+index = [1:height(channels)]';
+channels = addvars(channels, index, 'Before', 'name'); 
 
 end
 

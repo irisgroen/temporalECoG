@@ -1,19 +1,15 @@
-function [epochs, channels, stimnames, t, srate, opts, epochs_se, epochs_indiv] = tde_selectData(data, opts)
+function [epochs, channels, t, srate, opts] = tde_selectData(data, opts)
 
 % Description
 %
-% [epochs, channels, stimnames, t, srate, ...
-%   opts, epochs_se, epochs_indiv] = tde_selectData(data, [opts])
+% [epochs, channels, t, srate, opts] = tde_selectData(data, [opts])
 % 
-% Outputs reduced version of data after following steps:
+% Outputs subject-concatenated version of data after following steps:
 %
 % Removes bad epochs and channels with many bad epochs (opts.epoch_)
 % Removes channels that do not match inclusion criteria (opts.elec_)
 % Converts to percent signal change (using baselineTime)
-% Averages across trials (make optional?)
-% Normalizes by max (optional)
-% Averages across visual areas (optional)
-% Makes plots (optional)
+% Averages across trials (optional)
 
 %% Check inputs
 
@@ -44,7 +40,7 @@ if ~isfield(opts,'epoch_jump_thresh') || isempty(opts.epoch_jump_thresh)
     opts.epoch_jump_thresh = 500; % max jump in voltage allowed within stim_on period
 end
 if ~isfield(opts,'epoch_outlier_thresh') || isempty(opts.epoch_outlier_thresh)
-    opts.epoch_outlier_thresh = 20; % percentile for max absolute voltage within stim_on period at which epoch will be labeled as outlier
+    opts.epoch_outlier_thresh = 10; % xfold max absolute voltage within stim_on period at which epoch will be labeled as outlier
 end
 if ~isfield(opts,'elec_selection_method') || isempty(opts.elec_selection_method)
     opts.elec_selection_method = 'splithalf'; % thresh, splithalf, meanpredict
@@ -62,22 +58,13 @@ if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thr
     opts.elec_meanpredict_thresh = 0; % minimum required R2 for prediction by mean (1 - (SSEresidual/SSEtotal)
 end
 if ~isfield(opts,'elec_exclude_depth') || isempty(opts.elec_exclude_depth)
-    opts.elec_exclude_depth  = false; % boolean
+    opts.elec_exclude_depth  = true; % boolean
 end
 if ~isfield(opts,'average_trials') || isempty(opts.average_trials)
     opts.average_trials      = true;  % boolean
 end
-if ~isfield(opts,'normalize_data') || isempty(opts.normalize_data)
-    opts.normalize_data      = false;  % boolean
-end
-if ~isfield(opts,'average_elecs') || isempty(opts.average_elecs)
-    opts.average_elecs       = false; % boolean
-end
 if ~isfield(opts,'doplots') || isempty(opts.doplots)
     opts.doplots             = true; % boolean
-end
-if ~isfield(opts,'sort_channels') || isempty(opts.sort_channels)
-    opts.sort_channels      = true;  % boolean
 end
 if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
     opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures');
@@ -155,15 +142,25 @@ for ii = 1:length(data) % Loop over subjects
         continue
     else
         %% STEP 1 Select epochs
-
+        
+        fprintf('[%s] Removing bad epochs...\n',mfilename);
+        
         % Exclude bad epochs based on VOLTAGE 
         [epochs_v] = ecog_normalizeEpochs(epochs_v, t, opts.baseline_time, 'subtractwithintrial');
 
-        fprintf('[%s] Removing bad epochs...\n',mfilename);
-
         %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs_v, t, opts);
         [~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs_v, t, opts.stim_on);
+        
+        % Provide run index to perform separately for each run and session
+        [~,~,task_idx]= unique(events.task_name);
+        [~,~,ses_idx]= unique(events.session_name);
+        [~,~,run_idx] = unique(events.run_name);
+        [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
+        
+        [epochs_b] = ecog_normalizeEpochs(epochs_b, t, opts.baseline_time, 'percentsignalchange', idx);
 
+        %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs_b, t, opts.stim_on);
+        
         % Plot the included and excluded trials: all channels combined
         if savePlots
             % Make separate plots for different electrode groups
@@ -206,7 +203,6 @@ for ii = 1:length(data) % Loop over subjects
                 if any(outlier_idx(:,jj))
                     outliers_found = find(outlier_idx(:,jj));
                     nOutliers = length(outliers_found);
-                    dim1 = round(sqrt(nOutliers+1)); dim2 = ceil((nOutliers+1)/dim1);
                     dim1 = round((nOutliers+1)/2);
                     dim2 = round((nOutliers+1)/dim1);
                     % voltage
@@ -248,8 +244,8 @@ for ii = 1:length(data) % Loop over subjects
     %     [~,~,ses_idx]= unique(events.session_name);
     %     [~,~,run_idx] = unique(events.run_name);
     %     [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
-        idx = [];
-        [epochs] = ecog_normalizeEpochs(epochs, t, opts.baseline_time, 'percentsignalchange', idx);
+        %idx = [];
+        %[epochs] = ecog_normalizeEpochs(epochs, t, opts.baseline_time, 'percentsignalchange', idx);
         channels.units = repmat({'%change'}, [height(channels),1]);
 
         %% STEP 3 Select electrodes   
@@ -262,7 +258,7 @@ for ii = 1:length(data) % Loop over subjects
             if ~isempty(epochs_split)
                 for el = 1:height(channels)
                     figureName = sprintf('%s_%s_%s_%s', subject, ...
-                    channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});
+                    channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el});
                     figure;hold on;
                     plot(squeeze(epochs_split(1,el,:)), 'r','LineWidth', 2);
                     plot(squeeze(epochs_split(2,el,:)), 'b','LineWidth', 2);
@@ -271,7 +267,7 @@ for ii = 1:length(data) % Loop over subjects
                     set(gca, 'XTick', 1:nSamp:nSampTot, 'XTickLabel', opts.stimnames);
                     xtickangle(45)
                     title(sprintf('%s %s %s R2 = %0.2f', ...
-                    channels.name{el}, channels.bensonarea{el}, channels.wangarea{el}, R2(el)));
+                    channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el}, R2(el)));
                     scrSz = get(0, 'Screensize');
                     set(gcf, 'Position', [1 1 scrSz(3)/2 scrSz(4)/2]);
                     set(findall(gcf,'-property','FontSize'),'FontSize',14)
@@ -291,7 +287,7 @@ for ii = 1:length(data) % Loop over subjects
             figure('Name', figureName); plotDim1 = round(sqrt(nEl)); plotDim2 = ceil((nEl)/plotDim1);
             for el = 1:nEl
                 subplot(plotDim1,plotDim2,el); hold on
-                plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
+                plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el});        
                 ecog_plotSingleTimeCourse(t, mean_resp(:,:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle);
                 %if el == 1; xlabel('Time (s)'); ylabel('Broadband signal change');end
                 set(gcf, 'Position', [150 100 1500 1250]);
@@ -303,7 +299,7 @@ for ii = 1:length(data) % Loop over subjects
             for el = 1:nEl
                 if select_idx(el)
                     subplot(plotDim1,plotDim2,el); hold on
-                    plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.bensonarea{el}, channels.wangarea{el});        
+                    plotTitle = sprintf('%s %s %s ', channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el});        
                     ecog_plotSingleTimeCourse(t, mean_resp(:,el), squeeze(mean_resp_sd(:,:,el)), [], plotTitle)    
                     set(gcf, 'Position', [150 100 1500 1250]);
                 end
@@ -334,67 +330,18 @@ for ii = 1:length(data) % Loop over subjects
     end   
 end
 
-%% Run checks and finalize processing %%
+%% Finalize processing %%
 
-% Now that we have the selected trials and electrodes from all subjects, 
-% run a few checks, and make decisions on how to further process the data.
 epochs    = allEpochs;
 channels  = allChannels;
-stimnames = opts.stimnames;
 
 % Check that all channels have same sample frequency
 assert(length(unique(channels.sampling_frequency))==1);
 srate = channels.sampling_frequency(1);
 
-% Sort electrodes on visual area (rather than subjectID)?
-if opts.sort_channels
-    % sort on benson area
-    [~,I] = sortVisualAreaNames(channels.benson14_varea);
-    channels = channels(I,:);
-    epochs = epochs(:,:,I);
-end
-
-% Scale each electrode to its max?
-if opts.normalize_data       
-    [epochs] = normalize_data(epochs);
-end
-
-% Average elecs within area?
-if opts.average_elecs
-    fprintf('[%s] Averaging electrodes...\n', mfilename);
-    [epochs, channels, epochs_se] = average_elecs(epochs, channels);
-else
-    epochs_se = [];
-end
-
 % Add an index column to channels
 index = [1:height(channels)]';
 channels = addvars(channels, index, 'Before', 'name'); 
 
-fprintf('[%s] Done! \n',mfilename);
-
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%% SUBROUTINES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  
-% Data normalization
-function [data] = normalize_data(data)
-    normdata = data;
-    % normalize each channel separately
-    for ii = 1:size(data,3)
-        tmp = data(:, :, ii);
-        maxRsp(ii) = max(tmp(:));
-        normdata(:, :, ii) = data(:, :, ii)./maxRsp(ii);
-    end
-    data = normdata;
 end
 
-% Data averaging
-function [data, channels, se] = average_elecs(data, channels)
-    
-    area_names = {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'};
-    [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', area_names);
-    fun = @mean;
-    [data, se] = averageWithinArea(data, group_prob, fun);   
-end

@@ -1,27 +1,23 @@
-%% 1: Load the ECoG data and stimulus description
+%% 1: Load the ECoG data 
 
-% load or (re)compute the processed data
-reComputeFlag = true; 
+% Load or (re)compute the processed data
+reComputeFlag = false; 
 [fulldata] = tde_getData(reComputeFlag);
 
-% select epochs and channels, average trials within stimulus condition 
-options = [];
-options.average_elecs             = true;
-options.elec_exclude_depth        = true;
-options.doplots                   = false;
-options.elec_selection_method     = 'splithalf';
-%options.areanames                 = 'V1';
-%options.stimnames                 = {'CRF-1','CRF-2', 'CRF-3','CRF-4','CRF-5'}; %{'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4','ONEPULSE-5','ONEPULSE-6'}; %{'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
-[data, channels, stimnames, t, srate, options, epochs_se] = ...
-    tde_selectData(fulldata, options);
+% Select epochs and channels, average trials within stimulus condition 
+options.doplots = true;
+[data, channels, t, srate, options] = tde_selectData(fulldata, options);
 
-% % plot average response per stimulus for selected data
-savePlot = 0; 
-saveStr = [];%e.g. 'CRF';
-tde_plotData(data, channels, t, options, savePlot, saveStr);
-
-% generate stimulus timecourses
+% Generate stimulus timecourses
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
+
+% Sort and average electrodes
+options.average_elecs = false;
+options.area_names = []; %{'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'};
+[data2fit, channels2fit, se] = tde_prepareData(data, channels, options);
+
+% Plot average response per stimulus for selected data
+tde_plotData(data2fit, channels2fit, t, options);
 
 %% 2. Model fitting
 
@@ -41,13 +37,13 @@ if LOADFITS
     [params, pred] = tde_loadModelFits(modelfun, options, [], saveStr);
 else    
     % Compute model fit(s)
-    [params, pred] = tde_doModelFits(modelfun, stim_ts, data, srate, options);
+    [params, pred] = tde_doModelFits(modelfun, stim_ts, epochs, srate, options);
 end
 
 %% 3. Model evaluation
 
 % Compute R2 and derived parameters
-[results] = tde_evaluateModelFit(data, modelfun, params, pred, stim_info);
+[results] = tde_evaluateModelFit(epochs, modelfun, params, pred, stim_info);
 
 %% 4. Plot timecourses and fits
 
@@ -55,12 +51,12 @@ end
 saveDir = fullfile(analysisRootPath, 'figures', 'modelfits_sixROIs');
 % Plot data and prediction for each model individually
 for ii = 1 : length(results)
-    tde_plotDataAndFits(results(ii), data, channels, stim_ts, stim_info, t, saveDir)
+    tde_plotDataAndFits(results(ii), epochs, channels2fit, stim_ts, stim_info, t, saveDir)
     %tde_plotResiduals(results(ii), data, channels, stim_ts, stim_info, t, saveDir)
 end
 
 % Plot multiple model predictions (superimposed)
-tde_plotDataAndFits(results([2 1]), data, channels, stim_ts, stim_info, t, saveDir)
+tde_plotDataAndFits(results([2 1]), epochs, channels2fit, stim_ts, stim_info, t, saveDir)
 
 %% 5. Plot derived and fitted parameters
 
@@ -68,19 +64,19 @@ tde_plotDataAndFits(results([2 1]), data, channels, stim_ts, stim_info, t, saveD
 
 % model parameters
 saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
-tde_plotParams(results, channels, saveDir);%close;
+tde_plotParams(results, channels2fit, saveDir);%close;
 
 % model predictions (derived)
 saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
-tde_plotDerivedPredictions(results,channels,2,1, saveDir);
+tde_plotDerivedPredictions(results,channels2fit,2,1, saveDir);
 
 %% UNDER DEVELOPMENT
 
 % data params 
 %close all;
-tde_plotDerivedParamsData(data,channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
+tde_plotDerivedParamsData(data2fit,channels2fit,t,stim_info, {'V1', 'V2', 'V3'}, 0);
 
 %tde_plotDerivedParamsData(pred{5},channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
 %tde_computeDerivedParamsData(data,channels,t,stim_info);
 
-tde_plotDerivedParamsModel(params{1},modelfun{1}, channels,t,{'V1'});
+tde_plotDerivedParamsModel(params{1},modelfun{1}, channels2fit,t,{'V1'});

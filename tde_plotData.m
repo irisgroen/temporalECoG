@@ -7,7 +7,7 @@ if ~exist('saveStr', 'var') || isempty(saveStr)
     saveStr = '';
 end
 if ~exist('savePlot', 'var') || isempty(savePlot)
-    savePlot = 0;
+    savePlot = false;
 end
 
 % Plot final selected data
