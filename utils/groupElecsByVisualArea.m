@@ -1,7 +1,7 @@
 function [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, groupingMethod, areaNames)
 % Groups electrodes in a channel table based on atlas assignment
 %
-% [chan_idx, channels, areaNames] = groupElecsByVisualArea(channels,
+% [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels,
 %                                       [groupingMethod], [areaNames])
 %
 % Input

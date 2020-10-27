@@ -1,10 +1,9 @@
-function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sampleRate, saveStr, saveDir)
+function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sampleRate, bidsDir, saveStr, saveDir)
 
-% Read in ECoG data from <bidsRootPath> for channels that match visual
-% atlases
+% Read in ECoG data from BIDS directory for channels that match visual atlases
 %
 % [data] = tde_getData(compute, [subjects], [sessions], [tasks], [epochTime], ...
-%                               [sampleRate], [saveStr], [saveDir])
+%                               [sampleRate], [bidsDir], [saveStr], [saveDir])
 %
 % INPUT (required):
 % - compute : boolean indicating whether to compute or read from disk.
@@ -22,6 +21,8 @@ function [data] = tde_getData(compute, subjects, sessions, tasks, epochTime, sam
 %          default: [-0.2 1.2];
 % - sampleRate : desired sample rate in Hz for all datasets.
 %          Datasets with rates will be downsampled. default: 512            
+% - bidsDir : directory to read data from
+%          default: fullfile(bidsRootPath);
 % - saveStr : string to be added to filename for saved out data
 %          default: 'tdedata'
 % - saveDir : directory to write data to 
@@ -88,6 +89,11 @@ if ~exist('sampleRate', 'var') || isempty(sampleRate)
     sampleRate = 512;
 end
 
+% <readDir>
+if ~exist('bidsDir', 'var') || isempty(bidsDir)
+	bidsDir = bidsRootPath;
+end 
+
 % <saveStr>
 if ~exist('saveStr', 'var') || isempty(saveStr)
 	saveStr = 'tdedata';
@@ -130,17 +136,17 @@ for ii = 1 : length(subjects)
         if ~isempty(sessions), session = sessions{ii}; else, session = []; end
 
         % Read in voltage data
-        dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
+        dataDir = fullfile(bidsDir, 'derivatives', 'ECoGCAR');
         [data_v, ~, ~] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'reref', sampleRate);
         if isempty(data_v), warning('No voltage data found for subject %s!', subject); end
 
         % Read in broadband data
-        dataDir = fullfile(bidsRootPath, 'derivatives', 'ECoGBroadband');
+        dataDir = fullfile(bidsDir, 'derivatives', 'ECoGBroadband');
         [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband', sampleRate);
         if isempty(data_b), warning('No broadband data found for subject %s!', subject); end
 
         % Read in electrode data and match to atlas
-        dataDir = fullfile(bidsRootPath);
+        dataDir = fullfile(bidsDir);
         atlasName = {'benson14_varea',  'wang15_mplbl', 'wang15_fplbl', 'benson14_eccen', 'benson14_angle', 'benson14_sigma'};
         [electrodes] = bidsEcogMatchElectrodesToAtlas(dataDir, subject, session, atlasName, [], 0);
         

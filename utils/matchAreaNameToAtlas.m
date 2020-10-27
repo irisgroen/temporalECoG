@@ -3,6 +3,7 @@ function area_idx = matchAreaNameToAtlas(areaName, atlasLabels)
 % for V1 for wang atlases), preventing matches for V3a/b with V3 and
 % collapsing all IPS maps
 
+
 if strcmpi(areaName, 'V3')
     area_idx = contains(atlasLabels, 'V3') & ~contains(atlasLabels, {'V3a', 'V3b'});
 elseif strcmpi(areaName, 'IPS')

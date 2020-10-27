@@ -14,33 +14,29 @@ function [epochs, channels, t, srate, opts] = tde_selectData(data, opts)
 %% Check inputs
 
 % <data>
-if ~exist('data', 'var') || isempty(data)
-	error('Please provide the data struct outputted by tde_getData.m as input');
-end 
+if ~exist('data', 'var') || isempty(data), error('Please provide the data struct outputted by tde_getData.m as input'); end 
 
 % <opts>
-if ~exist('opts','var') || isempty(opts)
-    opts = struct();
-end
+if ~exist('opts','var') || isempty(opts), opts = struct(); end
+
 if ~isfield(opts, 'stimnames') || isempty(opts.stimnames)
     opts.stimnames = {'CRF-1','CRF-2', 'CRF-3','CRF-4', 'CRF-5',...
-                 'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
-                 'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
+                      'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
+                      'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 end
-if ~isfield(opts, 'areanames') 
-    opts.areanames = [];
-end
+if ~isfield(opts, 'areanames'), opts.areanames = []; end
+
 if ~isfield(opts,'stim_on') || isempty(opts.stim_on)
-    opts.stim_on             = [0 1]; % time period across which stimulus is presented
+    opts.stim_on = [0 1]; % time period across which stimulus is presented
 end
 if ~isfield(opts,'baseline_time') || isempty(opts.baseline_time)
-    opts.baseline_time       = [-0.2 0]; % time period across which to compute normalization baseline
+    opts.baseline_time = [-0.2 0]; % time period across which to compute normalization baseline
 end
 if ~isfield(opts,'epoch_jump_thresh') || isempty(opts.epoch_jump_thresh)
     opts.epoch_jump_thresh = 500; % max jump in voltage allowed within stim_on period
 end
 if ~isfield(opts,'epoch_outlier_thresh') || isempty(opts.epoch_outlier_thresh)
-    opts.epoch_outlier_thresh = 10; % xfold max absolute voltage within stim_on period at which epoch will be labeled as outlier
+    opts.epoch_outlier_thresh = 20; % xfold max absolute voltage within stim_on period at which epoch will be labeled as outlier
 end
 if ~isfield(opts,'elec_selection_method') || isempty(opts.elec_selection_method)
     opts.elec_selection_method = 'splithalf'; % thresh, splithalf, meanpredict
@@ -58,16 +54,16 @@ if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thr
     opts.elec_meanpredict_thresh = 0; % minimum required R2 for prediction by mean (1 - (SSEresidual/SSEtotal)
 end
 if ~isfield(opts,'elec_exclude_depth') || isempty(opts.elec_exclude_depth)
-    opts.elec_exclude_depth  = true; % boolean
+    opts.elec_exclude_depth = true; % boolean
 end
 if ~isfield(opts,'average_trials') || isempty(opts.average_trials)
-    opts.average_trials      = true;  % boolean
+    opts.average_trials = true;  % boolean
 end
 if ~isfield(opts,'doplots') || isempty(opts.doplots)
-    opts.doplots             = true; % boolean
+    opts.doplots = true; % boolean
 end
 if ~isfield(opts,'plotsavedir') || isempty(opts.plotsavedir)
-    opts.plotsavedir         = 	fullfile(analysisRootPath, 'figures');
+    opts.plotsavedir = fullfile(analysisRootPath, 'figures');
 end
 
 %% Initialize
@@ -141,16 +137,16 @@ for ii = 1:length(data) % Loop over subjects
         fprintf('[%s] Did not find any matching electrodes for subject %s. Moving to next subject\n', mfilename, subject);
         continue
     else
-        %% STEP 1 Select epochs
+        %% STEP 1 Baseline correction
         
-        fprintf('[%s] Removing bad epochs...\n',mfilename);
+        fprintf('[%s] Baseline correcting voltage epochs ......\n',mfilename);
         
         % Exclude bad epochs based on VOLTAGE 
         [epochs_v] = ecog_normalizeEpochs(epochs_v, t, opts.baseline_time, 'subtractwithintrial');
+        channels.units = repmat({'%change'}, [height(channels),1]);
 
-        %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs_v, t, opts);
-        [~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs_v, t, opts.stim_on);
-        
+        fprintf('[%s] Converting broadband epochs to percent signal change...\n',mfilename);
+
         % Provide run index to perform separately for each run and session
         [~,~,task_idx]= unique(events.task_name);
         [~,~,ses_idx]= unique(events.session_name);
@@ -159,10 +155,16 @@ for ii = 1:length(data) % Loop over subjects
         
         [epochs_b] = ecog_normalizeEpochs(epochs_b, t, opts.baseline_time, 'percentsignalchange', idx);
 
-        %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs_b, t, opts.stim_on);
+        %% STEP 2 Epoch selection
+        
+        fprintf('[%s] Removing bad epochs...\n',mfilename);
+
+        %[~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs_v, t, opts);
+        [~, outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochsStat(epochs_v, t, opts.stim_on);
         
         % Plot the included and excluded trials: all channels combined
         if savePlots
+            fprintf('[%s] Plotting epoch selection ...\n',mfilename);
             % Make separate plots for different electrode groups
             groups = unique(channels.group);
             nGroups = length(groups);
@@ -195,6 +197,8 @@ for ii = 1:length(data) % Loop over subjects
 
         % Plot the outlier trials: individual plots
         if savePlots
+            fprintf('[%s] Plotting removed epochs...\n',mfilename);
+
             for jj = 1:height(channels)
                 % Skip plotting of depth electrodes if those are not included
                 if opts.elec_exclude_depth && contains(lower(channels.type(jj)), 'seeg')
@@ -236,29 +240,19 @@ for ii = 1:length(data) % Loop over subjects
         epochs = epochs_b;
         epochs(:,outlier_idx) = nan;
 
-        %% STEP 2 Convert to percent signal change 
-        fprintf('[%s] Converting epochs to percent signal change...\n',mfilename);
-
-        % Provide run index to perform separately for each run and session
-    %     [~,~,task_idx]= unique(events.task_name);
-    %     [~,~,ses_idx]= unique(events.session_name);
-    %     [~,~,run_idx] = unique(events.run_name);
-    %     [~,~,idx] = unique([task_idx ses_idx run_idx], 'rows');
-        %idx = [];
-        %[epochs] = ecog_normalizeEpochs(epochs, t, opts.baseline_time, 'percentsignalchange', idx);
-        channels.units = repmat({'%change'}, [height(channels),1]);
-
         %% STEP 3 Select electrodes   
         fprintf('[%s] Selecting electrodes...\n',mfilename);
 
         [epochs_selected, channels_selected, select_idx, R2, epochs_split] = ...
             ecog_selectElectrodes(epochs, channels, events, t, opts);
 
-        if savePlots     
+        if savePlots    
+            
+            fprintf('[%s] Plotting electrode selection...\n',mfilename);
+
             if ~isempty(epochs_split)
                 for el = 1:height(channels)
-                    figureName = sprintf('%s_%s_%s_%s', subject, ...
-                    channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el});
+                    figureName = sprintf('%s_%s_%s_%s', subject, channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el});
                     figure;hold on;
                     plot(squeeze(epochs_split(1,el,:)), 'r','LineWidth', 2);
                     plot(squeeze(epochs_split(2,el,:)), 'b','LineWidth', 2);
@@ -266,8 +260,7 @@ for ii = 1:length(data) % Loop over subjects
                     nSamp = size(epochs,1); nSampTot = nSamp * length(opts.stimnames);
                     set(gca, 'XTick', 1:nSamp:nSampTot, 'XTickLabel', opts.stimnames);
                     xtickangle(45)
-                    title(sprintf('%s %s %s R2 = %0.2f', ...
-                    channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el}, R2(el)));
+                    title(sprintf('%s %s %s R2 = %0.2f', channels.name{el}, channels.benson14_varea{el}, channels.wang15_mplbl{el}, R2(el)));
                     scrSz = get(0, 'Screensize');
                     set(gcf, 'Position', [1 1 scrSz(3)/2 scrSz(4)/2]);
                     set(findall(gcf,'-property','FontSize'),'FontSize',14)

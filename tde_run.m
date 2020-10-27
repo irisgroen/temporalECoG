@@ -5,7 +5,7 @@ reComputeFlag = false;
 [fulldata] = tde_getData(reComputeFlag);
 
 % Select epochs and channels, average trials within stimulus condition 
-options.doplots = true;
+options.doplots = false;
 [data, channels, t, srate, options] = tde_selectData(fulldata, options);
 
 % Generate stimulus timecourses
@@ -29,8 +29,8 @@ modelfun = modelfuns([6 10]);
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 
-LOADFITS = 0; % instead of fitting, load an existing saved model fit
-saveStr = 'sixROIs';
+LOADFITS = 1; % instead of fitting, load an existing saved model fit
+saveStr = [];%'sixROIs';
 
 if LOADFITS  
 	% Load model fit(s)
