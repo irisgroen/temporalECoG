@@ -14,7 +14,7 @@ end
 nModels     = size(results,2);
 nDatasets   = size(data,3);
 nCond       = length(conditionsOfInterest);
-stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
+%stim_info   = stim_info(contains(stim_info.name, conditionsOfInterest),:);
 t_ind       = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 
 % Determine if data was averaged across elecs prior to fit
@@ -25,6 +25,7 @@ else
 end
 
 %% Plot data and predictions
+%colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
@@ -57,7 +58,8 @@ for ii = 1:nDatasets
         % plot models
         for kk = 1:nModels           
             pred = results(kk).pred(t_ind,inx,ii);
-            plot(flatten(pred), 'Color', colors{kk}, 'LineWidth', 2);
+            %plot(flatten(pred), 'Color', colors{kk}, 'LineStyle', '-.', 'LineWidth', 2);
+            plot(flatten(pred), 'Color', colors{kk},  'LineWidth', 2);
             %if isfield(results(kk).R2, 'concat_cond')
             %    R2val = mean(results(kk).R2.concat_cond(jj,ii));
             %else
@@ -80,6 +82,7 @@ for ii = 1:nDatasets
 %         else
 %             set(gca, 'XTickLabel', stim_info.ISI(inx))
 %         end
+          %ylim([-0.2 1])
         if ii == 1, ylim([-5 20]); end
         if ii == 2, ylim([-5 15]); end
         if ii == 3, ylim([-2 10]); end

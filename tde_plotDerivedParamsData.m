@@ -19,7 +19,7 @@ if isfield(summary(channels), 'number_of_elecs')
 	figureName = sprintf('summary_electrodeaverages_%s', saveStr);
 else
     dataWasAveraged = false;
-    [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample');   
+    [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', {'V1', 'V2', 'V3', 'V3ab', 'LOTO', 'IPS'});   
   	figureName = sprintf('summary_individualelecs_%s', saveStr);
 end
 

@@ -23,9 +23,10 @@ if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
 else
     dataWasAveraged = false;
-    [chan_idx1, channels1] = groupElecsByVisualArea(channels, 'fixedassignment');  
-	[chan_idx2, channels2] = groupElecsByVisualArea(channels, 'probabilisticresample');  
-    channels = channels1;
+    %[chan_idx1, channels1] = groupElecsByVisualArea(channels, 'fixedassignment');  
+	%[chan_idx2, channels2] = groupElecsByVisualArea(channels, 'probabilisticresample');  
+    %channels = channels1;
+    [~, channels, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample');
     nChans = height(channels);
 end
 
@@ -55,16 +56,18 @@ for kk = 1:nModels
     for dd = 1:length(data)
         subplot(1,3,subplotinx(dd)); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageWithinArea(data{dd}, chan_idx1);
+            [m, se] = averageWithinArea(data{dd}, group_prob);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             end
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
-            [m, se] = averageAcrossElecsWithinArea(data{dd}, chan_idx2);
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            errorbar(1:nChans, m, m-se(:,1)', se(:,2)'-m, '.k', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
+            %errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
+            %[m, se] = averageAcrossElecsWithinArea(data{dd}, chan_idx2);
+            %errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             se_all(dd,:,:,kk) = squeeze(se);
         else
-            m = results(kk).R2.concat_all; 
+            %m = results(kk).R2.concat_all; 
+            m = data{dd};
             if size(m,1) > 1
                 cmap = num2cell(flipud(gray(size(m,1)+1)),2);
                 h = plot(1:nChans, m, 'k.-', 'MarkerSize', 20, 'LineWidth', 2);
@@ -138,7 +141,7 @@ for jj = 1:nSubPlot
     set(gca, 'Xlim', [0 nChans+1], 'XTick', 1:nChans, 'XTickLabel', channels.name, 'XTickLabelRotation', 45);
     title(derivedTitles{jj}); xlabel('visual area'); 
     if jj == 1, set(gca, 'Ylim', [0 1]); end
-    if jj == 2, set(gca, 'Ylim',[0 0.8]); end
+    if jj == 2, set(gca, 'Ylim',[0 1]); end
     if jj == 3, set(gca, 'Ylim',[0 1]); end
     if jj == 4, set(gca, 'Ylim',[0.5 1]); end
 	if jj == 5, set(gca, 'Ylim',[0 1]); end
@@ -170,14 +173,16 @@ for kk = 1:nModels
     for p = 1:nParams
         subplot(2,ceil(nParams/2),p); hold on
         if ~dataWasAveraged
-            [m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx1);
+            %[m, se, dat] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx1);
+            [m, se] = averageWithinArea(results(kk).params(p,:), group_prob);
             if opts.plotindivpoints
                 for ii = 1:nChans, scatter(ones(1,size(dat{ii},2))*ii, dat{ii}, 30, [0.7 0.7 0.7], 'filled');end
             end
+            errorbar(1:nChans, m, m-se(:,1)', se(:,2)'-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
             %errorbar(1:nChans, m, se, '.k', 'MarkerSize', 50, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
-            [m, se] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx2);
-            errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+            %errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.b', 'MarkerSize', 30, 'LineWidth', 4, 'LineStyle', 'none', 'CapSize', 0)
+            %[m, se] = averageAcrossElecsWithinArea(results(kk).params(p,:), chan_idx2);
+            %errorbar(1:nChans, m, m-se(:,:,1), se(:,:,2)-m, '.c', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
         else
             m = results(kk).params(p,:); 
             plot(1:nChans, m, '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none')
