@@ -39,7 +39,7 @@ for ii = 1:nSubjects
     
     subject  = data{ii}.subject;
     t        = data{ii}.t;
-    epochs   = data{ii}.epochs;
+    epochs   = data{ii}.epochs_b;
     
     % Determine which stimuli to select for the PRF timecourse
     switch subject

@@ -1,12 +1,13 @@
 %% 1: Load the ECoG PRF data and stimulus description
 
 % Load and epoch the data
-recomputeFlag = false;
+recomputeFlag = true;
 tasks         = {'prf'};
 epochTime     = [-0.2 0.6];
 saveStr       = 'prfdata';
+sampleRate    = 512;
 
-[data] = tde_getData(recomputeFlag, [], [], tasks, [], epochTime, [], saveStr);
+[data] = tde_getData(recomputeFlag, [], [], tasks, epochTime, sampleRate, [], saveStr);
 
 % Compute the PRF timecourses
 doPlots = true;
