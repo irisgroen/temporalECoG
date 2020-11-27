@@ -124,8 +124,10 @@ for ii = 1 : length(subjects)
         if exist(fileName, 'file')
             data{ii} = load(fileName);
             fprintf('[%s] Loading data for subject %s \n',mfilename, subject);
+        else
+            fprintf('[%s] Could not locate datafile to load from disk for subject %s \n', mfilename,subject);
         end
-    
+        
     else
         
         fprintf('[%s] Computing data for subject %s \n',mfilename, subject);
@@ -138,13 +140,15 @@ for ii = 1 : length(subjects)
         % Read in voltage data
         dataDir = fullfile(bidsDir, 'derivatives', 'ECoGCAR');
         [data_v, ~, ~] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'reref', sampleRate);
-        if isempty(data_v), warning('No voltage data found for subject %s!', subject); end
+        if isempty(data_v), warning('[%s] No voltage data found for subject %s!', mfilename, subject); end
 
         % Read in broadband data
         dataDir = fullfile(bidsDir, 'derivatives', 'ECoGBroadband');
         [data_b, channels, events] = bidsEcogGetPreprocData(dataDir, subject, session, tasks, [], 'broadband', sampleRate);
-        if isempty(data_b), warning('No broadband data found for subject %s!', subject); end
-
+        if isempty(data_b), warning('[%s] No broadband data found for subject %s!', mfilename, subject); end
+        
+        if isempty(data_v) && isempty(data_b), continue; end
+            
         % Read in electrode data and match to atlas
         dataDir = fullfile(bidsDir);
         atlasName = {'benson14_varea',  'wang15_mplbl', 'wang15_fplbl', 'benson14_eccen', 'benson14_angle', 'benson14_sigma'};
@@ -263,7 +267,11 @@ for ii = 1:length(data)
 end
 data(emptycells) = [];
 
-fprintf('[%s] Done! \n',mfilename);
+if ~isempty(data)
+    fprintf('[%s] Done! \n',mfilename);
+else
+    fprintf('[%s] No data found! \n',mfilename);
+end
 end
 
 
