@@ -10,7 +10,7 @@ function [out] = tde_fitPRFs(data, bar_apertures, opt, doPlots, saveDir, results
 if ~exist('doPlots','var') || isempty(doPlots), doPlots = false; end
 
 % <saveDir>
-if ~exist('saveDir', 'var') || isempty(doPlots), saveDir = fullfile(analysisRootPath, 'prfs'); end
+if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = fullfile(analysisRootPath, 'prfs'); end
 
 % <resultsStr>
 if ~exist('resultsStr', 'var') || isempty(resultsStr), resultsStr = 'prffits'; end
@@ -32,11 +32,13 @@ nSubjects = length(data);
 out = cell(nSubjects,1);
 
 % Loop over subjects
-for ii = 1:nSubjects
+for ii = 2:nSubjects
 
     subject = data{ii}.subject;
 	channels = data{ii}.channels;
-        
+    data2fit = [];
+    stimulus = [];
+    
     if ~isempty(data)
         
         % Average runs
@@ -44,18 +46,18 @@ for ii = 1:nSubjects
             continue
         else
             
-            stim_inx = data{ii}.stim_inx;
             % Define stimulus and data
-            for jj = 1:size(data{ii}.ts,3)
-                data2fit{jj} = data{ii}.ts(:,:,jj);
-                stimulus{jj} = double(bar_apertures(:,:,stim_inx));
-            end
+%            stim_inx = data{ii}.stim_inx;
+%             for jj = 1:size(data{ii}.ts,3)
+%                 data2fit{jj} = data{ii}.ts(:,:,jj);
+%                 stimulus{jj} = double(bar_apertures(:,:,stim_inx));
+%             end
+%             
+            data2fit = mean(data{ii}.ts,3);
+            stimulus = {bar_apertures};
             
-            %data2fit = mean(data{ii}.ts,3);
-            %stimulus = {bar_apertures};
-            
-            %results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
-            results = analyzePRFdog(stimulus, data2fit, tr, opt);
+            results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
+            %results = analyzePRFdog(stimulus, data2fit, tr, opt);
             results.channels = channels;
             results.subject  = subject;
             out{ii}          = results;
@@ -80,27 +82,40 @@ for ii = 1:nSubjects
             % Make plots of the estimated PRFs and PRF fits
 
             if doPlots
-
+                close all;
                 channels = data{ii}.channels;
-                nChans = height(channels);
-                figureName = sprintf('%s_prftimecoursefits', subject);
+                f_ind = checkForHDgrid(channels);
 
                 % Timeseries + fits
-                ecog_plotPRFtsfits(data2fit, stimulus, results, channels)
-                set(gcf, 'Name', figureName);
-                set(gcf, 'Position', get(0,'screensize'));
-                set(findall(gcf,'-property','FontSize'),'FontSize',14)
-                saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
-
+                ecog_plotPRFtsfits(data2fit, stimulus, results, channels);
+                for f = 1:length(f_ind)
+                    if length(f_ind) == 1
+                        figureName = sprintf('%s_prftimecoursefits', subject);
+                    else
+                        figureName = sprintf('%s_prftimecoursefits_%d', subject, f);
+                    end                
+                    set(f, 'Name', figureName);
+                    set(f, 'Position', get(0,'screensize'));
+                    set(findall(f,'-property','FontSize'),'FontSize',14)
+                    saveas(f, fullfile(plotSaveDir, figureName), 'png'); 
+                end
+                close all;
+                
                 % PRFs
-                coloropt = 1;
-                figureName = sprintf('%s_prfs', subject);
-
+                coloropt = 0;
                 ecog_plotPRFs(results, stimulus, channels, [], [], coloropt)  
-                set(gcf, 'Position', get(0,'screensize'));
-                set(findall(gcf,'-property','FontSize'),'FontSize',14)
-                saveas(gcf, fullfile(plotSaveDir, figureName), 'png'); close;
-
+                for f = 1:length(f_ind)
+                    if length(f_ind) == 1
+                        figureName = sprintf('%s_prfs', subject);
+                    else
+                        figureName = sprintf('%s_prfs_%d', subject, f);
+                    end                
+                    set(f, 'Name', figureName);
+                    set(f, 'Position', get(0,'screensize'));
+                    set(findall(f,'-property','FontSize'),'FontSize',14)
+                    saveas(f, fullfile(plotSaveDir, figureName), 'png'); 
+                end
+                close all;
             end
         end
     end
