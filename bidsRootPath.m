@@ -4,6 +4,6 @@ function rootPath = bidsRootPath()
 % where they downloaded the BAIR dataset.
 
 %rootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/visual';
-rootPath = '/Volumes/SeaGate/BAIR/BIDS/visual';
+rootPath = '/Users/iiagroen/surfdrive/BAIR/BIDS/visual';
 
 end

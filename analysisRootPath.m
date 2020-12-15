@@ -4,7 +4,7 @@ function rootPath = analysisRootPath()
 % where they want the processed data and figures to be written to.
 
 %rootPath = '/Volumes/server/Projects/BAIR/Papers/TemporalDynamicsECoG';
-rootPath = '/Volumes/SeaGate/BAIR/Papers/TemporalDynamicsECoG';
+rootPath = '/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG';
 
 end
 

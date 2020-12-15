@@ -29,7 +29,7 @@ modelfun = modelfuns([10]);
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 
-LOADFITS = 0; % instead of fitting, load an existing saved model fit
+LOADFITS = 1; % instead of fitting, load an existing saved model fit
 saveStr = [];%'sixROIs';
 
 if LOADFITS  
@@ -95,3 +95,5 @@ tde_plotDerivedParamsData(data2fit,channels2fit,t,stim_info, [], 0);
 %tde_computeDerivedParamsData(data,channels,t,stim_info);
 
 tde_plotDerivedParamsModel(params{1},modelfun{1}, channels2fit,t,{'V1'});
+
+
