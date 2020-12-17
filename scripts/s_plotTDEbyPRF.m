@@ -4,8 +4,8 @@ channelsPRF.benson14_angle = channelsPRF.benson14_angle+90;
 % define cut offs
 R2thresh         = 30;
 eccfovthresh     = 1.5;
-eccparafovthresh = 6;
-eccmax           = 12;
+eccparafovthresh = 8;
+eccmax           = 20;
 
 % select channels
 chan_idx_R2         = channelsPRF.aprf_R2 > R2thresh;
@@ -13,66 +13,43 @@ chan_idx_eccfov     = channelsPRF.aprf_ecc < eccfovthresh;
 chan_idx_eccparafov = channelsPRF.aprf_ecc >= eccfovthresh & channelsPRF.aprf_ecc < eccparafovthresh;
 chan_idx_eccper     = channelsPRF.aprf_ecc >= eccparafovthresh & channelsPRF.aprf_ecc < eccmax;
 
-
 %% contrast temporal time courses
+areaNames = {'V1','V2','V3','higher'};
+%areaNames = {'V123','higher'};
+fun = @median;
+numboot = 1000;
 
-% V123 %%%
-chan_idx_area       = matchAreaNameToAtlas({'V123'}, channelsPRF.benson14_varea);
+[~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov & chan_idx_area;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov & chan_idx_area;
-per_idx      = chan_idx_R2 & chan_idx_eccper & chan_idx_area;
+fov_idx      = chan_idx_R2 & chan_idx_eccfov; %&~contains(channelsPRF.subject_name, 'som708'); 
+parafov_idx  = chan_idx_R2 & chan_idx_eccparafov; %&~contains(channelsPRF.subject_name, 'som708'); 
+per_idx      = chan_idx_R2 & chan_idx_eccper;% &~contains(channelsPRF.subject_name, 'som708');
 
-% get the data
-tmpdata_fov     = data2fit(:,:,fov_idx);
-tmpdata_parafov = data2fit(:,:,parafov_idx);
-tmpdata_per     = data2fit(:,:,per_idx);
+% average the electrodes
+[tmpdata_fov] = averageWithinArea(data2fit(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
+[tmpdata_parafov] = averageWithinArea(data2fit(:,:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
+%[tmpdata_per] = averageWithinArea(data2fit(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
 figure; hold on
-subplot(2,1,1);hold on
-plot(flatten(median(tmpdata_fov,3)),'k', 'LineWidth',2); 
-plot(flatten(median(tmpdata_parafov,3)),'b', 'LineWidth',2); 
-plot(flatten(mean(tmpdata_per,3)),'r', 'LineWidth',2); 
 
-set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
-axis tight
+for ii = 1:length(areaNames)
+    subplot(length(areaNames),1,ii);hold on
+    plot(smooth(flatten(tmpdata_fov(:,:,ii)),20),'k', 'LineWidth',2); 
+    plot(smooth(flatten(tmpdata_parafov(:,:,ii)),20),'r', 'LineWidth',2); 
+    %plot(flatten(tmpdata_per(:,:,ii)),'b', 'LineWidth',2); 
 
-l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(fov_idx)));
-l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(parafov_idx)));
-l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(per_idx)));
-legend({l1,l2,l3}, 'Location', 'NorthWest');
-title(sprintf('V123 (PRF R2 > %d)', R2thresh));
+    set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
+    axis tight
 
-%%% HIGHER %%%
-chan_idx_area   = matchAreaNameToAtlas({'higher'}, channelsPRF.benson14_varea);
-
-% combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov & chan_idx_area;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov & chan_idx_area;%&~contains(channelsPRF.subject_name, 'som708');
-per_idx      = chan_idx_R2 & chan_idx_eccper & chan_idx_area;
-
-% get the data
-tmpdata_fov     = data2fit(:,:,fov_idx);
-tmpdata_parafov = data2fit(:,:,parafov_idx);
-tmpdata_per     = data2fit(:,:,per_idx);
-
-% plot
-subplot(2,1,2);hold on
-plot(flatten(median(tmpdata_fov,3)),'k', 'LineWidth',2); 
-plot(flatten(median(tmpdata_parafov,3)),'b', 'LineWidth',2); 
-plot(flatten(mean(tmpdata_per,3)),'r', 'LineWidth',2); 
-
-set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
-axis tight
-
-l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(fov_idx)));
-l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(parafov_idx)));
-l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(per_idx)));
-legend({l1,l2,l3}, 'Location', 'NorthWest');
-title(sprintf('higher (PRF R2 > %d)', R2thresh));
-
+    l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(group_prob(fov_idx,ii)>0)));
+    l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(group_prob(parafov_idx,ii)>0)));
+    l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(group_prob(per_idx,ii)>0)));
+    legend({l1,l2}, 'Location', 'NorthWest');
+    %legend({l1,l2,l3}, 'Location', 'NorthWest');
+    title(sprintf('%s (PRF R2 > %d)', areaNames{ii}, R2thresh));
+end
 set(gcf, 'Position', get(0,'screensize'));
 %set(gcf, 'Position', [1         436        1440         369]);
 
@@ -82,100 +59,61 @@ objFunction = @LINEAR_RECTF_EXP_NORM_DELAY;
 tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(objFunction))));
 paramNames = strsplit(tmp.params, ',');
 
-% V123 %%%
-chan_idx_area       = matchAreaNameToAtlas({'V123'}, channelsPRF.benson14_varea);
+areaNames = {'V1','V2','V3','higher'};
+%areaNames = {'V123','higher'};
+fun = @median;
+numboot = 10000;
+
+[~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov & chan_idx_area;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov & chan_idx_area;
-per_idx      = chan_idx_R2 & chan_idx_eccper & chan_idx_area;
+fov_idx      = chan_idx_R2 & chan_idx_eccfov;
+parafov_idx  = chan_idx_R2 & chan_idx_eccparafov;
+per_idx      = chan_idx_R2 & chan_idx_eccper;
 
-% get the data
-tmpdata_fov     = params(:,fov_idx);
-tmpdata_parafov = params(:,parafov_idx);
-tmpdata_per     = params(:,per_idx);
+% average the electrodes
+[d_fov, se_fov] = averageWithinArea(params(:,fov_idx), group_prob(fov_idx,:), fun, numboot);
+[d_pfov, se_pfov] = averageWithinArea(params(:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
+%[d_per, se_per] = averageWithinArea(params(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
 figure; hold on
-for p = 1:length(paramNames)
-    subplot(2,length(paramNames),p);hold on;
-    %plot(1, median(tmpdata_fov(p,:),2),'.k','MarkerSize', 30); 
-    errorbar(0.95, mean(tmpdata_fov(p,:),2), std(tmpdata_fov(p,:),0,2)/sqrt(size(tmpdata_fov,2)), '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    %plot(1.05, median(tmpdata_parafov(p,:),2),'.b','MarkerSize', 30); 
-	errorbar(1, mean(tmpdata_parafov(p,:),2), std(tmpdata_parafov(p,:),0,2)/sqrt(size(tmpdata_parafov,2)), '.b', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    %plot(0.95, median(tmpdata_per(p,:),2),'.r', 'MarkerSize', 30); 
-	%errorbar(1.05, median(tmpdata_per(p,:),2), std(tmpdata_per(p,:),0,2)/sqrt(size(tmpdata_per,2)), '.r', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    title(paramNames{p});
-    set(gca, 'XLim',[0.8 1.2], 'XTickLabel', []);
+cp = 1;
+for ii = 1:length(areaNames)
+    for p = 1:length(paramNames)
+        subplot(length(areaNames),length(paramNames),cp);hold on;
+        errorbar(0.95, d_fov(p,ii), d_fov(p,ii)-se_fov(p,ii,1), se_fov(p,ii,2)-d_fov(p,ii), '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        errorbar(1, d_pfov(p,ii), d_pfov(p,ii)-se_pfov(p,ii,1), se_pfov(p,ii,2)-d_pfov(p,ii), '.r', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        %errorbar(1.05, d_per(p,ii), d_per(p,ii)-se_per(p,ii,1), se_per(p,ii,2)-d_per(p,ii), '.b', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
+        title(sprintf('%s %s', areaNames{ii}, paramNames{p}));
+        set(gca, 'XLim',[0.8 1.2], 'XTickLabel', []);
+        cp = cp + 1;
+    end
 end
+set(gcf, 'Position', get(0,'screensize'));
+%        set(gcf, 'Position', [1         436        1440         369]);
 
-% V123 %%%
-chan_idx_area       = matchAreaNameToAtlas({'higher'}, channelsPRF.benson14_varea);
 
-% combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov & chan_idx_area;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov & chan_idx_area;
-per_idx      = chan_idx_R2 & chan_idx_eccper & chan_idx_area;
+%% correlations
+%corr(channelsPRF.aprf_ecc(chan_idx_R2 &  chan_idx_area), params(4,chan_idx_R2 &  chan_idx_area)', 'Type', 'Spearman')
+areaName = {'V1'};
+chan_idx_area       = matchAreaNameToAtlas(areaName, channelsPRF.benson14_varea);
+subjectNames        = unique(channelsPRF.subject_name(chan_idx_R2 & chan_idx_area));
+colors              = 1-parula(length(subjectNames));
 
-% get the data
-tmpdata_fov     = params(:,fov_idx);
-tmpdata_parafov = params(:,parafov_idx);
-tmpdata_per     = params(:,per_idx);
-
-% plot
+figure;hold on
 for p = 1:length(paramNames)
-    subplot(2,length(paramNames),p+length(paramNames));hold on;
-    %plot(1, median(tmpdata_fov(p,:),2),'.k','MarkerSize', 30); 
-    errorbar(0.95, mean(tmpdata_fov(p,:),2), std(tmpdata_fov(p,:),0,2)/sqrt(size(tmpdata_fov,2)), '.k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    %plot(1.05, median(tmpdata_parafov(p,:),2),'.b','MarkerSize', 30); 
-	errorbar(1,mean(tmpdata_parafov(p,:),2), std(tmpdata_parafov(p,:),0,2)/sqrt(size(tmpdata_parafov,2)), '.b', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    %plot(0.95, median(tmpdata_per(p,:),2),'.r', 'MarkerSize', 30); 
-	%errorbar(1.05, median(tmpdata_per(p,:),2), std(tmpdata_per(p,:),0,2)/sqrt(size(tmpdata_per,2)), '.r', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
-    title(paramNames{p});
-    set(gca, 'XLim',[0.8 1.2], 'XTickLabel', []);
+	subplot(2,5,p);hold on;
+    for ii = 1:length(subjectNames)
+        idx = chan_idx_R2 & contains(channelsPRF.subject_name, subjectNames{ii}) & chan_idx_area;
+        scatter(channelsPRF.aprf_ecc(idx), params(p,idx), 100, colors(ii,:), 'filled')
+    end
+    xlabel('aPRF eccentricity');
+    title(sprintf('%s %s', areaName{:}, paramNames{p}));
+    set(gca, 'XLim', [0 10]);
 end
-
+legend(subjectNames);
 set(gcf, 'Position', get(0,'screensize'));
-%set(gcf, 'Position', [1         436        1440         369]);
-
-
-%%
-l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(fov_idx)));
-l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(parafov_idx)));
-l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(per_idx)));
-legend({l1,l2,l3}, 'Location', 'NorthWest');
-title(sprintf('V123 (PRF R2 > %d)', R2thresh));
-
-%%% HIGHER %%%
-chan_idx_area   = matchAreaNameToAtlas({'higher'}, channelsPRF.benson14_varea);
-
-% combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov & chan_idx_area;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov & chan_idx_area;%&~contains(channelsPRF.subject_name, 'som708');
-per_idx      = chan_idx_R2 & chan_idx_eccper & chan_idx_area;
-
-% get the data
-tmpdata_fov     = data2fit(:,:,fov_idx);
-tmpdata_parafov = data2fit(:,:,parafov_idx);
-tmpdata_per     = data2fit(:,:,per_idx);
-
-% plot
-subplot(2,1,2);hold on
-plot(flatten(median(tmpdata_fov,3)),'k', 'LineWidth',2); 
-plot(flatten(median(tmpdata_parafov,3)),'b', 'LineWidth',2); 
-plot(flatten(median(tmpdata_per,3)),'r', 'LineWidth',2); 
-
-set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
-axis tight
-
-l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(fov_idx)));
-l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(parafov_idx)));
-l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(per_idx)));
-legend({l1,l2,l3}, 'Location', 'NorthWest');
-title(sprintf('higher (PRF R2 > %d)', R2thresh));
-
-set(gcf, 'Position', get(0,'screensize'));
-%set(gcf, 'Position', [1         436        1440         369]);
 
 %% comparison with benson
 
