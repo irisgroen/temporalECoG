@@ -36,8 +36,8 @@ for ii = 2:nSubjects
 
     subject = data{ii}.subject;
 	channels = data{ii}.channels;
-    data2fit = [];
-    stimulus = [];
+    %data2fit = [];
+    %stimulus = [];
     
     if ~isempty(data)
         
@@ -56,8 +56,8 @@ for ii = 2:nSubjects
             data2fit = mean(data{ii}.ts,3);
             stimulus = {bar_apertures};
             
-            results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
-            %results = analyzePRFdog(stimulus, data2fit, tr, opt);
+            %results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
+            results = analyzePRFdog(stimulus, data2fit, tr, opt);
             results.channels = channels;
             results.subject  = subject;
             out{ii}          = results;

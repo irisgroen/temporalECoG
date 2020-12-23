@@ -43,6 +43,7 @@ end
 [~, nElecs] = size(data);
 m_boot = nan(size(data,1), nAreas, numboot); 
 
+fprintf('[%s] Computing %s using %d bootstraps...\n', mfilename, func2str(fun), numboot);
 % each boot, sample all channels at once
 for ii = 1:numboot
     elec_idx = randsample(1:nElecs,nElecs,1);

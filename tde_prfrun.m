@@ -19,11 +19,12 @@ load(stimName, 'bar_apertures');
 %% 2: Model fitting
 
 % Fit the PRF time courses with analyzePRF
-tr             = 1;
-opt.hrf        = 1;
-opt.maxpolydeg = 0;
-opt.xvalmode   = 0; 
-opt.display    = 'off';
+tr              = 1;
+opt.hrf         = 1;
+opt.maxpolydeg  = 0;
+opt.xvalmode    = 0; 
+opt.forcebounds = 1;
+opt.display     = 'off';
 
 doPlots = true;
 [results] = tde_fitPRFs(data, bar_apertures, opt, doPlots);

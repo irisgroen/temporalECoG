@@ -1,10 +1,14 @@
+
+%load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_individualelecs_20201029T015941.mat')
+
+%%
 channelsPRF = tde_getPRFparams(channels2fit);
-channelsPRF.benson14_angle = channelsPRF.benson14_angle+90;
+[channelsPRF] = convertBensonangleToAnalyzePRFangle(channelsPRF);
 
 % define cut offs
 R2thresh         = 30;
-eccfovthresh     = 1.5;
-eccparafovthresh = 8;
+eccfovthresh     = 3;
+eccparafovthresh = 20;
 eccmax           = 20;
 
 % select channels
@@ -14,9 +18,9 @@ chan_idx_eccparafov = channelsPRF.aprf_ecc >= eccfovthresh & channelsPRF.aprf_ec
 chan_idx_eccper     = channelsPRF.aprf_ecc >= eccparafovthresh & channelsPRF.aprf_ecc < eccmax;
 
 %% contrast temporal time courses
-areaNames = {'V1','V2','V3','higher'};
-%areaNames = {'V123','higher'};
-fun = @median;
+%areaNames = {'V1','V2','V3','higher'};
+areaNames = {'V123','higher'};
+fun = @mean;
 numboot = 1000;
 
 [~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', areaNames );   
@@ -29,23 +33,25 @@ per_idx      = chan_idx_R2 & chan_idx_eccper;% &~contains(channelsPRF.subject_na
 % average the electrodes
 [tmpdata_fov] = averageWithinArea(data2fit(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
 [tmpdata_parafov] = averageWithinArea(data2fit(:,:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
-%[tmpdata_per] = averageWithinArea(data2fit(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
+[tmpdata_per] = averageWithinArea(data2fit(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
 figure; hold on
 
 for ii = 1:length(areaNames)
     subplot(length(areaNames),1,ii);hold on
-    plot(smooth(flatten(tmpdata_fov(:,:,ii)),20),'k', 'LineWidth',2); 
-    plot(smooth(flatten(tmpdata_parafov(:,:,ii)),20),'r', 'LineWidth',2); 
-    %plot(flatten(tmpdata_per(:,:,ii)),'b', 'LineWidth',2); 
+    toplot = flatten(tmpdata_fov(:,:,ii));
+    plot(smooth(toplot/norm(toplot,2),20),'k', 'LineWidth',2); 
+    toplot = flatten(tmpdata_parafov(:,:,ii));
+    plot(smooth(toplot/norm(toplot,2),20),'r', 'LineWidth',2); 
+    %plot(smooth(flatten(tmpdata_per(:,:,ii)),20),'b', 'LineWidth',2); 
 
     set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
     axis tight
 
     l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(group_prob(fov_idx,ii)>0)));
     l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(group_prob(parafov_idx,ii)>0)));
-    l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(group_prob(per_idx,ii)>0)));
+    %l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(group_prob(per_idx,ii)>0)));
     legend({l1,l2}, 'Location', 'NorthWest');
     %legend({l1,l2,l3}, 'Location', 'NorthWest');
     title(sprintf('%s (PRF R2 > %d)', areaNames{ii}, R2thresh));
@@ -117,25 +123,38 @@ set(gcf, 'Position', get(0,'screensize'));
 
 %% comparison with benson
 
-chan_idx_area       = matchAreaNameToAtlas({'V123'}, channelsPRF.benson14_varea);
 chan_idx_ecc        = channelsPRF.aprf_ecc < 10;
+idx                 = chan_idx_R2 & chan_idx_ecc;
+
+figure;hold on;
+line([0 360], [0 360], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
+scatter(channelsPRF.benson14_angle(idx), channelsPRF.aprf_ang(idx), 100, 'k','filled');
+title(sprintf('V123 angle: circular r = %0.2f', circ_corrcc(circ_ang2rad(channelsPRF.benson14_angle(idx)),circ_ang2rad(channelsPRF.aprf_ang(idx)))));
+xlabel('benson');ylabel('analyzePRF');
+
+%%
+chan_idx_area       = matchAreaNameToAtlas({'V123'}, channelsPRF.benson14_varea);
+chan_idx_ecc        = channelsPRF.aprf_ecc < 20;
 
 idx                 = chan_idx_R2 & chan_idx_area & chan_idx_ecc;
 
 figure;hold on;
 subplot(2,3,1); hold on;
+line([0 360], [0 360], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_angle(idx), channelsPRF.aprf_ang(idx), 100, 'k','filled');
-title(sprintf('V123 angle: rho = %0.2f', corr(channelsPRF.benson14_angle(idx),channelsPRF.aprf_ang(idx), 'Type', 'Spearman', 'Rows', 'complete')));
+title(sprintf('V123 angle: circular r = %0.2f', circ_corrcc(deg2rad(channelsPRF.benson14_angle(idx)),deg2rad(channelsPRF.aprf_ang(idx)))));
 xlabel('benson');ylabel('analyzePRF');
 axis equal; set(gca, 'XLim', [0 360], 'YLim', [0 360]);
 subplot(2,3,2); hold on;
+line([0 10], [0 10], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_eccen(idx), channelsPRF.aprf_ecc(idx),  100, 'k','filled');
 title(sprintf('V123 eccen: rho = %0.2f', corr(channelsPRF.benson14_eccen(idx),channelsPRF.aprf_ecc(idx), 'Type', 'Spearman', 'Rows', 'complete')));
 axis equal; set(gca, 'XLim', [0 10], 'YLim', [0 10]);
 subplot(2,3,3); hold on;
+line([0 4], [0 4], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_sigma(idx), channelsPRF.aprf_rfsize(idx), 100, 'k', 'filled');
 title(sprintf('V123 sigma: rho = %0.2f', corr(channelsPRF.benson14_sigma(idx),channelsPRF.aprf_rfsize(idx),'Type', 'Spearman',  'Rows', 'complete')));
-axis equal; set(gca, 'XLim', [0 4], 'YLim', [0 4]);
+axis equal; set(gca, 'XLim', [0 3], 'YLim', [0 3]);
 %set(gcf, 'Position', [1         436        1440         369]);
 
 chan_idx_area   = matchAreaNameToAtlas({'higher'}, channelsPRF.benson14_varea);
@@ -144,18 +163,21 @@ idx             = chan_idx_R2 & chan_idx_area & chan_idx_ecc;
 
 
 subplot(2,3,4); hold on;
+line([0 360], [0 360], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_angle(idx), channelsPRF.aprf_ang(idx), 100, 'k','filled');
-title(sprintf('higher angle: rho = %0.2f', corr(channelsPRF.benson14_angle(idx),channelsPRF.aprf_ang(idx),'Type', 'Spearman',  'Rows', 'complete')));
+title(sprintf('higher angle: circular r = %0.2f', circ_corrcc(deg2rad(channelsPRF.benson14_angle(idx)),deg2rad(channelsPRF.aprf_ang(idx)))));
 xlabel('benson');ylabel('analyzePRF'); 
 axis equal; set(gca, 'XLim', [0 360], 'YLim', [0 360]);
 subplot(2,3,5); hold on;
+line([0 10], [0 10], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_eccen(idx), channelsPRF.aprf_ecc(idx),  100, 'k','filled');
 title(sprintf('higher eccen: rho = %0.2f', corr(channelsPRF.benson14_eccen(idx),channelsPRF.aprf_ecc(idx),'Type', 'Spearman',  'Rows', 'complete')));
 axis equal; set(gca, 'XLim', [0 10], 'YLim', [0 10]);
 subplot(2,3,6); hold on;
+line([0 8], [0 8], 'LineStyle', ':', 'Color', [0.5 0.5 0.5]);
 scatter(channelsPRF.benson14_sigma(idx), channelsPRF.aprf_rfsize(idx), 100, 'k', 'filled');
 title(sprintf('higher sigma: rho = %0.2f', corr(channelsPRF.benson14_sigma(idx),channelsPRF.aprf_rfsize(idx), 'Type', 'Spearman', 'Rows', 'complete')));
-axis equal; set(gca, 'XLim', [0 8], 'YLim', [0 8]);
+axis equal; set(gca, 'XLim', [0 6], 'YLim', [0 6]);
 
 set(gcf, 'Position', get(0,'screensize'));
 

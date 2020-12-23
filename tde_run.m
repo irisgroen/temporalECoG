@@ -1,7 +1,7 @@
 %% 1: Load the ECoG data 
 
 % Load or (re)compute the processed data
-reComputeFlag = false; 
+reComputeFlag = true; 
 [fulldata] = tde_getData(reComputeFlag);
 
 % Select epochs and channels, average trials within stimulus condition 
