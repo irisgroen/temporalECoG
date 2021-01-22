@@ -40,7 +40,7 @@ if ~exist('groupingMethod', 'var') || isempty(groupingMethod)
 end
 
 if ~exist('areaNames', 'var') || isempty(areaNames)
-    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','TO2','IPS'};
+    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','TO2','IPS', 'V123', 'higher', 'V3ab'};
 end
 
 chan_idx = [];
