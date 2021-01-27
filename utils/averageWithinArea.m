@@ -13,7 +13,7 @@ function [m, se] = averageWithinArea(data, group_prob, fun, numboot)
 %                       probabilities of belonging to a set of areas as
 %                       outputted by groupElecsByVisualArea.m
 %     fun:              (optional) Averaging function (default: @median).
-%     numboot:          (optional) Number of bootstraps (default: 10000).
+%     numboot:          (optional) Number of bootstraps (default: 1000).
 %
 % Output
 %     m:                estimated summary metric (default median).
@@ -26,7 +26,7 @@ if ~exist('fun','var') || isempty(fun)
 end
 
 if ~exist('numboot','var') || isempty(numboot)
-    numboot = 10000;
+    numboot = 1000;
 end
 
 % if there are more than one dimension per channel, vectorize data
