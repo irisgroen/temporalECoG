@@ -81,7 +81,7 @@ end
 
 % <epochTime>
 if ~exist('epochTime', 'var') || isempty(epochTime)
-    epochTime = [-0.2 1.2];
+    epochTime = [-0.1 1.2];
 end
 
 % <sampleRate>

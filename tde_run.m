@@ -4,7 +4,8 @@
 reComputeFlag = true; 
 [fulldata] = tde_getData(reComputeFlag);
 
-% Select epochs and channels, average trials within stimulus condition 
+% Select epochs and channels, average trials within stimulus condition
+options = [];
 options.doplots = false;
 [data, channels, t, srate, options] = tde_selectData(fulldata, options);
 
@@ -12,12 +13,12 @@ options.doplots = false;
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
 
 % Sort and average electrodes
-options.average_elecs = false;
+options.average_elecs = true;
 options.normalize_data = false;  % boolean
 [data2fit, channels2fit, se] = tde_prepareData(data, channels, options);
 
 % Plot average response per stimulus for selected data
-%tde_plotData(data2fit, channels2fit, t, options);
+tde_plotData(data2fit, channels2fit, t, options);
 
 %% 2. Model fitting
 
@@ -29,7 +30,7 @@ modelfun = modelfuns([10]);
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 
-LOADFITS = 1; % instead of fitting, load an existing saved model fit
+LOADFITS = 0; % instead of fitting, load an existing saved model fit
 saveStr = [];%'sixROIs';
 
 if LOADFITS  
@@ -37,7 +38,7 @@ if LOADFITS
     [params, pred] = tde_loadModelFits(modelfun, options, [], saveStr);
 else    
     % Compute model fit(s)
-    [params, pred] = tde_doModelFits(modelfun, stim_ts, data2fit, srate, options);
+    [params, pred] = tde_doModelFits(modelfun, stim_ts, data2fit, channels2fit, srate, t, options);
 end
 
 %% 3. Model evaluation
@@ -89,7 +90,7 @@ tde_plotDerivedPredictions(results,channels2fit,2,1, saveDir);
 
 % data params 
 %close all;
-tde_plotDerivedParamsData(data2fit,channels2fit,t,stim_info, [], 0);
+tde_plotDerivedParamsData(data2fit,channels2fit,t,stim_info, [],0);
 
 %tde_plotDerivedParamsData(pred{5},channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
 %tde_computeDerivedParamsData(data,channels,t,stim_info);

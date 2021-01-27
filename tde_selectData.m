@@ -24,7 +24,7 @@ if ~isfield(opts, 'stimnames') || isempty(opts.stimnames)
                       'ONEPULSE-1','ONEPULSE-2', 'ONEPULSE-3','ONEPULSE-4', 'ONEPULSE-5','ONEPULSE-6',...
                       'TWOPULSE-1','TWOPULSE-2', 'TWOPULSE-3','TWOPULSE-4', 'TWOPULSE-5','TWOPULSE-6'};
 end
-if ~isfield(opts, 'areanames'), opts.areanames = []; end
+if ~isfield(opts, 'areanames'), opts.areanames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','IPS'}; end
 
 if ~isfield(opts,'stim_on') || isempty(opts.stim_on)
     opts.stim_on = [0 1]; % time period across which stimulus is presented
@@ -48,7 +48,7 @@ if ~isfield(opts,'elec_mean_thresh') || isempty(opts.elec_mean_thresh)
     opts.elec_mean_thresh = 0; % minimum required mean response during stim_on period in % signal change
 end
 if ~isfield(opts,'elec_splithalf_thresh') || isempty(opts.elec_splithalf_thresh)
-    opts.elec_splithalf_thresh = -0.2; % minimum required R2 between split halves of data
+    opts.elec_splithalf_thresh = 0; % minimum required R2 between split halves of data
 end
 if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thresh)
     opts.elec_meanpredict_thresh = 0; % minimum required R2 for prediction by mean (1 - (SSEresidual/SSEtotal)
@@ -115,22 +115,16 @@ for ii = 1:length(data) % Loop over subjects
     % Include only requested areas
     if ~isempty(opts.areanames)
         if ~iscell(opts.areanames),opts.areanames = {opts.areanames};end
-        [chan_groupidx, channels_grouped] = groupElecsByVisualArea(channels);
-        chan_idx = [];
-        for cc = 1:length(opts.areanames)
-            group_idx = strcmp(opts.areanames{cc}, channels_grouped.name);
-            chan_idx_matched = find(chan_groupidx{group_idx});
-            if ~any(chan_idx_matched)
-                fprintf('[%s] Did not find matching electrodes in area %s for subject %s\n', mfilename, opts.areanames{cc}, subject);
-            else
-                chan_idx = [chan_idx; chan_idx_matched];
-            end
+        [~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', opts.areanames);
+        chan_idx = any(group_prob,2);
+        if ~any(chan_idx)
+            fprintf('[%s] Did not find matching electrodes in area %s for subject %s\n', mfilename, [opts.areanames{:}], subject);
+            channels = [];
+        else
+            channels = channels(chan_idx,:);
+            epochs_b = epochs_b(:,:,chan_idx);
+            epochs_v = epochs_v(:,:,chan_idx);      
         end
-        
-        channels = channels(chan_idx,:);
-        epochs_b = epochs_b(:,:,chan_idx);
-        epochs_v = epochs_v(:,:,chan_idx);      
-
     end
     
     if isempty(channels)

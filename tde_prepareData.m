@@ -16,9 +16,6 @@ end
 if ~isfield(opts,'sort_channels') || isempty(opts.sort_channels)
     opts.sort_channels       = true;  % boolean
 end
-if ~isfield(opts,'area_names') || isempty(opts.area_names)
-    area_names = [];
-end
 
 % Sort electrodes on visual area (rather than subjectID)?
 if opts.sort_channels
@@ -31,7 +28,7 @@ end
 % Average elecs within area?
 if opts.average_elecs
     fprintf('[%s] Averaging electrodes...\n', mfilename);
-    [epochs, channels, epochs_se] = average_elecs(epochs, channels, area_names);
+    [epochs, channels, epochs_se] = average_elecs(epochs, channels, opts.areanames);
 else
     epochs_se = [];
 end
@@ -58,9 +55,9 @@ function [data] = normalize_data(data)
     normdata = data;
     % normalize each channel separately
     for ii = 1:size(data,3)
-        tmp = data(:, :, ii);
-        maxRsp(ii) = max(tmp(:));
-        normdata(:, :, ii) = data(:, :, ii)./maxRsp(ii);
+        tmp = data(:,:,ii);
+        %normdata(:,:,ii) = data(:,:,ii)./max(tmp(:));
+        normdata(:,:,ii) = data(:,:,ii)./norm(tmp(:),2);
     end
     data = normdata;
 end
