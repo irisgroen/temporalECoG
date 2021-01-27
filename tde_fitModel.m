@@ -1,6 +1,6 @@
-function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, saveDir, saveName)
+function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
 
-% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options, saveDir, saveName) 
+% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
 % <objFunction> model form
 % <stimuli> stimulus time courses (time x condition)
@@ -16,21 +16,18 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options, 
 %     0 : no cross-validation (default)
 %     1 : train on all stimulus conditions but 1, test on the left out 
 %   <display> is 'iter' | 'final' | 'off'.  default: 'iter'.
-% <saveDir> path to save parameters and fits; if empty, results are not
-%   saved (default)
-% <saveName> string to add to the save filename, if results are saved
-%   (default empty)
 %
 % Example
 
 %% PARSE OPTIONS
 
 if ~exist('options', 'var') || isempty(options), options = struct(); end
+% Model fitting options
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
-if ~exist('saveDir', 'var'), saveDir = []; end
-if ~exist('saveName', 'var'), saveName = []; end
+
+% Some formatting
 if iscell(objFunction), objFunction = objFunction{1}; end
 
 % Get model start points and bounds
@@ -123,26 +120,6 @@ for ii = 1:nDatasets % loop over channels or channel averages
     end
 end
 
-%% SAVE RESULTS
-if ~isempty(saveDir)
-    
-    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-    if isempty(saveName)
-        saveName = sprintf('%s_xvalmode%d', func2str(objFunction), options.xvalmode);
-    else
-        saveName = sprintf('%s_xvalmode%d_%s', func2str(objFunction), options.xvalmode, saveName);
-    end
-    saveName = fullfile(saveDir, saveName);
-    fprintf('[%s] Saving results to %s \n', mfilename, saveName);
-      
-    if exist(sprintf('%s.mat',saveName),'file')
-        warning('[%s] Results file already exists! Writing new file with date-time stamp.',mfilename);
-        saveName = sprintf('%s_%s', saveName, datestr(now,30));
-        fprintf('[%s] Saving results to %s \n', mfilename, saveName);
-    end
-    save(saveName, 'pred', 'params', 'stim', 'data', 'srate', 'options', 'objFunction');  
-end
-
-fprintf('[%s] Done!\n',mfilename);
+fprintf('[%s] Done with model fitting!\n',mfilename);
 
 end
