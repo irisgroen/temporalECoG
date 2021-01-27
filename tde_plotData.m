@@ -2,7 +2,6 @@ function tde_plotData(data, channels, t, opts, savePlot, saveStr)
 
 % Data should be time x trials x channels
 
-
 if ~exist('saveStr', 'var') || isempty(saveStr)
     saveStr = '';
 end
@@ -48,7 +47,7 @@ for ii = 1:size(data,3)
         xlabel('time (s)');
     end
     yaxlims = get(gca, 'YLim');
-    set(gca, 'YLim', [-0.5 ceil(yaxlims(2)+ (0.1 * yaxlims(2)))]);
+    %set(gca, 'YLim', [-0.5 ceil(yaxlims(2)+ (0.1 * yaxlims(2)))]);
     %yaxlims = get(gca, 'YLim');
     %line([0 0], [yaxlims(1) yaxlims(2)], 'Color', 'k', 'LineStyle', ':')
     %line([t(1) t(end)], [0 0],'Color', 'k', 'LineStyle', ':');
@@ -72,4 +71,16 @@ if savePlot
     fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
     saveas(gcf, fullfile(saveDir, figureName), 'png');
 end
+
+figure;hold on
+colors = jet(height(channels));
+for ii = 1:height(channels), plot(flatten(data(:,:,ii)), 'LineWidth', 2, 'Color', colors(ii,:));end
+set(gca, 'xtick', (0:length(opts.stimnames))*size(data,1)+1, 'xgrid', 'on', 'xticklabel', opts.stimnames, 'xticklabelrotation', 90);
+axis tight
+set(gcf, 'Position', FigSz);
+if opts.average_elecs
+    legend(channels.name);
+end
+   
+
 end
