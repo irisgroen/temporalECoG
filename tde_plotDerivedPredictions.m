@@ -133,7 +133,7 @@ if plotType == 2
             plot(m, 'Color', colors(ii,:), 'LineWidth', 2);        
         end
         set(gca, 'FontSize', 14);
-        set(gca, 'Xlim', [0 2000]);
+        set(gca, 'Xlim', [0 1000]);
         if normalize, set(gca, 'Ylim', [-0.1 1.1]);end
         title(modelNames{kk});
         if kk ==1, legend(channels.name, 'Location', 'SouthEast'); xlabel('Time'), ylabel('Predicted response');end

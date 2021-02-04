@@ -7,11 +7,11 @@ function [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, gro
 % Input
 %     channels:         BIDSformatted channels table (matlab table)
 %     groupingMethod:   electrode grouping method (string). options
-%                           - 'fixedassignment'; requires wang_15_mplbl and
-%                               benson14_varea column in channel table
+%                           - 'fixedassignment' (default) requires
+%                               wang_15_mplbl and benson14_varea column 
+%                               in channel table
 %                           - 'probabilisticresample'; requires
 %                               wang_15_fplbl column in channel table
-%                               default: 'fixedassignment'
 %     areaNames:        list of areas to group (cell array of string)
 %                               default: {'V1', 'V2', 'V3', 'V3a','V3b',...
 %                                         'LO1','LO2','TO1','IPS'};
@@ -32,6 +32,7 @@ function [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, gro
 %                       NOTE: for 'probabilisticresample', the subject_name
 %                       and nelecs columns contain ANY subject and the 
 %                       MAXIMUM number of included elecs in each area
+%     group_prob:       
 %
 % IG 2020
 
@@ -40,7 +41,7 @@ if ~exist('groupingMethod', 'var') || isempty(groupingMethod)
 end
 
 if ~exist('areaNames', 'var') || isempty(areaNames)
-    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','TO2','IPS', 'V123', 'higher', 'V3ab'};
+    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','TO2','IPS'};
 end
 
 chan_idx = [];

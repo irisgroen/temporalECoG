@@ -1,4 +1,4 @@
-function [params, pred] = tde_doModelFits(modelfun, stim, data, channels, srate,t,options, saveDir, saveStr)
+function [params, pred] = tde_doModelFits(modelfun,stim,data,channels,srate,t,stim_info,options,saveDir,saveStr)
 
 % Wrapper around tde_fitModel to run multiple models in a loop 
 
@@ -24,17 +24,18 @@ end
 
 for ii = 1:size(modelfun,2)
     
+    % FIT MODEL
     objFunction = modelfun{ii};
-    [params{ii}, pred{ii}] = tde_fitModel(objFunction, stim, data, srate, options);
+    [params, pred] = tde_fitModel(objFunction, stim, data, srate, options);
     
     % SAVE RESULTS
     if ~isempty(saveDir)
 
         if ~exist(saveDir, 'dir'); mkdir(saveDir); end
         if isempty(saveName)
-            saveName = sprintf('%s_xvalmode%d_%s', func2str(objFunction), options.xvalmode, dataName);
+            saveName = sprintf('%s_xvalmode%d_%s', func2str(objFunction), options.xvalmode, preprocName);
         else
-            saveName = sprintf('%s_xvalmode%d_%s_%s', func2str(objFunction), options.xvalmode, dataName, saveStr);
+            saveName = sprintf('%s_xvalmode%d_%s_%s', func2str(objFunction), options.xvalmode, preprocName, saveStr);
         end
         saveName = fullfile(saveDir, saveName);
         fprintf('[%s] Saving results to %s \n', mfilename, saveName);
@@ -44,7 +45,7 @@ for ii = 1:size(modelfun,2)
             saveName = sprintf('%s_%s', saveName, datestr(now,30));
             fprintf('[%s] Saving results to %s \n', mfilename, saveName);
         end
-        save(saveName, 'pred', 'params', 'stim', 'data', 'channels','srate','t', 'options', 'objFunction');  
+        save(saveName, 'stim', 'data', 'pred', 'params', 'channels','srate','t','stim_info','options', 'objFunction');  
     end
 end
 

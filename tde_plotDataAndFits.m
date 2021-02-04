@@ -60,16 +60,16 @@ for ii = 1:nDatasets
             pred = results(kk).pred(t_ind,inx,ii);
             %plot(flatten(pred), 'Color', colors{kk}, 'LineStyle', '-.', 'LineWidth', 2);
             plot(flatten(pred), 'Color', colors{kk},  'LineWidth', 2);
-            %if isfield(results(kk).R2, 'concat_cond')
-            %    R2val = mean(results(kk).R2.concat_cond(jj,ii));
-            %else
+            if isfield(results(kk).R2, 'concat_cond')
+                R2val = mean(results(kk).R2.concat_cond(jj,ii));
+            else
                 R2val = mean(results(kk).R2.stim(inx,ii));
-            %end
+            end
             titlestr{kk} = sprintf('   r2 %s = %0.2f   ', func2str(results(kk).model), R2val);
         end
         
         % add title
-        % title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
+        title(sprintf('%s: %s', conditionsOfInterest{jj}, [titlestr{:}]));
         
         % set axes
        % axis tight   
@@ -83,12 +83,12 @@ for ii = 1:nDatasets
 %             set(gca, 'XTickLabel', stim_info.ISI(inx))
 %         end
           %ylim([-0.2 1])
-        if ii == 1, ylim([-5 20]); end
-        if ii == 2, ylim([-5 15]); end
-        if ii == 3, ylim([-2 10]); end
-        if ii == 4, ylim([-0.5 5.5]); end
-        if ii == 5, ylim([-0.5 2]); end
-        if ii == 6, ylim([-0.5 2.5]); end
+%         if ii == 1, ylim([-5 20]); end
+%         if ii == 2, ylim([-5 15]); end
+%         if ii == 3, ylim([-2 10]); end
+%         if ii == 4, ylim([-0.5 5.5]); end
+%         if ii == 5, ylim([-0.5 2]); end
+%         if ii == 6, ylim([-0.5 2.5]); end
 
         set(gca, 'FontSize', 20);
         %xlabel('stimulus');
@@ -127,7 +127,7 @@ for ii = 1:nDatasets
         end
         if ~exist(figDir, 'dir'), mkdir(figDir), end
         saveas(gcf, fullfile(figDir, figureName), 'png'); 
-        saveas(gcf, fullfile(figDir, figureName), 'fig'); 
+        %saveas(gcf, fullfile(figDir, figureName), 'fig'); 
         close;
     end
 end

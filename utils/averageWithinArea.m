@@ -56,8 +56,8 @@ for ii = 1:numboot
     end
 end
 
-% take median of bootstrapped distribution and compute confidence intervals
-m = median(m_boot,3, 'omitnan');
+% take mean of bootstrapped distribution and compute confidence intervals
+m = mean(m_boot,3, 'omitnan');
 se = squeeze(prctile(m_boot,[15.87 84.13],3));
 
 % reshape back to original shape

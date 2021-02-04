@@ -14,7 +14,6 @@ R2stim      = nan(nStim,nDatasets);
 R2concat    = nan(1,nDatasets);
 R2cond      = nan(length(unique(stimcond)), nDatasets); 
 
-pred_derived = [];
 derivedPrm   = [];
 
 %% COMPUTE SUMMARY METRICS

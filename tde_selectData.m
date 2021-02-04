@@ -48,7 +48,7 @@ if ~isfield(opts,'elec_mean_thresh') || isempty(opts.elec_mean_thresh)
     opts.elec_mean_thresh = 0; % minimum required mean response during stim_on period in % signal change
 end
 if ~isfield(opts,'elec_splithalf_thresh') || isempty(opts.elec_splithalf_thresh)
-    opts.elec_splithalf_thresh = 0; % minimum required R2 between split halves of data
+    opts.elec_splithalf_thresh = 0.1; % minimum required R2 between split halves of data
 end
 if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thresh)
     opts.elec_meanpredict_thresh = 0; % minimum required R2 for prediction by mean (1 - (SSEresidual/SSEtotal)
