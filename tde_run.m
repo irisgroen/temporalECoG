@@ -31,7 +31,7 @@ options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 
-LOADFITS = 0; % instead of fitting, load an existing saved model fit
+LOADFITS = 1; % instead of fitting, load an existing saved model fit
 saveStr = [];%'sixROIs';
 
 if LOADFITS  

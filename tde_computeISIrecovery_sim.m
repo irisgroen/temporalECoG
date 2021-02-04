@@ -1,6 +1,6 @@
-function [ISIrecover] = tde_computeISIrecovery(data,t,stim_info)
+function [ISIrecover] = tde_computeISIrecovery_sim(data,t,stim_info)
 
-
+% Computes recovery without using the ONE PULSE conditions
 [~,~,nDatasets] = size(data);
 
 % Set parameters

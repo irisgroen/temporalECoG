@@ -41,9 +41,10 @@ contrastISI = ones(nStim,1);
 pulse1_toff = 0.133;
 pulse1_on = t>0 & t<=pulse1_toff;
 stimISI(pulse1_on,:) = 1;
+ISIs = linspace(0,0.533,nStim);
 % generate second pulse
 for ii = 1:nStim
-    this_ISI = ii/nStim * 0.533;
+    this_ISI = ISIs(ii);%ii/nStim * 0.533;
     pulse2_ton = pulse1_toff + this_ISI;
     pulse2_toff = pulse2_ton + 0.133;
     pulse2_on = t>pulse2_ton & t<=pulse2_toff;
