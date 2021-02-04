@@ -3,10 +3,10 @@
 % Load data and fits
 
 % electrode-averaged data and DN model fits
-d1 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_electrodeaverages_20210203T232402.mat');
+d1 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_electrodeaverages.mat');
 
 % individual electrodes and DN model fits
-d2 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_individualelecs.mat');
+d2 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_individualelecs');
 
 % stimulus info
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(d1.options.stimnames,d1.t);
@@ -54,8 +54,8 @@ subplot('position', posa); hold on
 plot(s(:), 'color', [0.5 0.5 0.5], 'lineWidth', 1);
 plot((d(:)./maxresp), 'k', 'lineWidth', 2);
 plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
-set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1), 'xticklabel', []);
-set(gca, 'xticklabel', stim_info.duration(stim_idx)); xlabel('duration (s)'), box off
+set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1));
+set(gca, 'xticklabel', stim_info.duration(stim_idx)); box off
 xlabel('stimulus duration (ms)'); ylabel('neural response'); title('Temporal summation is sub-additive', 'fontsize', 20); 
 %axis tight
 legend({'stimulus', 'neural data', 'linear prediction'}, 'location', 'northwest', 'fontsize', 18);
@@ -137,9 +137,11 @@ plot(x,m, 'r', 'linewidth', 2);
 ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
 set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-% format axes
-xlabel('stimulus duration (ms)'); ylabel('summed broadband timecourse (0-1s)'); title('ECoG temporal summation in V1', 'fontsize', 20); 
-legend({'linear prediction', 'neural data', 'fitted line', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
+% Format axes
+xlabel('stimulus duration (ms)'); ylabel('summed broadband timecourse (0-1s)'); title('Temporal summation in V1', 'fontsize', 20); 
+%legend({'linear prediction', 'neural data', 'fitted line', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
+legend({'linear prediction', 'neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
+
 legend('boxoff')
 axis square
 axis tight
@@ -176,7 +178,7 @@ function [y,h0] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only,c)
             f1 = f{ii};
             x1 = 0:max(x)/1000:max(x);
             y1 = f1(x1) + c(ii);
-            h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
+            %h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
 %             if ~fits_only
 %                 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 %             end
