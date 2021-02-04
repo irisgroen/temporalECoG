@@ -33,6 +33,12 @@ l = cell(1,nModels+1);
 l{1} = 'data';
 for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 
+if isfield(summary(channels), 'index_1')
+	chan_index = channels.index_1;
+else
+    chan_index = channels.index;
+end
+
 % Loop over channels or channel averages
 for ii = 1:nDatasets
     
@@ -46,7 +52,7 @@ for ii = 1:nDatasets
     for jj = 1:length(conditionsOfInterest)
         subplot(nCond,1,jj); hold on
         inx = contains(stim_info.name, conditionsOfInterest{jj});
-        
+        cond = unique(stim_info.condition(inx));
         % plot stimulus
         h = plot(flatten(stim_ts(t_ind,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
         h.Annotation.LegendInformation.IconDisplayStyle = 'off';
@@ -61,7 +67,7 @@ for ii = 1:nDatasets
             %plot(flatten(pred), 'Color', colors{kk}, 'LineStyle', '-.', 'LineWidth', 2);
             plot(flatten(pred), 'Color', colors{kk},  'LineWidth', 2);
             if isfield(results(kk).R2, 'concat_cond')
-                R2val = mean(results(kk).R2.concat_cond(jj,ii));
+                R2val = mean(results(kk).R2.concat_cond(cond,ii));
             else
                 R2val = mean(results(kk).R2.stim(inx,ii));
             end
@@ -103,10 +109,10 @@ for ii = 1:nDatasets
     if ~dataWasAveraged
         if isfield(summary(channels), 'benson14_varea') && isfield(summary(channels), 'wang15_mplbl')
             if isfield(summary(channels), 'subject_name')
-                figureName = sprintf('fits_%s_%s_%s_%s_%s', channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
+                figureName = sprintf('%d_fits_%s_%s_%s_%s_%s', chan_index(ii), channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
                     channels.name{ii}, channels.subject_name{ii}, [l{2:end}]);
             else
-                figureName = sprintf('fits_%s_%s_%s_%s', channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
+                figureName = sprintf('%d_fits_%s_%s_%s_%s', chan_index(ii), channels.benson14_varea{ii}, channels.wang15_mplbl{ii}, ...
                     channels.name{ii}, [l{2:end}]);
             end
         else
