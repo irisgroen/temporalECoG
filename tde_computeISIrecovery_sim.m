@@ -1,23 +1,35 @@
-function [ISIrecover] = tde_computeISIrecovery_sim(data,t,stim_info)
+function [ISIrecover,ts,w] = tde_computeISIrecovery_sim(data,t,stim_info,srate,w,shift,metric)
+% Computes recovery without using the ONE PULSE conditions for arbitrary
+% TWOPULSE names
 
-% Computes recovery without using the ONE PULSE conditions
+if ~exist('w', 'var') || isempty(w)
+    w = 0.3; % window for computing recover
+end
+
+if ~exist('shift', 'var') || isempty(shift)
+    shift = 0; % shift of window relative to stimulus onset
+end
+
+if ~exist('metric', 'var') || isempty(metric)
+    metric = 'sum'; % 'sum' or 'max'
+end
+
 [~,~,nDatasets] = size(data);
 
 % Set parameters
-
-w = 0.3; % window for computing sum
-shift = 0;
-stimdur = 0.133;
 conditionsOfInterest = {'TWOPULSE'};
+stim_idx = find(contains(stim_info.name, conditionsOfInterest));
+stimdur = stim_info.duration(stim_idx(1));
+% Make sure the window size matches the sample rate
+w = round(w*srate)*(1/srate);
 
 ISIrecover = [];
+ts = [];
 
 for kk = 1:nDatasets
 
     % Get the data
-    stim_idx = find(contains(stim_info.name, conditionsOfInterest));
     D = data(:,stim_idx,kk);
-    stimNames = stim_info.name(stim_idx)';
 
     % Get onsets for each pulse for each stimulus
     nStim = length(stim_idx);
@@ -51,8 +63,15 @@ for kk = 1:nDatasets
 
     % Compute the sum over mean of pulse 1
     t_idx1 = t > pulse1_onset(1) + shift & t<= pulse1_onset(1) + w + shift;
-    pulse1_mn_summed = sum(pulse1_mn(t_idx1), 'omitnan');
-
+    switch metric
+        case 'sum'
+            pulse1_mn_summed = sum(pulse1_mn(t_idx1), 'omitnan');
+        case 'max'
+            pulse1_mn_summed = max(pulse1_mn(t_idx1));
+        otherwise
+            error('unknown metric, choose sum or max')
+    end
+    
     % Compute the sum over each second pulse 
     t_idx2 = [];
     for ii = 1:nStim
@@ -63,11 +82,20 @@ for kk = 1:nDatasets
     % Sum pulse 2
     pulse2_to_sum = pulse2_sub;
     pulse2_to_sum(~t_idx2) = 0;
-    pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
+    switch metric
+        case 'sum'
+            pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
+        case 'max'
+            pulse2_summed = max(pulse2_to_sum,[],1, 'omitnan');
+    end
 
     % Compute recovery
-    ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed) * 100; % in percentage
-
+    ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed); % in percentage
+    ts(:,1,kk) = pulse1_mn(t_idx1);
+    for ii = 1:size(pulse2_sub,2)
+        ts(:,ii+1,kk) = pulse2_to_sum(t_idx2(:,ii),ii);
+    end
+    
 %     % Debug:
 % 
 %     % Plot pulse 1 mean + window

@@ -1,21 +1,33 @@
-function [ISIrecover] = tde_computeISIrecovery(data,t,stim_info)
+function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric)
 
+if ~exist('w', 'var') || isempty(w)
+    w = 0.3; % window for computing recovery
+end
 
-[nSamp,~,nDatasets] = size(data);
+if ~exist('shift', 'var') || isempty(shift)
+    shift = 0; % shift of window relative to stimulus onset
+end
+
+if ~exist('metric', 'var') || isempty(metric)
+    metric = 'sum'; % 'sum' or 'max'
+end
+    
+[~,~,nDatasets] = size(data);
 
 % Set parameters
-
-w = 0.3; % window for computing sum
-shift = 0;
-stimdur = 0.133;
 conditionsOfInterest = {'ONEPULSE-4','ONEPULSE-5','TWOPULSE'};
+stim_idx = find(contains(stim_info.name, conditionsOfInterest));
+stimdur = stim_info.duration(stim_idx(end));
+% Make sure the window size matches the sample rate
+w = round(w*srate)*(1/srate);
 
 ISIrecover = [];
+ts = [];
+
 
 for kk = 1:nDatasets
 
     % Get the data
-    stim_idx = find(contains(stim_info.name, conditionsOfInterest));
     D = data(:,stim_idx,kk);
     stimNames = stim_info.name(stim_idx)';
 
@@ -36,7 +48,7 @@ for kk = 1:nDatasets
     %pulse1_mn = pulse1(:,1); 
     %pulse1_mn = mean(pulse1(:,2:end),2,'omitnan');
     %pulse1_mn = mean(pulse1(:,3:end),2,'omitnan');
-    %pulse1_mn = mean(pulse1(:,[end]),2,'omitnan');
+    %pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
     
     % figure;hold on;
     % plot(t,pulse1, 'LineWidth', 1);
@@ -63,30 +75,54 @@ for kk = 1:nDatasets
 
     % Compute the sum over mean of pulse 1
     t_idx1 = t > pulse1_onset(1) + shift & t<= pulse1_onset(1) + w + shift;
-    %pulse1_mn_summed = sum(pulse1_mn(t_idx1), 'omitnan');
-    pulse1_mn_summed = max(pulse1_mn(t_idx1));
+    switch metric
+        case 'sum'
+            pulse1_mn_summed = sum(pulse1_mn(t_idx1), 'omitnan');
+        case 'max'
+            %pulse1_mn_summed = max(smooth(pulse1_mn(t_idx1),10));
+            pulse1_mn_summed = max(pulse1_mn(t_idx1));
+        otherwise
+            error('unknown metric, choose sum or max')
+    end
     
     % Compute the sum over each second pulse 
     t_idx2 = [];
     for ii = 1:nStim
-        t_idx2(:,ii) = t > pulse2_onset(ii) + shift & t<= pulse2_onset(ii) + w + shift;
+        t_idx2(:,ii) = t > pulse2_onset(ii) + shift & t <= pulse2_onset(ii) + w + shift;
     end
     t_idx2 = logical(t_idx2);
 
     % Sum pulse 2
     pulse2_to_sum = pulse2_sub;
     pulse2_to_sum(~t_idx2) = 0;
-    %pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
-    pulse2_summed = max(pulse2_to_sum,[],1, 'omitnan');
+    switch metric
+        case 'sum'
+            pulse2_summed = sum(pulse2_to_sum,1, 'omitnan');
+        case 'max'
+%             for ii = 1:nStim
+%                 pulse2_to_sum(:,ii) = smooth(pulse2_to_sum(:,ii),10);
+%             end
+            pulse2_summed = max(pulse2_to_sum,[],1, 'omitnan');
+    end
 
     % Compute recovery
-    ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed) * 100; % in percentage
-
-%     % Debug:
-% 
+    ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed); % in percentage
+    ts(:,1,kk) = pulse1_mn(t_idx1);
+    for ii = 1:size(pulse2_sub,2)
+        ts(:,ii+1,kk) = pulse2_sub(t_idx2(:,ii),ii);
+    end
+    
+    % Plot recovery
+   %figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
+    
+    % %% DEBUG %%%%% 
+    
+%     % Debug 1
+%     
 %     % Plot pulse 1 mean + window
 %     figure('Position', get(0, 'ScreenSize'));hold on;
 %     subplot(round(nStim/2),2,1); hold on;
+%     nSamp = size(data,1);
 %     tmp = zeros(nSamp,1);
 %     tmp(t_idx1) = 10;
 %     plot(t,pulse1_mn, 'r','LineWidth', 2); 
@@ -105,9 +141,7 @@ for kk = 1:nDatasets
 %         title(stimNames{ii});
 %     end
 %     
-%    % Plot recovery
-%    %figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
-    
+%     
 %     % Debug 2 
 %     
 %     figure;hold on
@@ -145,7 +179,6 @@ for kk = 1:nDatasets
 %     end
 %     xlim([0 max(x)+1]);
 %     
-% 	
 %     set(gcf, 'Position', [41         303        1301         502]);
      
 end
