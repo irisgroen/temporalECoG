@@ -211,12 +211,12 @@ sp = [1 1 1];
 [y] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only);  
 
 % plot linear prediction 
-h0 = line([x(1) x(end)], [100 100], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+h0 = line([x(1) x(end)], [1 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % format axes
 xlabel('ISI (ms)'); ylabel('% of first pulse'); title('ISI: recovery of second pulse'); 
-ylim([0 120]);
+ylim([0 1.2]);
 axis square; legend off;
 %legend(channels.name(chan_plot_idx));
 
