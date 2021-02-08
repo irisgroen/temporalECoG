@@ -28,12 +28,15 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 % Select two conditions to plot
 conditionsOfInterest = {'ONEPULSE-1', 'ONEPULSE-2'};
+
+% Select time window to plot
 timepointsOfInterest = [-0.05 0.3];
 
+% Look up corresponding indices in the data
 stim_idx = contains(stim_info.name, conditionsOfInterest);
 t_idx    = d1.t>timepointsOfInterest(1) & d1.t<=timepointsOfInterest(2);
 
-
+% Generate time courses + linear prediction
 s = stim_ts(t_idx,stim_idx);
 d = d1.data(t_idx,stim_idx,1);
 sft = length(find(s(:,1)));
@@ -47,21 +50,24 @@ d_copy(:,1) = nan;
 d_copy(:,2) = d_sum;
 maxresp = max(d(:,1)); % scale stimulus to max of lowest duration
 
-% for plotting purposes, add a little space after the first stimulus
+% For plotting purposes, add a little space after the first stimulus
 dummy = nan(40,2);
 s = cat(1, s, dummy);
 d = cat(1, d, dummy);
 d_copy = cat(1, d_copy, dummy);
 
+% Plot
 subplot('position', posa); hold on
-
 plot(s(:), 'color', [0.5 0.5 0.5], 'lineWidth', 1);
 plot((d(:)./maxresp), 'k', 'lineWidth', 2);
 plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
+
+% Set axes
 set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1), 'ytick', []);
 set(gca, 'xticklabel', stim_info.duration(stim_idx)); box off
 xlabel('Stimulus duration (ms)'); ylabel('Neural response'); title('Temporal summation is sub-additive', 'fontsize', 20); 
-%axis tight
+
+% Add legend
 legend({'Stimulus', 'Neural data', 'Linear prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff')
 
@@ -85,62 +91,65 @@ set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', stim_info.duration(stim_idx));
 box off,  axis tight
+
+ylim([-2 20]);
+xlim([-20 length(s(:)) + 20]);
+
 xlabel('Stimulus duration (ms)'); ylabel('Change in power (x-fold)'); title('Broadband responses to increasing durations', 'fontsize', 20); 
 legend({'Neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff');
 
 %% Panel C: temporal summation across electrodes
-stim_inx = find(contains(stim_info.name, 'ONEPULSE'));
-stim_on = d2.t>0 & d2.t<1;
-x = stim_info.duration(stim_inx); % in ms
 
-subplot('position', posc); hold on
-
-% plot linear prediction 
-h0 = line([0 x(end)], [0 1], 'linestyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
-%set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-set(gca, 'xtick', x);
-
-% Compute sum across stim_on window
-m = squeeze(sum(d2.data(stim_on, stim_inx, :),1)); 
-[~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample', {'V1'});   
-
-% Plot average parameter values within groups
-[m, se] = averageWithinArea(m, group_prob, [], 10000);
-se(:,1) = se(:,1)./m(end);
-se(:,2) = se(:,2)./m(end);
-m = m./m(end);
-formula_to_fit = 'x ./ (a + x) * (a+max(x))/max(x)';
-sp = 1;
-lb = 0;
-[f] = fitData(x,m,1,formula_to_fit, sp, lb);
-plotData(x,m,se,f,1,[0 0 0],0);  
+% Find stimulus index
+stim_idx = find(contains(stim_info.name, 'ONEPULSE'));
+x = stim_info.duration(stim_idx); % in ms
 
 % Generate new stimuli based on params
 nStim = 50;
-[stim, stim_info] = tde_simulateNewStimuli(d2.t,nStim);
-stim_inx = find(contains(stim_info.name, 'ONEPULSE'));
-stim_on = d2.t>0 & d2.t<1;
-x = stim_info.duration(stim_inx); % in ms
+[stim2, stim_info2] = tde_simulateNewStimuli(d2.t,nStim);
+stim_info2.duration = stim_info2.duration*1000; % convert to ms
+stim_idx2 = find(contains(stim_info2.name, 'ONEPULSE'));
+x2 = stim_info2.duration(stim_idx2); % in ms
 
 % Predict model responses for new stimuli
 srate = d2.channels.sampling_frequency(1);
-pred = nan([size(stim(:,stim_inx)) height(d2.channels)]);
+pred = nan([size(stim2(:,stim_idx2)) height(d2.channels)]);
 for ii = 1:size(d2.params,2)
     prm = d2.params(:,ii);
-   	[~, pred(:,:,ii)] = d2.objFunction(prm, [], stim(:,stim_inx), srate);      
+   	[~, pred(:,:,ii)] = d2.objFunction(prm, [], stim2(:,stim_idx2), srate);      
 end
 
-% Plot average model predictions across electrodes
-m = squeeze(sum(pred(stim_on,:,:),1)); 
-[m, se] = averageWithinArea(m, group_prob, [], 10000);
-se(:,1) = se(:,1)./m(end);
-se(:,2) = se(:,2)./m(end);
-m = m./m(end);
-x = stim_info.duration(stim_inx)*1000;
-plot(x,m, 'r', 'linewidth', 2);
-ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
-set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+% Determine time index over which to compute summary statistics
+t_idx = d2.t>0 & d2.t<1;
+
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+d = d2.data(t_idx,stim_idx,:);
+d = cat(2,d,pred(t_idx, :,:));
+
+% Compute sum across stim_on window
+m_conc = squeeze(sum(d,1)); 
+[~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample', {'V1'});   
+[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, [], 10000);
+
+% Plot
+subplot('position', posc); hold on
+
+% Plot linear prediction 
+h0 = line([0 x(end)], [0 1], 'linestyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
+set(gca, 'xtick', x);
+
+% Plot data
+nStim = length(stim_idx);
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotSummaryStats(m, se, x, 'data', 1)
+
+% Plot prediction
+m = m_conc(nStim+1:end);
+se = se_conc(nStim+1:end,:);
+tde_plotSummaryStats(m, se, x2, 'model', 1)
 
 % Format axes
 xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); title('Temporal summation', 'fontsize', 20); 
@@ -150,45 +159,4 @@ legend('boxoff')
 axis square
 axis tight
 
-%% subfunctions
 
-function [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub)
-    if ~exist('sp', 'var'), sp = []; end
-    if ~exist('lb', 'var'), lb = []; end
-    if ~exist('ub', 'var'), ub = []; end
-    for ii = 1:length(chan_plot_idx)
-        y = m(:,chan_plot_idx(ii));
-        f{ii} = fit(x, y, formula_to_fit, 'StartPoint', sp, 'Lower', lb, 'Upper', ub);
-    end
-end
-
-function [y,h0] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only,c)  
-    if ~exist('c', 'var'), c = zeros(1,length(chan_plot_idx)); end % constants to add to each channel
-    ally = nan(length(x), length(chan_plot_idx)); % to use for scaling y-axis
-    for ii = 1:length(chan_plot_idx)
-        y = m(:,chan_plot_idx(ii))+ c(ii);
-        % plot data
-        if ~fits_only
-            if ~isempty(se)
-                y_se = se;
-                errorbar(x, y, y-y_se(:,1), y_se(:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-            else
-                plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
-            end
-        end
-        ally(:,ii) = y;
-        % plot fits
-        if ~isempty(f)
-            f1 = f{ii};
-            x1 = 0:max(x)/1000:max(x);
-            y1 = f1(x1) + c(ii);
-            %h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
-%             if ~fits_only
-%                 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-%             end
-        end
-    end
-    % format axes
-    y = ally(:);
-    set(gca, 'XTick', x([1 end]),'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y)+0.1*max(y)], 'XTickLabelRotation', 0);
-end

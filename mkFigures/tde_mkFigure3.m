@@ -80,7 +80,6 @@ hd = plot(d(:), 'k-', 'linewidth', 2);
 hp = plot(p(:), 'r-', 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-
 set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', data2.stim_info.ISI(stim_idx)*1000);
 box off;  
 ylim([-2 30]);
@@ -117,8 +116,8 @@ end
 
 % make legend
 l{1} = 'First stimulus';
-stim_inx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
-ISIs = data2.stim_info.ISI(stim_inx)*1000; 
+stim_idx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
+ISIs = data2.stim_info.ISI(stim_idx)*1000; 
 for ii = 1:size(ts,2)-1
     l{size(ts,2)+1-ii} = sprintf('ISI %d', ISIs(ii));
 end
@@ -133,99 +132,60 @@ set(gca, 'XTick', [0 x(end)],  'YTick', [0 5 10 15 20]);
 xlabel('Time from stim onset (ms)'); ylabel('Response magnitude'); title('Effect of adaptation', 'fontsize', 20); 
 
 %% Panel D: recovery with adaptation: individual electrodes
-stim_inx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
-x = data2.stim_info.ISI(stim_inx)*1000; 
+
+% Find stimulus index
+stim_idx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
+x = data2.stim_info.ISI(stim_idx)*1000; 
 
 % Compute recovery per electrode
 srate = data2.channels.sampling_frequency(1);
 [m] = tde_computeISIrecovery(data2.data,data2.t,data2.stim_info, srate, [], [], 'max');
 
+% Generate new stimuli based on params
+nStim = 50;
+[stim2, stim_info2] = tde_simulateNewStimuli(data2.t,nStim);
+stim_idx2 = find(contains(stim_info2.name, 'TWOPULSE'));
+x2 = stim_info2.ISI(stim_idx2)*1000; 
+
+% Predict model responses for new stimuli
+srate = data2.channels.sampling_frequency(1);
+pred = nan([size(stim2) height(data2.channels)]);
+for ii = 1:size(data2.params,2)
+    prm = data2.params(:,ii);
+   	[~, pred(:,:,ii)] = data2.objFunction(prm, [], stim2, srate);      
+end
+
+% Compute recovery per electrode
+[m2] = tde_computeISIrecovery_sim(pred,data2.t,stim_info2,srate);
+
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+m = cat(1,m,m2);
+
 % Compute average parameter values within groups
 [~, channels, group_prob] = groupElecsByVisualArea(data2.channels, 'probabilisticresample', {'V1'});   
+[m_conc, se_conc] = averageWithinArea(m, group_prob, [], 10000);
 
-[m, se] = averageWithinArea(m, group_prob, [], 10000);
-
+% Plot
 subplot('position', posd); hold on
 
 % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
 
-% Plot averages and fit
-formula_to_fit = 'a * x ^ b + c';
-sp = [1 1 1];
-[f] = fitData(x,m,1,formula_to_fit, sp);
-[y] = plotData(x,m,se,f,1,[0 0 0],0);  
+% Plot data
+nStim = length(stim_idx);
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotSummaryStats(m, se, x, 'data', 0)
 
-% Generate new stimuli based on params
-nStim = 50;
-[stim, stim_info] = tde_simulateNewStimuli(data2.t,nStim);
+% Plot prediction
+m = m_conc(nStim+1:end);
+se = se_conc(nStim+1:end,:);
+tde_plotSummaryStats(m, se, x2, 'model', 0)
 
-% Predict model responses for new stimuli
-srate = data2.channels.sampling_frequency(1);
-pred = nan([size(stim) height(data2.channels)]);
-for ii = 1:size(data2.params,2)
-    prm = data2.params(:,ii);
-   	[~, pred(:,:,ii)] = data2.objFunction(prm, [], stim, srate);      
-end
-
-[m2] = tde_computeISIrecovery_sim(pred,data2.t,stim_info,srate);
-[m2, se2] = averageWithinArea(m2, group_prob, [], 10000);
-
-% % Plot average model predictions across electrodes
-stim_inx = find(contains(stim_info.name, 'TWOPULSE'));
-x2 = stim_info.ISI(stim_inx)*1000;
-plot(x2,m2, 'r', 'linewidth', 2);
-ch = ciplot(se2(:,1), se2(:,2), x2, 'r', 0.25);
-set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
- 
-% format axes
+% Format axes
 ylim([0 1.2]);
 xlim([-20 x(end)+20]);
 xlabel('Stimulus interval (ms)'); ylabel('Ratio second stimulus / first stimulus'); title('Recovery from adaptation', 'fontsize', 20); 
 legend({'Linear prediction', 'Neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
 legend('boxoff')
-%axis square
-%axis tight
-
-%% subfunctions
-
-function [f] = fitData(x,m,chan_plot_idx,formula_to_fit, sp, lb, ub)
-    if ~exist('sp', 'var'), sp = []; end
-    if ~exist('lb', 'var'), lb = []; end
-    if ~exist('ub', 'var'), ub = []; end
-    for ii = 1:length(chan_plot_idx)
-        y = m(:,chan_plot_idx(ii));
-        f{ii} = fit(x, y, formula_to_fit, 'StartPoint', sp, 'Lower', lb, 'Upper', ub);
-    end
-end
-
-function [y,h0] = plotData(x,m,se,f,chan_plot_idx,colors,fits_only,c)  
-    if ~exist('c', 'var'), c = zeros(1,length(chan_plot_idx)); end % constants to add to each channel
-    ally = nan(length(x), length(chan_plot_idx)); % to use for scaling y-axis
-    for ii = 1:length(chan_plot_idx)
-        y = m(:,chan_plot_idx(ii))+ c(ii);
-        % plot data
-        if ~fits_only
-            if ~isempty(se)
-                y_se = se;
-                errorbar(x, y, y-y_se(:,1), y_se(:,2)-y, '.', 'Color', colors(ii,:), 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-            else
-                plot(x,y, '.','Color', colors(ii,:), 'MarkerSize', 30, 'LineStyle', 'none');
-            end
-        end
-        ally(:,ii) = y;
-        % plot fits
-        if ~isempty(f)
-            f1 = f{ii};
-            x1 = 0:max(x)/1000:max(x);
-            y1 = f1(x1) + c(ii);
-            %h0 = plot(x1, y1, 'Color', colors(ii,:), 'LineWidth', 2); 
-%             if ~fits_only
-%                 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-%             end
-        end
-    end
-    % format axes
-    y = ally(:);
-    set(gca, 'XTick', x([1 end]),'XLim', [0 max(x)+0.1*max(x)], 'YLim', [0 max(y)+0.1*max(y)], 'XTickLabelRotation', 0);
-end
