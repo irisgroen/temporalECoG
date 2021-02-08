@@ -13,6 +13,8 @@ if ~exist('fits_only', 'var') || isempty(fits_only), fits_only = false; end
 if ~exist('savePlot', 'var') || isempty(savePlot), savePlot = false; end
 if ~exist('saveStr', 'var'), saveStr = datestr(now,30); end
 
+srate = channels.sampling_frequency(1);
+
 % Determine if data was averaged across elecs prior to fit
 if isfield(summary(channels), 'number_of_elecs')
     dataWasAveraged = true;
@@ -35,6 +37,7 @@ if ~isempty(chan_to_plot)
 else
     chan_plot_idx = height(channels):-1:1;
 end
+
 
 % Set plotting specs
 %figure('Position', [360    44   879   654]); hold on;
@@ -198,7 +201,7 @@ x = stim_info.ISI(stim_inx) * 1000; % in ms
 subplot(2,3,6); hold on
 %figure;hold on;
 
-[m] = tde_computeISIrecovery(data,t,stim_info);
+[m] = tde_computeISIrecovery(data,t,stim_info, srate);
 if ~dataWasAveraged
     [m, se] = averageWithinArea(m, group_prob);
 end
