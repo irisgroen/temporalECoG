@@ -3,16 +3,20 @@
 % Load data and fits
 
 % electrode-averaged data and DN model fits
-d1 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_electrodeaverages.mat');
+modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+xvalmode = 0;
+datatype = 'electrodeaverages';
+[d1] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % individual electrodes and DN model fits
-d2 = load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_individualelecs');
+datatype = 'individualelecs';
+[d2] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
-% stimulus info
+% Load stimulus info
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(d1.options.stimnames,d1.t);
 stim_info.duration = stim_info.duration*1000; % convert to ms
 
-% subplot positions: % [left bottom width height]
+% Subplot positions: % [left bottom width height]
 posa = [0.1 0.55 0.4 0.3];
 posb = [0.1 0.1 0.8 0.25];
 posc = [0.55 0.45 0.35 0.45];
@@ -54,11 +58,11 @@ subplot('position', posa); hold on
 plot(s(:), 'color', [0.5 0.5 0.5], 'lineWidth', 1);
 plot((d(:)./maxresp), 'k', 'lineWidth', 2);
 plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
-set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1));
+set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1), 'ytick', []);
 set(gca, 'xticklabel', stim_info.duration(stim_idx)); box off
-xlabel('stimulus duration (ms)'); ylabel('neural response'); title('Temporal summation is sub-additive', 'fontsize', 20); 
+xlabel('Stimulus duration (ms)'); ylabel('Neural response'); title('Temporal summation is sub-additive', 'fontsize', 20); 
 %axis tight
-legend({'stimulus', 'neural data', 'linear prediction'}, 'location', 'northwest', 'fontsize', 18);
+legend({'Stimulus', 'Neural data', 'Linear prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff')
 
 %% Panel B: data and fits
@@ -71,17 +75,18 @@ t_idx    = d1.t>timepointsOfInterest(1) & d1.t<=timepointsOfInterest(2);
 s = stim_ts(t_idx,stim_idx);
 d = d1.data(t_idx,stim_idx,1);
 p = d1.pred(t_idx,stim_idx,1);
+maxresp = max(d(:,1)); % scale stimulus to max of first condition
 
 subplot('position', posb); hold on
-hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hd = plot(d(:), 'k-', 'linewidth', 2);
 hp = plot(p(:), 'r-', 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', stim_info.duration(stim_idx));
 box off,  axis tight
-xlabel('stimulus duration (ms)'); ylabel('x-fold change in broadband'); title('V1 timecourses and fits', 'fontsize', 20); 
-legend({'neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
+xlabel('Stimulus duration (ms)'); ylabel('Change in power (x-fold)'); title('Broadband responses to increasing durations', 'fontsize', 20); 
+legend({'Neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff');
 
 %% Panel C: temporal summation across electrodes
@@ -138,9 +143,8 @@ ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
 set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 % Format axes
-xlabel('stimulus duration (ms)'); ylabel('summed broadband timecourse (0-1s)'); title('Temporal summation in V1', 'fontsize', 20); 
-%legend({'linear prediction', 'neural data', 'fitted line', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
-legend({'linear prediction', 'neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
+xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); title('Temporal summation', 'fontsize', 20); 
+legend({'Linear prediction', 'Neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
 
 legend('boxoff')
 axis square
