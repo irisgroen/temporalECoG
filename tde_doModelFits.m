@@ -4,11 +4,11 @@ function [params, pred] = tde_doModelFits(modelfun,stim,data,channels,srate,t,st
 
 % <saveDir> path to save parameters and fits; if empty, results are not
 %   saved (default)
-% <saveName> string to add to the save filename, if results are saved
+% <saveStr> string to add to the save filename, if results are saved
 %   (default empty)
 
 % Save options
-if ~exist('saveStr', 'var'), saveName = []; end
+if ~exist('saveStr', 'var'), saveStr = []; end
 if ~exist('saveDir', 'var'), saveDir = fullfile(analysisRootPath, 'results'); end
 
 % Some formatting
@@ -30,9 +30,9 @@ for ii = 1:size(modelfun,2)
     
     % SAVE RESULTS
     if ~isempty(saveDir)
-
+        
         if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-        if isempty(saveName)
+        if isempty(saveStr)
             saveName = sprintf('%s_xvalmode%d_%s', func2str(objFunction), options.xvalmode, preprocName);
         else
             saveName = sprintf('%s_xvalmode%d_%s_%s', func2str(objFunction), options.xvalmode, preprocName, saveStr);
