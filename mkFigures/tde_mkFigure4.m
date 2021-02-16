@@ -16,13 +16,13 @@ datatype = 'individualelecs';
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(d1.options.stimnames,d1.t);
 
 % Subplot positions: % [left bottom width height]
-posb = [0.05 0.1 0.9 0.25];
+posb = [0.05 0.1 0.92 0.3];
 
-posa1 = [0.04 0.45 0.15 0.45];
-posa2 = [0.21 0.45 0.15 0.45];
-posc1 = [0.45 0.45 0.15 0.45];
-posc2 = [0.63 0.45 0.15 0.45];
-posc3 = [0.80 0.45 0.15 0.45];
+posa1 = [0.04 0.5 0.15 0.45];
+posa2 = [0.21 0.5 0.15 0.45];
+posc1 = [0.43 0.5 0.15 0.45];
+posc2 = [0.63 0.5 0.15 0.45];
+posc3 = [0.82 0.5 0.15 0.45];
 
 figure(1); clf
 %figure;hold on
@@ -64,7 +64,7 @@ ecog_plotMultipleTimeCourses(d1.t(t_idx)*1000, fliplr(d), [], colors);
 set(gca, 'xtick', [0 300]);
 set(gca, 'ylim', [-2 22], 'ytick', []);
 xlabel('Time (ms)'); ylabel('Neural response');
-title('Peak amplitude decrease','fontsize', 18);
+%title('Peak amplitude decrease','fontsize', 18);
 
 legend(l,  'fontsize', 18);
 legend('boxoff')
@@ -77,7 +77,7 @@ set(gca, 'xtick', [0 300]);
 set(gca, 'ylim', [-0.1 1.15]);
 set(gca, 'ytick', [0 1], 'ytick', []);
 xlabel('Time (ms)'); ylabel('Neural response (normalized to peak)');
-title('Peak latency shift', 'fontsize', 18);
+%title('Peak latency shift', 'fontsize', 18);
 
 %% Panel B: data and fits
 
@@ -105,7 +105,7 @@ set(gca, 'ylim', [-2 20]);
 set(gca, 'xlim', [-20 length(s(:)) + 20]);
 
 xlabel('Stimulus contrast (%)'); ylabel('Change in power (x-fold)'); 
-title('Broadband responses to increasing contrast', 'fontsize', 18); 
+%title('Broadband responses to increasing contrast', 'fontsize', 18); 
 legend({'Neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff');
 
@@ -164,7 +164,7 @@ tde_plotPoints(m, se, x2, 'ci', 1)
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 xlabel('Contrast (%)'); ylabel('Summed broadband timecourse (0-1s)'); 
-title('Contrast response function', 'fontsize', 18); 
+%title('Contrast response function', 'fontsize', 18); 
 
 % 2. Peak latency
 subplot('position', posc2); hold on
@@ -194,7 +194,7 @@ ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 
 xlabel('Contrast (%)'); ylabel('Peak latency (ms)'); 
-title('Latency shift', 'fontsize', 18); 
+%title('Latency shift', 'fontsize', 18); 
 
 % 3. Ratio of sustained to  transient
 subplot('position', posc3); hold on
@@ -231,8 +231,8 @@ tde_plotPoints(m, se, x2, 'ci', 0)
 % format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
-
+set(gca, 'ylim', [0 10]);
 xlabel('Contrast (%)'); ylabel('Ratio offset - peak'); 
-title('Transient-sustained ratio', 'fontsize', 18); 
+%title('Transient-sustained ratio', 'fontsize', 18); 
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)

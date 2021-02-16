@@ -14,14 +14,14 @@ datatype = 'individualelecs';
 
 % subplot positions: % [left bottom width height]
 
-% posa = [0.1 0.55 0.35 0.3];
-% posb = [0.1 0.1 0.8 0.25];
-% posc = [0.55 0.45 0.35 0.45];
+posa = [0.05 0.55 0.4 0.3];
+posb = [0.05 0.08 0.9 0.35];
+posc = [0.55 0.5 0.4 0.45];
 
-posb = [0.05 0.1 0.9 0.25];
-posa = [0.05 0.50 0.25 0.3];
-posc = [0.365 0.45 0.25 0.45];
-posd = [0.70 0.45 0.25 0.45];
+% posb = [0.05 0.1 0.9 0.25];
+% posa = [0.05 0.50 0.25 0.3];
+% posc = [0.365 0.45 0.25 0.45];
+% posd = [0.70 0.45 0.25 0.45];
 
 figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
@@ -58,7 +58,7 @@ ylim([-0.1 1.4]);
 xlim([-20 length(sconc) + 20]);
 set(gca, 'xtick',[1 size(s1,1)+1], 'ytick', []);
 set(gca, 'xticklabel', data1.stim_info.ISI(stim_idx)*1000); box off
-xlabel('Interval (ms)'); ylabel('Neural response'); title('Adaptation to repeated stimulus', 'fontsize', 20); 
+xlabel('Stimulus interval (ms)'); ylabel('Neural response'); %title('Adaptation to repeated stimulus', 'fontsize', 20); 
 legend({'Stimulus', 'Neural data'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff')
 
@@ -85,51 +85,51 @@ box off;
 ylim([-2 30]);
 xlim([-20 length(s(:)) + 20]);
 
-xlabel('Stimulus interval (ms)'); ylabel('Change in broadband (x-fold)'); title('Broadband responses to increasing intervals', 'fontsize', 20); 
+xlabel('Stimulus interval (ms)'); ylabel('Change in broadband (x-fold)'); %title('Broadband responses to increasing intervals', 'fontsize', 20); 
 legend({'Neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff');
 
 %% Panel C: recovery with adaptation: timecourses for average
-
-% Compute recovery for average across electrodes
-srate = data1.channels.sampling_frequency(1);
-[~, ts, w] = tde_computeISIrecovery(data1.data(:,:,1),data1.t,data1.stim_info,srate, [], [], 'sum');
-
-t0 = data1.t(find(data1.t>0,1));
-x = t0:(1/srate):w;
-x = floor(x*1000); % in ms
-
-subplot('position', posc); hold on
-plot(x,ts(:,1), 'k-', 'LineWidth', 4)
-colors = flipud(gray(size(ts,2)));
-for ii = size(ts,2):-1:2
-    plot(x,ts(:,ii), 'Color', colors(ii,:), 'LineWidth', 2);
-end
-
-% [~, tspred] = tde_computeISIrecovery(data1.pred(:,:,1),data1.t,data1.stim_info,srate, [], [], 'max');
-% subplot('position', posd); hold on
-% plot(x,tspred(:,1), 'r:', 'LineWidth', 4)
-% colors(:,[2 3]) = 0;
+% 
+% % Compute recovery for average across electrodes
+% srate = data1.channels.sampling_frequency(1);
+% [~, ts, w] = tde_computeISIrecovery(data1.data(:,:,1),data1.t,data1.stim_info,srate, [], [], 'sum');
+% 
+% t0 = data1.t(find(data1.t>0,1));
+% x = t0:(1/srate):w;
+% x = floor(x*1000); % in ms
+% 
+% subplot('position', posc); hold on
+% plot(x,ts(:,1), 'k-', 'LineWidth', 4)
+% colors = flipud(gray(size(ts,2)));
 % for ii = size(ts,2):-1:2
-%     plot(x,tspred(:,ii), 'LineStyle', ':','Color', colors(ii,:), 'LineWidth', 2);
+%     plot(x,ts(:,ii), 'Color', colors(ii,:), 'LineWidth', 2);
 % end
-
-% make legend
-l{1} = 'First stimulus';
-stim_idx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
-ISIs = data2.stim_info.ISI(stim_idx)*1000; 
-for ii = 1:size(ts,2)-1
-    l{size(ts,2)+1-ii} = sprintf('ISI %d', ISIs(ii));
-end
-legend(l, 'fontsize', 18);
-legend('boxoff')
-
-% format axes
-axis tight
-ylim([-2 20]);
-xlim([-1 x(end)+1]);
-set(gca, 'XTick', [0 x(end)],  'YTick', [0 5 10 15 20]);
-xlabel('Time from stim onset (ms)'); ylabel('Response magnitude'); title('Effect of adaptation', 'fontsize', 20); 
+% 
+% % [~, tspred] = tde_computeISIrecovery(data1.pred(:,:,1),data1.t,data1.stim_info,srate, [], [], 'max');
+% % subplot('position', posd); hold on
+% % plot(x,tspred(:,1), 'r:', 'LineWidth', 4)
+% % colors(:,[2 3]) = 0;
+% % for ii = size(ts,2):-1:2
+% %     plot(x,tspred(:,ii), 'LineStyle', ':','Color', colors(ii,:), 'LineWidth', 2);
+% % end
+% 
+% % make legend
+% l{1} = 'First stimulus';
+% stim_idx = find(contains(data2.stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
+% ISIs = data2.stim_info.ISI(stim_idx)*1000; 
+% for ii = 1:size(ts,2)-1
+%     l{size(ts,2)+1-ii} = sprintf('ISI %d', ISIs(ii));
+% end
+% legend(l, 'fontsize', 18);
+% legend('boxoff')
+% 
+% % format axes
+% axis tight
+% ylim([-2 20]);
+% xlim([-1 x(end)+1]);
+% set(gca, 'XTick', [0 x(end)],  'YTick', [0 5 10 15 20]);
+% xlabel('Time from stim onset (ms)'); ylabel('Response magnitude'); %title('Effect of adaptation', 'fontsize', 20); 
 
 %% Panel D: recovery with adaptation: individual electrodes
 
@@ -139,7 +139,7 @@ x = data2.stim_info.ISI(stim_idx)*1000;
 
 % Compute recovery per electrode
 srate = data2.channels.sampling_frequency(1);
-[m] = tde_computeISIrecovery(data2.data,data2.t,data2.stim_info, srate, [], [], 'sum');
+[m] = tde_computeISIrecovery(data2.data,data2.t,data2.stim_info, srate, [], [], 'max');
 
 % Generate new stimuli based on params
 nStim = 50;
@@ -167,10 +167,11 @@ m = cat(1,m,m2);
 [m_conc, se_conc] = averageWithinArea(m, group_prob, [], 10000);
 
 % Plot
-subplot('position', posd); hold on
+subplot('position', posc); hold on
 
 % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
+set(gca, 'xtick', x, 'xticklabelrotation', 45);
 
 % Plot data
 nStim = length(stim_idx);

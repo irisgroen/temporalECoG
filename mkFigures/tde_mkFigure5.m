@@ -188,6 +188,7 @@ for chan_idx = 1:9
     end
 end
 
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
 %%
 modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;

@@ -65,7 +65,7 @@ plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
 % Set axes
 set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1), 'ytick', []);
 set(gca, 'xticklabel', stim_info.duration(stim_idx)); box off
-xlabel('Stimulus duration (ms)'); ylabel('Neural response'); title('Temporal summation is sub-additive', 'fontsize', 20); 
+xlabel('Stimulus duration (ms)'); ylabel('Neural response'); %title('Temporal summation is sub-additive', 'fontsize', 20); 
 
 % Add legend
 legend({'Stimulus', 'Neural data', 'Linear prediction'}, 'location', 'northwest', 'fontsize', 18);
@@ -95,7 +95,7 @@ box off,  axis tight
 ylim([-2 20]);
 xlim([-20 length(s(:)) + 20]);
 
-xlabel('Stimulus duration (ms)'); ylabel('Change in power (x-fold)'); title('Broadband responses to increasing durations', 'fontsize', 20); 
+xlabel('Stimulus duration (ms)'); ylabel('Change in power (x-fold)'); %title('Broadband responses to increasing durations', 'fontsize', 20); 
 legend({'Neural data', 'DN model prediction'}, 'location', 'northwest', 'fontsize', 18);
 legend('boxoff');
 
@@ -138,7 +138,7 @@ subplot('position', posc); hold on
 
 % Plot linear prediction 
 h0 = line([0 x(end)], [0 1], 'linestyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
-set(gca, 'xtick', x);
+set(gca, 'xtick', x, 'xticklabelrotation', 45);
 
 % Plot data
 nStim = length(stim_idx);
@@ -152,7 +152,7 @@ se = se_conc(nStim+1:end,:);
 tde_plotPoints(m, se, x2, 'ci', 1)
 
 % Format axes
-xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); title('Temporal summation', 'fontsize', 20); 
+xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); %title('Temporal summation', 'fontsize', 20); 
 legend({'Linear prediction', 'Neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
 
 legend('boxoff')
