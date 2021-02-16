@@ -1,4 +1,8 @@
-function tde_plotPoints(m, se, x, type, normalize)
+function [hp, hc] = tde_plotPoints(m, se, x, type, normalize, line_style)
+
+if ~exist('line_style', 'var') || isempty(line_style)
+    line_style = 'none';
+end
 
 if normalize
     % Normalize
@@ -8,11 +12,12 @@ if normalize
 end
 switch type
     case 'errbar'
-        errorbar(x, m, m-se(:,1), se(:,2)-m, '.', 'Color', 'k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
+        hp = errorbar(x, m, m-se(:,1), se(:,2)-m, '.', 'Color', 'k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', line_style, 'CapSize', 0);
+        hc = [];
     case 'ci'
-        plot(x, m, 'r', 'linewidth', 2);
-        ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
-        set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        hp = plot(x, m, 'r', 'linewidth', 2);
+        hc = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
+        set(get(get(hc,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 end
 
 end

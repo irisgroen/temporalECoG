@@ -123,3 +123,48 @@ set(gca, 'ytick', 0:0.2:0.6);
 ylabel('Ratio sustained/transient');
 xlabel('Visual area');
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
+
+%% tmp
+figure;hold on
+x = 1:height(channels);
+
+ylabels = {'t2p', 'r_asymp', 'fwhm'};
+
+xlabel('Visual area');
+
+cmap = brewermap(length(subjectNames),'Set2');
+%cmap(:,[2 3]) = 0.5;
+
+subjectNames = unique(d2.channels.subject_name);
+
+for jj = 1:3
+    subplot(1,3,jj);hold on
+    
+    for ii = 1:length(subjectNames)
+        idx = contains(d2.channels.subject_name, subjectNames{ii});
+        [~, ~, group_prob] = groupElecsByVisualArea(d2.channels(idx,:), 'probabilisticresample');  
+        [m, se] = averageWithinArea(results.derived.params(:,idx), group_prob, [], 1000);
+        ix = find(~isnan(m(1,:)));
+        [hp, hc] = tde_plotPoints(m(jj,ix)', squeeze(se(jj,ix,:)), x(ix), 'ci', 0);
+        hc.FaceColor = cmap(ii,:);
+        hp.Color = cmap(ii,:);
+        %hp.Color = cmap(ii,:);
+        %hp.LineWidth = 1;
+    end
+
+    [~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample');   
+    [m, se] = averageWithinArea(results.derived.params, group_prob, [], 1000);
+    h = tde_plotPoints(m(jj,:)', squeeze(se(jj,:,:)), x, 'errbar', 0, '-');
+    h.LineWidth = 2;
+    h.MarkerSize = 50;
+    ylabel(ylabels{jj});
+    if jj == 1
+        legend([subjectNames; 'all']);
+    end
+
+
+    xlim([0 max(x)+1]); %ylim([0 0.3]);
+    set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+    %set(gca, 'ytick', [0 0.1 0.2 0.3]);
+end
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
