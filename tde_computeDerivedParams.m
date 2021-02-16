@@ -1,4 +1,4 @@
-function [derivedPrm, paramNames, pred_sustained, t] = tde_computeDerivedParams(objFunction, prm)
+function [derivedPrm, paramNames, pred_sustained, pred_transient, t] = tde_computeDerivedParams(objFunction, prm)
 % Simulate model response to a long sustained stimulus
 % Extract four summary statistics:
 % - t2pk    = time to peak 
@@ -6,11 +6,12 @@ function [derivedPrm, paramNames, pred_sustained, t] = tde_computeDerivedParams(
 % - Rdouble = changed in summed response with doubling of duration
 % - t_isi = magnitude or response at asymptote
 
-paramNames = {'t2pk', 'rAsymp', 'rDouble', 'Tisi'};
-derivedPrm = cell(length(paramNames),1);
+paramNames = {'t2pk', 'rAsymp', 'wSize'};
+derivedPrm = [];
 
 %% Compute derived parameters Time2Peak and Rasymptote
 
+% Simulate response to a long stimulus
 t    = 0.001 : 0.001 : 2;
 stim = ones(length(t),1);
 srate = 1/median(diff(t)); % samples per second
@@ -18,91 +19,117 @@ srate = 1/median(diff(t)); % samples per second
 [~, pred] = objFunction(prm, [], stim, srate);
 
 [~,x] = max(pred);
-derivedPrm{1}    = t(x);
-derivedPrm{2}    = pred(end)/max(pred);
+% Find the timepoint corresponding to the maximum magnitude
+derivedPrm(1)    = t(x);
+% Find the ratio between the asymptote and the maximum magnitude
+derivedPrm(2)    = pred(end)/max(pred);
 pred_sustained   = pred;
 
-%% Compute derived parameter Rdouble
+%% Compute derived parameters WindowSize
 
-T = 2;
-stimLength = round(T*srate);
-stim_on = [1 2 4 8 16 32]/60;
-stim = zeros(stimLength,length(stim_on));
+% Simulate response to a short (5 ms) pulse 
+t    = 0.001 : 0.001 : 0.5;
+stim = zeros(length(t),1);
+stim(1:5) = 1;
+srate = 1/median(diff(t)); % samples per second
 
-for ii = 1:length(stim_on)
-    stim_end = round(stim_on(ii)*srate);
-    stim(1:stim_end,ii) = 1;
-end    
-    
 [~, pred] = objFunction(prm, [], stim, srate);
-rsp       = sum(pred, 1);
-linpred   = rsp*2;
-rdub      = rsp(2:end)./linpred(1:end-1);
+%figure;plot(t,stim,t,pred)
 
-derivedPrm{3} = rdub;
-% % debug
-%figure;plot(stim, 'LineWidth', 2)
-%hold on; plot(pred, 'LineWidth', 2)
+% Find the full width at half max value
+halfMax = (min(pred) + max(pred)) / 2;
+index1 = find(pred >= halfMax, 1, 'first');
+index2 = find(pred >= halfMax, 1, 'last');
+fwhmx = t(index2) - t(index1);
 
-%% Compute derived parameter Tisi
+derivedPrm(3)    = fwhmx;
 
-T = 3;
-t_on = 100;
-stimLength = round(T*srate);
-stim = zeros(stimLength,1);
-stim(1 : t_on) = 1;
+pred_transient = pred;
 
-thresh = [0.8 0.9 0.95 1];
 
-% compute summed response to first pulse
-[~, pred] = objFunction(prm, [], stim, srate);
-rsp = sum(pred(1:1000),1);
-
-% create set of new stimuli with a second pulse 
-stim2 = repmat(stim,1,stimLength-2*t_on);
-pulse2_st = t_on+1:stimLength-t_on;
-for ii = 1:length(pulse2_st)
-    stim2(pulse2_st(ii) : pulse2_st(ii)+t_on-1, ii) = 1;
-end
-
-% predict responses for 2 pulse stimuli
-[~, pred2] = objFunction(prm, [], stim2, srate);
-
-% % debug
-% figure;
-% subplot(2,1,1);plot(pred2); yl = get(gca, 'YLim');
-% subplot(2,1,2);plot(pred2-pred); set(gca, 'YLim', yl);
-%  
-% subtract the response to first pulse
-pred2 = pred2-pred;
-% compute sum over matched windows relative to stimulus onset
-rsp2 = [];
-for ii = 1:size(pred2,2)-1000
-    rsp2(ii) = sum(pred2(pulse2_st(ii):pulse2_st(ii)+1000,ii),1);
-end
-%rsp2  = sum(pred2,1);
-
-% compute t_isi
-isi_samples = nan(length(thresh),1);
-for ii = 1:length(thresh)
-    % find the 2 pulse condition for which the sum of the 2 pulse stimulus
-    % is equal to thresh * the first pulse
-    resp_diff = rsp2-(rsp*thresh(ii));
-    stim_inx = find(round(resp_diff)>=0);
-    if any(stim_inx) 
-    % compute t_isi (gap between offset of pulse 1 and onset of pulse 2)
-        isi_samples(ii) = (pulse2_st(stim_inx(1)) - t_on);
-    else
-        isi_samples(ii) = nan;
-    end
-end
-
-t_isi = isi_samples./srate;
-derivedPrm{4} = t_isi;
-
-% % debug
-stim_inx = isi_samples+t_on;
-resp_diff = rsp2-(rsp*thresh(1));
+%%% OLD %%%
+% paramNames = {'t2pk', 'rAsymp', 'rDouble', 'Tisi'};
+% %% Compute derived parameter Rdouble
+% 
+% T = 2;
+% stimLength = round(T*srate);
+% stim_on = [1 2 4 8 16 32]/60;
+% stim = zeros(stimLength,length(stim_on));
+% 
+% for ii = 1:length(stim_on)
+%     stim_end = round(stim_on(ii)*srate);
+%     stim(1:stim_end,ii) = 1;
+% end    
+%     
+% [~, pred] = objFunction(prm, [], stim, srate);
+% rsp       = sum(pred, 1);
+% linpred   = rsp*2;
+% rdub      = rsp(2:end)./linpred(1:end-1);
+% 
+% derivedPrm{3} = rdub;
+% % % debug
+% %figure;plot(stim, 'LineWidth', 2)
+% %hold on; plot(pred, 'LineWidth', 2)
+% 
+% %% Compute derived parameter Tisi
+% 
+% T = 3;
+% t_on = 100;
+% stimLength = round(T*srate);
+% stim = zeros(stimLength,1);
+% stim(1 : t_on) = 1;
+% 
+% thresh = [0.8 0.9 0.95 1];
+% 
+% % compute summed response to first pulse
+% [~, pred] = objFunction(prm, [], stim, srate);
+% rsp = sum(pred(1:1000),1);
+% 
+% % create set of new stimuli with a second pulse 
+% stim2 = repmat(stim,1,stimLength-2*t_on);
+% pulse2_st = t_on+1:stimLength-t_on;
+% for ii = 1:length(pulse2_st)
+%     stim2(pulse2_st(ii) : pulse2_st(ii)+t_on-1, ii) = 1;
+% end
+% 
+% % predict responses for 2 pulse stimuli
+% [~, pred2] = objFunction(prm, [], stim2, srate);
+% 
+% % % debug
+% % figure;
+% % subplot(2,1,1);plot(pred2); yl = get(gca, 'YLim');
+% % subplot(2,1,2);plot(pred2-pred); set(gca, 'YLim', yl);
+% %  
+% % subtract the response to first pulse
+% pred2 = pred2-pred;
+% % compute sum over matched windows relative to stimulus onset
+% rsp2 = [];
+% for ii = 1:size(pred2,2)-1000
+%     rsp2(ii) = sum(pred2(pulse2_st(ii):pulse2_st(ii)+1000,ii),1);
+% end
+% %rsp2  = sum(pred2,1);
+% 
+% % compute t_isi
+% isi_samples = nan(length(thresh),1);
+% for ii = 1:length(thresh)
+%     % find the 2 pulse condition for which the sum of the 2 pulse stimulus
+%     % is equal to thresh * the first pulse
+%     resp_diff = rsp2-(rsp*thresh(ii));
+%     stim_inx = find(round(resp_diff)>=0);
+%     if any(stim_inx) 
+%     % compute t_isi (gap between offset of pulse 1 and onset of pulse 2)
+%         isi_samples(ii) = (pulse2_st(stim_inx(1)) - t_on);
+%     else
+%         isi_samples(ii) = nan;
+%     end
+% end
+% 
+% t_isi = isi_samples./srate;
+% derivedPrm{4} = t_isi;
+% 
+% % % debug
+% stim_inx = isi_samples+t_on;
+% resp_diff = rsp2-(rsp*thresh(1));
 
 % figure('Position', [ 354    20   803   540]);%clf
 % subplot(2,2,1);hold on
