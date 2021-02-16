@@ -64,7 +64,7 @@ ecog_plotMultipleTimeCourses(d1.t(t_idx)*1000, fliplr(d), [], colors);
 set(gca, 'xtick', [0 300]);
 set(gca, 'ylim', [-2 22], 'ytick', []);
 xlabel('Time (ms)'); ylabel('Neural response');
-title('Peak amplitude shift','fontsize', 18);
+title('Peak amplitude decrease','fontsize', 18);
 
 legend(l,  'fontsize', 18);
 legend('boxoff')
@@ -153,12 +153,12 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotSummaryStats(m, se, x, 'data', 1)
+tde_plotPoints(m, se, x, 'data', 1)
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotSummaryStats(m, se, x2, 'model', 1)
+tde_plotPoints(m, se, x2, 'model', 1)
 
 % Format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
@@ -181,12 +181,12 @@ se_conc = se_conc * 1000;
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotSummaryStats(m, se, x, 'data', 0)
+tde_plotPoints(m, se, x, 'data', 0)
 
 % Plot preduction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotSummaryStats(m, se, x2, 'model', 0)
+tde_plotPoints(m, se, x2, 'model', 0)
 
 % Format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
@@ -235,21 +235,4 @@ set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 xlabel('Contrast (%)'); ylabel('Ratio offset - peak'); 
 title('Transient-sustained ratio', 'fontsize', 18); 
 
-function plotDataOrPrediction(m, se, x, type, normalize)
-
-    if normalize
-        % Normalize
-        se(:,1) = se(:,1)./m(end);
-        se(:,2) = se(:,2)./m(end);
-        m = m./m(end);
-    end
-    switch type
-        case 'data'
-            errorbar(x, m, m-se(:,1), se(:,2)-m, '.', 'Color', 'k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-        case 'model'
-            plot(x, m, 'r', 'linewidth', 2);
-            ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
-            set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-    end
-
-end
+set(findall(gcf,'-property','FontSize'),'FontSize',20)

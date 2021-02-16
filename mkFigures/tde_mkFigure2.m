@@ -144,12 +144,12 @@ set(gca, 'xtick', x);
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotSummaryStats(m, se, x, 'data', 1)
+tde_plotPoints(m, se, x, 'data', 1)
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotSummaryStats(m, se, x2, 'model', 1)
+tde_plotPoints(m, se, x2, 'model', 1)
 
 % Format axes
 xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); title('Temporal summation', 'fontsize', 20); 
@@ -159,4 +159,5 @@ legend('boxoff')
 axis square
 axis tight
 
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
 

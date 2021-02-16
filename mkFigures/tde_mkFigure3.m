@@ -93,7 +93,7 @@ legend('boxoff');
 
 % Compute recovery for average across electrodes
 srate = data1.channels.sampling_frequency(1);
-[~, ts, w] = tde_computeISIrecovery(data1.data(:,:,1),data1.t,data1.stim_info,srate, [], [], 'max');
+[~, ts, w] = tde_computeISIrecovery(data1.data(:,:,1),data1.t,data1.stim_info,srate, [], [], 'sum');
 
 t0 = data1.t(find(data1.t>0,1));
 x = t0:(1/srate):w;
@@ -139,7 +139,7 @@ x = data2.stim_info.ISI(stim_idx)*1000;
 
 % Compute recovery per electrode
 srate = data2.channels.sampling_frequency(1);
-[m] = tde_computeISIrecovery(data2.data,data2.t,data2.stim_info, srate, [], [], 'max');
+[m] = tde_computeISIrecovery(data2.data,data2.t,data2.stim_info, srate, [], [], 'sum');
 
 % Generate new stimuli based on params
 nStim = 50;
@@ -176,12 +176,12 @@ h0 = line([x(1) x(end)], [1 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotSummaryStats(m, se, x, 'data', 0)
+tde_plotPoints(m, se, x, 'data', 0)
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotSummaryStats(m, se, x2, 'model', 0)
+tde_plotPoints(m, se, x2, 'model', 0)
 
 % Format axes
 ylim([0 1.2]);
@@ -189,3 +189,5 @@ xlim([-20 x(end)+20]);
 xlabel('Stimulus interval (ms)'); ylabel('Ratio second stimulus / first stimulus'); title('Recovery from adaptation', 'fontsize', 20); 
 legend({'Linear prediction', 'Neural data', 'DN model prediction'}, 'location', 'southeast', 'fontsize', 18);
 legend('boxoff')
+
+set(findall(gcf,'-property','FontSize'),'FontSize',20)

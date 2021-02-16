@@ -84,7 +84,7 @@ for chan_idx = 1:9
     [~, ts1,w] = tde_computeISIrecovery(d1.data(:,:,chan_idx),d1.t,d1.stim_info,srate,0.5);
     [~, tspred1] = tde_computeISIrecovery(d1.pred(:,:,chan_idx),d1.t,d1.stim_info,srate,0.5);
    
-    conditionsOfInterest = {'ONEPULSE4','ONEPULSE-5', 'TWOPULSE'};
+    conditionsOfInterest = {'ONEPULSE-4','ONEPULSE-5', 'TWOPULSE'};
     stim_idx = find(contains(d1.stim_info.name, conditionsOfInterest));
     nStim = length(find(stim_idx));
 
@@ -195,4 +195,132 @@ xvalmode = 0;
 datatype = 'electrodeaverages';
 [d1] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
+param = d1.params(:,1);
+data = d1.data(:,:,1);
+stim = d1.stim;
+srate = d1.srate;
 
+LINEAR_RECTF_EXP_NORM_DELAY(param, data, stim, srate)
+%%
+figure(1); clf
+set(gcf, 'position',  get(0, 'screensize'));
+
+inx = 1:5;
+timepointsOfInterest = [0 0.3];
+t_idx    = d1.t>timepointsOfInterest(1) & d1.t<=timepointsOfInterest(2);
+cmap = flipud(parula(6));
+cmap = cmap(2:end,:);
+   
+subplot(2,5,1); hold on
+p = plot(linrsp(t_idx,inx)); title('linrsp');legend(stim_info.name(inx));
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+subplot(2,5,2); hold on
+
+p = plot(numrsp(t_idx,inx)); title('abs(linrsp)^n (numerator)');
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,3); hold on
+p = plot(poolrsp(t_idx,inx)); title('linrsp lowpass (poolrsp)');
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,4); hold on
+p = plot(demrsp(t_idx,inx)); title('abs(poolrsp)^n + sigma^n (denominator)');
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,5); hold on
+p = plot(normrsp(t_idx,inx)); title('normrsp (num/den)');
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 6]);
+% subplot(2,6,6); hold on
+% scatter(1,prm.sigma, 100,'k', 'filled'); hold on;
+% scatter(2,prm.n, 100,'k','filled');
+% xlim([0 3]);title('sigma and n');
+% 
+% inx_fp = 9;
+% 
+inx = 12:17;
+% s = stim(:,inx);
+% onsets = [];
+% % 
+% for ii = 1:size(s,2)
+%     onsets(ii) = find(diff(s(:,ii)),1,'last') - 68;
+% end
+
+conditionsOfInterest = {'ONEPULSE-5', 'TWOPULSE'};
+stim_idx = find(contains(d1.stim_info.name, conditionsOfInterest));
+cmap = flipud(parula(length(stim_idx)+1));
+cmap = cmap(2:end,:);
+
+subplot(2,5,6); hold on
+[ISIrecover, ts, w] = tde_computeISIrecovery(linrsp,d1.t,d1.stim_info,d1.srate,0.3);
+p = plot(ts(:,2:end)); 
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+legend(stim_info.name(stim_idx));
+
+subplot(2,5,7); hold on
+%toplot = numrsp(:,inx)-numrsp(:,inx_fp);
+[ISIrecover, ts, w] = tde_computeISIrecovery(numrsp,d1.t,d1.stim_info,d1.srate,0.3);
+p = plot(ts(:,2:end));
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,8); hold on
+%plot(t,poolrsp(:,inx)-poolrsp(:,inx_fp)); title('poolrsp');
+[ISIrecover, ts, w] = tde_computeISIrecovery(poolrsp,d1.t,d1.stim_info,d1.srate,0.3);
+p = plot(ts(:,2:end));
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,9); hold on
+%plot(t,demrsp(:,inx)-demrsp(:,inx_fp)); title('denominator');
+[ISIrecover, ts, w] = tde_computeISIrecovery(demrsp,d1.t,d1.stim_info,d1.srate,0.3);
+p = plot(ts(:,2:end));
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 1]);
+
+subplot(2,5,10); hold on
+%plot(t,normrsp(:,inx)-normrsp(:,inx_fp)); title('normrsp (num/den)');
+[ISIrecover, ts, w] = tde_computeISIrecovery(normrsp,d1.t,d1.stim_info,d1.srate,0.3);
+p = plot(ts(:,2:end));
+set(p, {'color'}, num2cell(cmap,2));
+set(gca, 'ylim', [0 6]);
+
+set(findobj(gcf,'type','line'),'LineWidth', 2);
+
+[~, ts_num] = tde_computeISIrecovery(numrsp,d1.t,d1.stim_info,d1.srate,0.3);
+[~, ts_dem] = tde_computeISIrecovery(demrsp,d1.t,d1.stim_info,d1.srate,0.3);
+[~, ts_fin] = tde_computeISIrecovery(normrsp,d1.t,d1.stim_info,d1.srate,0.3);
+Ts = {'first pulse', 'ONEPULSE-5', 'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'}; 
+figure;hold on
+for ii = 1:size(ts,2)
+    subplot(2,4,ii);hold on
+    plot(ts_num(:,ii));
+    plot(ts_dem(:,ii));
+    plot(ts_fin(:,ii));
+    if ii == 1, legend('numerator', 'denominator', 'final'), end
+    set(gca, 'ylim', [0 6]);
+    title(Ts{ii});
+end
+set(findobj(gcf,'type','line'),'LineWidth', 2);
+
+%%
+inx = 12:17;
+subplot(2,6,7); hold on
+plot(t,numrsp(:,inx)-numrsp(:,inx_fp)); title('numerator');
+subplot(2,6,8); hold on
+plot(t,poolrsp(:,inx)-poolrsp(:,inx_fp)); title('poolrsp');
+subplot(2,6,9); hold on
+plot(t,abs(poolrsp(:,inx )).^prm.n - abs(poolrsp(:,inx_fp)).^prm.n); title('poolrsp exp');
+subplot(2,6,10); hold on
+plot(t,demrsp(:,inx)-demrsp(:,inx_fp)); title('denominator');
+subplot(2,6,11); hold on
+plot(t,normrsp(:,inx)-normrsp(:,inx_fp)); title('normrsp (num/den)');
+subplot(2,6,12); hold on
+scatter(1,prm.sigma, 100,'k', 'filled'); hold on;
+scatter(2,prm.n, 100,'k','filled');
+xlim([0 3]);title('sigma and n');

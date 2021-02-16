@@ -1,4 +1,4 @@
-function tde_plotSummaryStats(m, se, x, type, normalize)
+function tde_plotPoints(m, se, x, type, normalize)
 
 if normalize
     % Normalize
