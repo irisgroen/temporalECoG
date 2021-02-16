@@ -1,4 +1,4 @@
-function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric)
+function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric, debug)
 
 if ~exist('w', 'var') || isempty(w)
     w = 0.3; % window for computing recovery
@@ -11,7 +11,11 @@ end
 if ~exist('metric', 'var') || isempty(metric)
     metric = 'sum'; % 'sum' or 'max'
 end
-    
+   
+if ~exist('debug', 'var') || isempty(debug)
+    debug = false;
+end
+
 [~,~,nDatasets] = size(data);
 
 % Set parameters
@@ -44,11 +48,11 @@ for kk = 1:nDatasets
         pulse1(~t_idx,ii) = nan;
     end
 
-    pulse1_mn = mean(pulse1,2,'omitnan');
+    %pulse1_mn = mean(pulse1,2,'omitnan');
     %pulse1_mn = pulse1(:,1); 
     %pulse1_mn = mean(pulse1(:,2:end),2,'omitnan');
     %pulse1_mn = mean(pulse1(:,3:end),2,'omitnan');
-    %pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
+    pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
     
     % figure;hold on;
     % plot(t,pulse1, 'LineWidth', 1);
@@ -115,71 +119,72 @@ for kk = 1:nDatasets
     % Plot recovery
    %figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
     
-    % %% DEBUG %%%%% 
-    
-%     % Debug 1
-%     
-%     % Plot pulse 1 mean + window
-%     figure('Position', get(0, 'ScreenSize'));hold on;
-%     subplot(round(nStim/2),2,1); hold on;
-%     nSamp = size(data,1);
-%     tmp = zeros(nSamp,1);
-%     tmp(t_idx1) = 10;
-%     plot(t,pulse1_mn, 'r','LineWidth', 2); 
-%     plot(t,tmp, 'k');
-%     title('mean pulse 1');
-% 
-%      % Plot pulse 2 + window
-%     for ii = 1:nStim
-%         tmp = zeros(nSamp,1);
-%         tmp(t_idx2(:,ii)) = 10;
-%         subplot(round(nStim/2),2, ii+1); hold on
-%         plot(t,pulse2(:,ii),'b', 'LineWidth', 2);
-%         plot(t,pulse2_sub(:,ii),'m:', 'LineWidth', 2);
-%         plot(t,tmp, 'k');    
-%         plot(t,pulse1_mn, 'r', 'LineWidth', 2);
-%         title(stimNames{ii});
-%     end
-%     
-%     
-%     % Debug 2 
-%     
-%     figure;hold on
-%     subplot(1,3,1);hold on;
-%     colors = parula(size(pulse2_sub,2));
-% 
-%     for ii = 1:size(pulse2_sub,2)
-%         plot(t,pulse2_to_sum(:,ii), 'Color', colors(ii,:), 'LineWidth', 2);
-%     end
-%     plot(t,pulse1_mn, 'k', 'LineWidth', 3)
-% 
-%     dummy = nan(length(t),1);
-%     dummy(t_idx1) = -10;
-%     hold on
-%     plot(t,dummy, 'k', 'LineWidth', 3)
-% 
-%     for ii = 1:size(t_idx2,2)
-%         dummy = nan(length(t),1);
-%         dummy(t_idx2(:,ii)) = -10+ii;
-%         plot(t,dummy, 'Color', colors(ii,:), 'LineWidth', 3)
-%     end
-% 
-%     subplot(1,3,2);hold on;
-%     plot(pulse1_mn(t_idx1), 'k', 'LineWidth', 3)
-%     for ii = 1:size(pulse2_sub,2)
-%         tmp = pulse2_to_sum(t_idx2(:,ii),ii);
-%         plot(tmp, 'Color', colors(ii,:), 'LineWidth', 2);
-%     end
-%     
-%     subplot(1,3,3);hold on;
-%     x = 1:size(pulse2_sub,2);
-%     plot(1,pulse1_mn_summed, 'k.', 'MarkerSize', 100, 'LineStyle', 'none');
-%     for ii = 1:length(x)
-%         plot(x(ii)+1,pulse2_summed(ii), 'Color', colors(ii,:), 'Marker', '.', 'MarkerSize', 100, 'LineStyle', 'none')
-%     end
-%     xlim([0 max(x)+1]);
-%     
-%     set(gcf, 'Position', [41         303        1301         502]);
+    %% DEBUG %%%%% 
+    if debug
+        % Debug 1
+
+        % Plot pulse 1 mean + window
+        figure('Position', get(0, 'ScreenSize'));hold on;
+        subplot(round(nStim/2),2,1); hold on;
+        nSamp = size(data,1);
+        tmp = zeros(nSamp,1);
+        tmp(t_idx1) = 10;
+        plot(t,pulse1_mn, 'r','LineWidth', 2); 
+        plot(t,tmp, 'k');
+        title('mean pulse 1');
+
+         % Plot pulse 2 + window
+        for ii = 1:nStim
+            tmp = zeros(nSamp,1);
+            tmp(t_idx2(:,ii)) = 10;
+            subplot(round(nStim/2),2, ii+1); hold on
+            plot(t,pulse2(:,ii),'b', 'LineWidth', 2);
+            plot(t,pulse2_sub(:,ii),'m:', 'LineWidth', 2);
+            plot(t,tmp, 'k');    
+            plot(t,pulse1_mn, 'r', 'LineWidth', 2);
+            title(stimNames{ii});
+        end
+
+
+        % Debug 2 
+
+        figure;hold on
+        subplot(1,3,1);hold on;
+        colors = parula(size(pulse2_sub,2));
+
+        for ii = 1:size(pulse2_sub,2)
+            plot(t,pulse2_to_sum(:,ii), 'Color', colors(ii,:), 'LineWidth', 2);
+        end
+        plot(t,pulse1_mn, 'k', 'LineWidth', 3)
+
+        dummy = nan(length(t),1);
+        dummy(t_idx1) = -10;
+        hold on
+        plot(t,dummy, 'k', 'LineWidth', 3)
+
+        for ii = 1:size(t_idx2,2)
+            dummy = nan(length(t),1);
+            dummy(t_idx2(:,ii)) = -10+ii;
+            plot(t,dummy, 'Color', colors(ii,:), 'LineWidth', 3)
+        end
+
+        subplot(1,3,2);hold on;
+        plot(pulse1_mn(t_idx1), 'k', 'LineWidth', 3)
+        for ii = 1:size(pulse2_sub,2)
+            tmp = pulse2_to_sum(t_idx2(:,ii),ii);
+            plot(tmp, 'Color', colors(ii,:), 'LineWidth', 2);
+        end
+
+        subplot(1,3,3);hold on;
+        x = 1:size(pulse2_sub,2);
+        plot(1,pulse1_mn_summed, 'k.', 'MarkerSize', 100, 'LineStyle', 'none');
+        for ii = 1:length(x)
+            plot(x(ii)+1,pulse2_summed(ii), 'Color', colors(ii,:), 'Marker', '.', 'MarkerSize', 100, 'LineStyle', 'none')
+        end
+        xlim([0 max(x)+1]);
+
+        set(gcf, 'Position', [41         303        1301         502]);
+    end
      
 end
 
