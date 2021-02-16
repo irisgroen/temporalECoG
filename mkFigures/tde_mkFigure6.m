@@ -10,7 +10,7 @@ for ii = 1:length(modelfuns)
     [d(ii)] = tde_loadDataForFigure(modelfuns{ii}, xvalmode, datatype);
 end
 
-[results] = tde_evaluateModelFit(d);
+[results] = tde_evaluateModelFit(d,0);
 
 %% Plot specs
 
@@ -73,7 +73,7 @@ xlabel('visual area');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
-%%
+%% temp
 pred = nan(4,2000,height(d(1).channels));
 modelind = [5 6 7 8];
 
@@ -108,11 +108,24 @@ for ii = 1:size(m,3)
 end
 
 figure;hold on
-cmap2 = flipud(brewermap(size(m,3),'YlGnBu'));
+cmap2 = flipud(brewermap(size(m,3),'YlOrBr'));
 toplot = squeeze(m(1,:,:));
 toplot = toplot./max(toplot);
 p = plot(toplot, 'LineWidth', 2);
 set(p, {'color'}, num2cell(cmap2(1:end,:),2));
+xlim([0 400]);
+legend(channels.name);
+
+%%
+dat = d(5).data;
+[m, se] = averageWithinArea(dat, group_prob, @mean, 1000);
+
+figure;hold on
+cmap2 = flipud(brewermap(size(m,3)+2,'YlGnBu'));
+toplot = squeeze(m(:,5,:));
+toplot = toplot./max(toplot);
+p = plot(toplot, 'LineWidth', 2);
+set(p, {'color'}, num2cell(cmap2(1:end-2,:),2));
 xlim([0 400]);
 legend(channels.name);
 

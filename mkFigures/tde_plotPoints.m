@@ -7,9 +7,9 @@ if normalize
     m = m./m(end);
 end
 switch type
-    case 'data'
+    case 'errbar'
         errorbar(x, m, m-se(:,1), se(:,2)-m, '.', 'Color', 'k', 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0);
-    case 'model'
+    case 'ci'
         plot(x, m, 'r', 'linewidth', 2);
         ch = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
         set(get(get(ch,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');

@@ -176,12 +176,12 @@ h0 = line([x(1) x(end)], [1 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotPoints(m, se, x, 'data', 0)
+tde_plotPoints(m, se, x, 'errbar', 0)
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'model', 0)
+tde_plotPoints(m, se, x2, 'ci', 0)
 
 % Format axes
 ylim([0 1.2]);

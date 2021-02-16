@@ -1,12 +1,125 @@
 % tde_mkFigure 7
 
-
-modelfuns = @LINEAR_RECTF_EXP_NORM_DELAY;
+modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
+
+datatype = 'electrodeaverages';
+d1 = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+
 datatype = 'individualelecs';
+d2 = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
-for ii = 1:length(modelfuns)
-    [d(ii)] = tde_loadDataForFigure(modelfuns{ii}, xvalmode, datatype);
-end
+[results] = tde_evaluateModelFit(d2);
 
-[results] = tde_evaluateModelFit(d);
+[stim_ts, stim_info] = tde_generateStimulusTimecourses(d1.options.stimnames,d1.t);
+
+%% Plot specs
+% Subplot positions: % [left bottom width height]
+
+posa1 = [0.05  0.75 0.9 0.22];
+posa2 = [0.05  0.50 0.9 0.22];
+posb =  [0.05  0.1 0.25 0.3];
+posc =  [0.375 0.1 0.25 0.3];
+posd =  [0.7   0.1 0.25 0.3];
+
+figure(1); clf
+set(gcf, 'position',  get(0, 'screensize'));
+
+% Panel A: time courses comparison V1 and V3b
+
+conditionsOfInterest = {'ONEPULSE'};
+timepointsOfInterest = [-0.1 0.8];
+areasOfInterest      = {'V1', 'V3b'};
+
+stim_idx  = contains(stim_info.name, conditionsOfInterest);
+t_idx     = d1.t>timepointsOfInterest(1) & d1.t<=timepointsOfInterest(2);
+chan_idx1 = find(strcmp(d1.channels.name, areasOfInterest{1}));
+chan_idx2 = find(strcmp(d1.channels.name, areasOfInterest{2}));
+
+% Top: Data
+
+subplot('position', posa1); hold on
+
+s = stim_ts(t_idx,stim_idx);
+c1 = d1.data(t_idx,stim_idx,chan_idx1);
+c2 = d1.data(t_idx,stim_idx,chan_idx2);
+c1 = c1/max(c1(:,end));
+c2 = c2/max(c2(:,end));
+
+hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hd = plot(c1(:), 'k-', 'linewidth', 2);
+hp = plot(c2(:), 'Color', ones(1,3)*0.5, 'linewidth', 2);
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel',[]);
+set(gca, 'ytick', [0 1]);
+box off,  axis tight
+
+ylim([-0.2 1.5]);
+xlim([-20 length(s(:)) + 20]);
+
+ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+legend(areasOfInterest, 'location', 'northeast');
+legend('boxoff');
+
+% Bottom: Model
+
+subplot('position', posa2); hold on
+
+s = stim_ts(t_idx,stim_idx);
+c1 = d1.pred(t_idx,stim_idx,chan_idx1);
+c2 = d1.pred(t_idx,stim_idx,chan_idx2);
+c1 = c1/max(c1(:,end));
+c2 = c2/max(c2(:,end));
+
+hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hd = plot(c1(:), 'r-', 'linewidth', 2);
+hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.duration(stim_idx)*1000);
+set(gca, 'ytick', [0 1]);
+box off,  axis tight
+
+ylim([-0.2 1.5]);
+xlim([-20 length(s(:)) + 20]);
+
+xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+legend(areasOfInterest, 'location', 'northeast');
+legend('boxoff');
+
+
+
+% Panel B, C, D: derived parameters summarized across areas
+[~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample');   
+[m, se] = averageWithinArea(results.derived.params, group_prob, [], 10000);
+
+subplot('position', posb); hold on
+x = 1:height(channels);
+tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.3]);
+set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+set(gca, 'ytick', [0 0.1 0.2 0.3]);
+
+ylabel('Time to peak (s)');
+xlabel('Visual area');
+
+subplot('position', posc); hold on
+x = 1:height(channels);
+tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.2]);
+set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+set(gca, 'ytick', [0 0.1 0.2]);
+ylabel('Fwhm (s)');
+xlabel('Visual area');
+
+subplot('position', posd); hold on
+x = 1:height(channels);
+tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.6]);
+set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+set(gca, 'ytick', 0:0.2:0.6);
+
+ylabel('Ratio sustained/transient');
+xlabel('Visual area');
+set(findall(gcf,'-property','FontSize'),'FontSize',20)

@@ -153,12 +153,12 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotPoints(m, se, x, 'data', 1)
+tde_plotPoints(m, se, x, 'errbar', 1)
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'model', 1)
+tde_plotPoints(m, se, x2, 'ci', 1)
 
 % Format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
@@ -181,12 +181,12 @@ se_conc = se_conc * 1000;
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotPoints(m, se, x, 'data', 0)
+tde_plotPoints(m, se, x, 'errbar', 0)
 
 % Plot preduction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'model', 0)
+tde_plotPoints(m, se, x2, 'ci', 0)
 
 % Format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
@@ -221,12 +221,12 @@ R = squeeze(M./O); % divide value at offset with value of peak
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotSummaryStats(m, se, x, 'data', 0)
+tde_plotPoints(m, se, x, 'errbar', 0)
 
 % Plot preduction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotSummaryStats(m, se, x2, 'model', 0)
+tde_plotPoints(m, se, x2, 'ci', 0)
 
 % format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
