@@ -1,20 +1,10 @@
-function [results] = tde_evaluateModelFit(data, objFunction, params, pred, stim_info)
+function [results] = tde_evaluateModelFit(d)
+ 
+% Input: struct with data and fitted model parameters and predictions
 
-% Inputs: cell arrays with objFunction, params, data, pred
-if ~iscell(objFunction), objFunction = {objFunction}; end
-if ~iscell(params), params = {params}; end
-if ~iscell(pred), pred = {pred}; end
+%nModels     = size(objFunction,2);
 
-nModels     = size(objFunction,2);
-[~,nStim,nDatasets] = size(data);
-stimcond    = stim_info.condition;
-
-% initialize
-R2stim      = nan(nStim,nDatasets);
-R2concat    = nan(1,nDatasets);
-R2cond      = nan(length(unique(stimcond)), nDatasets); 
-
-derivedPrm   = [];
+nModels = size(d,2);
 
 %% COMPUTE SUMMARY METRICS
 results = struct;
@@ -22,8 +12,24 @@ results = struct;
 % Loop over models
 for kk = 1:nModels
     
-    fprintf('[%s] Evaluating model %s for %d datasets\n', mfilename, func2str(objFunction{kk}), nDatasets)
+    data        = d(kk).data;
+    pred        = d(kk).pred;
+    params      = d(kk).params;
+    objFunction = d(kk).objFunction;
+    stim_info   = d(kk).stim_info;
+    stimcond    = stim_info.condition;
     
+    % Get sizes of data and stiminfo
+    [~,nStim,nDatasets] = size(data);
+
+    fprintf('[%s] Evaluating model %s for %d datasets\n', mfilename, func2str(objFunction), nDatasets)
+
+    % Initialize
+    R2stim      = nan(nStim,nDatasets);
+    R2concat    = nan(1,nDatasets);
+    R2cond      = nan(length(unique(stimcond)), nDatasets); 
+    derivedPrm  = [];
+
     % Loop over channels or channel averages
     for ii = 1:nDatasets
         
@@ -33,14 +39,14 @@ for kk = 1:nModels
         rsq = nan(nStim,1);
         for jj = 1:nStim % loop over stimuli
             DATA = data(:,jj,ii);
-            MODEL = pred{kk}(:,jj,ii);
+            MODEL = pred(:,jj,ii);
             rsq(jj) = computeR2(DATA,MODEL);
         end
         R2stim(:,ii) = rsq;
              
         % For all stimuli concatenated
         DATA = flatten(data(:,:,ii));
-        MODEL = flatten(pred{kk}(:,:,ii));
+        MODEL = flatten(pred(:,:,ii));
         R2concat(:,ii) = computeR2(DATA,MODEL);
         
         % For specific conditions
@@ -48,18 +54,17 @@ for kk = 1:nModels
         for jj = 1:nCond
             condInx = find(stimcond == cond(jj));
             DATA = flatten(data(:,condInx,ii));
-            MODEL = flatten(pred{kk}(:,condInx,ii));
+            MODEL = flatten(pred(:,condInx,ii));
             R2cond(jj,ii) = computeR2(DATA,MODEL);
         end
         
-        fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
+        %fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
     
-
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
-        fprintf('[%s] Computing derived parameters...\n', mfilename)
+        %fprintf('[%s] Computing derived parameters...\n', mfilename)
 
         % Compute parameters and generate a prediction to a sustained stimulus:
-        [derived_prm, pred_names, pred_derived] = tde_computeDerivedParams(objFunction{kk}, params{kk}(:,ii));
+        [derived_prm, pred_names, pred_derived] = tde_computeDerivedParams(objFunction, params(:,ii));
         
         % Concatenate across datasets
         for jj = 1:length(derived_prm)
@@ -70,9 +75,9 @@ for kk = 1:nModels
     end
     
     %% COLLECT RESULTS
-    results(kk).model           = objFunction{kk};
-	results(kk).params          = params{kk};
-    results(kk).pred            = pred{kk};
+    results(kk).model           = objFunction;
+	results(kk).params          = params;
+    results(kk).pred            = pred;
     results(kk).R2.stim         = R2stim;
     results(kk).R2.concat_all   = R2concat;
     results(kk).R2.concat_cond  = R2cond; 
