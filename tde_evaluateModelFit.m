@@ -1,8 +1,10 @@
-function [results] = tde_evaluateModelFit(d)
+function [results] = tde_evaluateModelFit(d, includeDerivedParams)
  
 % Input: struct with data and fitted model parameters and predictions
 
-%nModels     = size(objFunction,2);
+if ~exist('includeDerivedParams', 'var') || isempty(includeDerivedParams)
+    includeDerivedParams = true;
+end
 
 nModels = size(d,2);
 
@@ -25,11 +27,13 @@ for kk = 1:nModels
     fprintf('[%s] Evaluating model %s for %d datasets\n', mfilename, func2str(objFunction), nDatasets)
 
     % Initialize
-    R2stim      = nan(nStim,nDatasets);
-    R2concat    = nan(1,nDatasets);
-    R2cond      = nan(length(unique(stimcond)), nDatasets); 
-    derivedPrm  = [];
-
+    R2stim       = nan(nStim,nDatasets);
+    R2concat     = nan(1,nDatasets);
+    R2cond       = nan(length(unique(stimcond)), nDatasets); 
+    derivedPrm   = nan(3,nDatasets);
+    derivedPredS = nan(2000,nDatasets);
+    derivedPredT = nan(500,nDatasets);
+    
     % Loop over channels or channel averages
     for ii = 1:nDatasets
         
@@ -62,15 +66,20 @@ for kk = 1:nModels
     
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
         %fprintf('[%s] Computing derived parameters...\n', mfilename)
-
-        % Compute parameters and generate a prediction to a sustained stimulus:
-        [derived_prm, pred_names, pred_derived] = tde_computeDerivedParams(objFunction, params(:,ii));
         
-        % Concatenate across datasets
-        for jj = 1:length(derived_prm)
-            derivedPrm{jj}(:,ii) = derived_prm{jj};
+        if includeDerivedParams
+            % Compute parameters and generate a prediction to a sustained stimulus:
+            [derived_prm, pred_names, pred_sustained, pred_transient] = tde_computeDerivedParams(objFunction, params(:,ii));
+
+            derivedPrm(:,ii) = derived_prm;
+            derivedPredS(:,ii) = pred_sustained;
+            derivedPredT(:,ii) = pred_transient;
+%             % Concatenate across datasets
+%             for jj = 1:length(derived_prm)
+%                 derivedPrm{jj}(:,ii) = derived_prm{jj};
+%             end
+%             derivedPred(:,ii) = pred_derived;
         end
-        derivedPred(:,ii) = pred_derived;
         
     end
     
@@ -83,7 +92,9 @@ for kk = 1:nModels
     results(kk).R2.concat_cond  = R2cond; 
     results(kk).derived.names   = pred_names;
     results(kk).derived.params  = derivedPrm;
-    results(kk).derived.pred    = derivedPred;
+    results(kk).derived.pred_s  = derivedPredS;
+    results(kk).derived.pred_t  = derivedPredT;
+    
 end
 fprintf('[%s] Done!\n', mfilename)
 end
