@@ -48,8 +48,11 @@ for kk = 1:nModels
     % Collect the data to plot
     data{1} = results(kk).R2.concat_all;
     for p = 1:2
-        data{p+1} = results(kk).derived.params{p};
+       data{p+1} = results(kk).derived.params{p};
     end
+%     for p = 1:3
+%         data{p} = results(kk).R2.concat_cond(p,:);
+%     end
        
     % Plot 
     subplotinx = [1 2 3 5 6];
@@ -125,8 +128,8 @@ for jj = 1:nSubPlot
     if ~isempty(se_all)
         se = squeeze(se_all(jj,:,:,:));
         if nModels > 1
-            neg = m-se(:,1,:);
-            pos = se(:,2,:)-m;
+            neg = m-squeeze(se(:,1,:));
+            pos = squeeze(se(:,2,:))-m;
             for ii = 1:numbars
                 x = (1:numgroups) - groupwidth/2 + (2*ii-1) * groupwidth / (2*numbars);  % Aligning error bar with individual bar    
                 errorbar(x, m(:,ii), neg(:,ii), pos(:,ii), 'k', 'LineWidth', 2,  'LineStyle', 'none', 'CapSize', 0);
