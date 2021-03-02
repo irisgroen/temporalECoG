@@ -144,12 +144,12 @@ set(gca, 'xtick', x, 'xticklabelrotation', 45);
 nStim = length(stim_idx);
 m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
-tde_plotPoints(m, se, x, 'errbar', 1)
+tde_plotPoints(m, se, x, 'errbar', 1);
 
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'ci', 1)
+tde_plotPoints(m, se, x2, 'ci', 1);
 
 % Format axes
 xlabel('Stimulus duration (ms)'); ylabel('Summed broadband timecourse (0-1s)'); %title('Temporal summation', 'fontsize', 20); 

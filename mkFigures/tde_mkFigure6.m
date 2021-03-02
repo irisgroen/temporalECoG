@@ -1,7 +1,7 @@
 % tde_mkFigure 6
 
 modelfuns = {@LINEAR,@LINEAR_RECTF,@LINEAR_RECTF_EXP,@LINEAR_RECTF_EXP_NORM,@LINEAR_RECTF_EXP_NORM_DELAY,...
-    @TTC,@TTCSTIG17, @TTCSTIG19};
+    @DN, @HEEGER93, @TTC,@TTCSTIG17, @TTCSTIG19};
 
 xvalmode = 1;
 datatype = 'individualelecs';
@@ -47,8 +47,8 @@ ylabel('cross-validated R^{2}', 'Interpreter','tex');
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
 % Panel B: cross-validated R2 for other models vs DN in all areas
-R2 = nan(4,height(d(1).channels));
-modelind = [5 6 7 8];
+R2 = nan(6,height(d(1).channels));
+modelind = [5 6 7 10 9 8];
 
 for ii = 1:size(R2,1)
     R2(ii,:) = results(modelind(ii)).R2.concat_all;
@@ -62,7 +62,9 @@ x = 1:height(channels);
 cmap = brewermap(size(R2,1),'RdYlGn');
 tde_plotBars(m,se,x,cmap);
 
-l = {'DN', 'TTC', 'TTC 2017', 'TTC 2019'};
+%l = {'LINEAR_RECTF_EXP_NORM_DELAY', 'DN (Zhou 2019)', 'TTC (Horiguchi)', 'TTC (Stigliani 2017)', 'A + S (Stigliani 2019)'};
+l = {'current', 'DN', 'Heeger93', 'TTC 2019', 'TTC 2017', 'TTC'};
+
 legend(l, 'location', 'northeastoutside');
 legend('boxoff')
 set(gca, 'xtick', 1:height(channels), 'xticklabel', channels.name)

@@ -16,7 +16,7 @@ switch type
         hc = [];
     case 'ci'
         hp = plot(x, m, 'r', 'linewidth', 2);
-        hc = ciplot(se(:,1), se(:,2), x, 'r', 0.25);
+        hc = ciplot(se(:,1), se(:,2), x, 'r', 1);
         set(get(get(hc,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 end
 

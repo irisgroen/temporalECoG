@@ -132,10 +132,11 @@ ylabels = {'t2p', 'r_asymp', 'fwhm'};
 
 xlabel('Visual area');
 
+subjectNames = unique(d2.channels.subject_name);
+
 cmap = brewermap(length(subjectNames),'Set2');
 %cmap(:,[2 3]) = 0.5;
 
-subjectNames = unique(d2.channels.subject_name);
 
 for jj = 1:3
     subplot(1,3,jj);hold on
