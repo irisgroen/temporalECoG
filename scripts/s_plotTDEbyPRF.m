@@ -1,14 +1,18 @@
 
-%load('/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/results/LINEAR_RECTF_EXP_NORM_DELAY_xvalmode0_individualelecs_20201029T015941.mat')
+% individual electrodes and DN model fits
+modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+xvalmode = 0;
+datatype = 'individualelecs';
+[d] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
 %%
-channelsPRF = tde_getPRFparams(channels2fit);
+channelsPRF = tde_getPRFparams(d.channels);
 [channelsPRF] = convertBensonangleToAnalyzePRFangle(channelsPRF);
 
 % define cut offs
 R2thresh         = 30;
-eccfovthresh     = 3;
-eccparafovthresh = 20;
+eccfovthresh     = 2;
+eccparafovthresh = 16;
 eccmax           = 20;
 
 % select channels
@@ -23,7 +27,7 @@ areaNames = {'V123','higher'};
 fun = @mean;
 numboot = 1000;
 
-[~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', areaNames );   
+[~, ~, group_prob] = groupElecsByVisualArea(d.channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
 fov_idx      = chan_idx_R2 & chan_idx_eccfov; %&~contains(channelsPRF.subject_name, 'som708'); 
@@ -31,9 +35,9 @@ parafov_idx  = chan_idx_R2 & chan_idx_eccparafov; %&~contains(channelsPRF.subjec
 per_idx      = chan_idx_R2 & chan_idx_eccper;% &~contains(channelsPRF.subject_name, 'som708');
 
 % average the electrodes
-[tmpdata_fov] = averageWithinArea(data2fit(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
-[tmpdata_parafov] = averageWithinArea(data2fit(:,:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
-[tmpdata_per] = averageWithinArea(data2fit(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
+[tmpdata_fov] = averageWithinArea(d.data(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
+[tmpdata_parafov] = averageWithinArea(d.data(:,:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
+[tmpdata_per] = averageWithinArea(d.data(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
 figure; hold on
@@ -46,11 +50,11 @@ for ii = 1:length(areaNames)
     plot(smooth(toplot/norm(toplot,2),20),'r', 'LineWidth',2); 
     %plot(smooth(flatten(tmpdata_per(:,:,ii)),20),'b', 'LineWidth',2); 
 
-    set(gca, 'XTick',1:size(data2fit,1):size(data2fit,2)*size(data2fit,1), 'XTickLabel', []);
+    set(gca, 'XTick',1:size(d.data,1):size(d.data,2)*size(d.data,1), 'XTickLabel', []);
     axis tight
 
     l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(group_prob(fov_idx,ii)>0)));
-    l2 = sprintf('parafoveal (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(group_prob(parafov_idx,ii)>0)));
+    l2 = sprintf('peripheral (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(group_prob(parafov_idx,ii)>0)));
     %l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(group_prob(per_idx,ii)>0)));
     legend({l1,l2}, 'Location', 'NorthWest');
     %legend({l1,l2,l3}, 'Location', 'NorthWest');
@@ -65,12 +69,12 @@ objFunction = @LINEAR_RECTF_EXP_NORM_DELAY;
 tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(objFunction))));
 paramNames = strsplit(tmp.params, ',');
 
-areaNames = {'V1','V2','V3','higher'};
-%areaNames = {'V123','higher'};
+%areaNames = {'V1','V2','V3','higher'};
+areaNames = {'V123','higher'};
 fun = @median;
 numboot = 10000;
 
-[~, ~, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', areaNames );   
+[~, ~, group_prob] = groupElecsByVisualArea(d.channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
 fov_idx      = chan_idx_R2 & chan_idx_eccfov;
@@ -78,8 +82,8 @@ parafov_idx  = chan_idx_R2 & chan_idx_eccparafov;
 per_idx      = chan_idx_R2 & chan_idx_eccper;
 
 % average the electrodes
-[d_fov, se_fov] = averageWithinArea(params(:,fov_idx), group_prob(fov_idx,:), fun, numboot);
-[d_pfov, se_pfov] = averageWithinArea(params(:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
+[d_fov, se_fov] = averageWithinArea(d.params(:,fov_idx), group_prob(fov_idx,:), fun, numboot);
+[d_pfov, se_pfov] = averageWithinArea(d.params(:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
 %[d_per, se_per] = averageWithinArea(params(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
@@ -102,7 +106,7 @@ set(gcf, 'Position', get(0,'screensize'));
 
 %% correlations
 %corr(channelsPRF.aprf_ecc(chan_idx_R2 &  chan_idx_area), params(4,chan_idx_R2 &  chan_idx_area)', 'Type', 'Spearman')
-areaName = {'V1'};
+areaName = {'higher'};
 chan_idx_area       = matchAreaNameToAtlas(areaName, channelsPRF.benson14_varea);
 subjectNames        = unique(channelsPRF.subject_name(chan_idx_R2 & chan_idx_area));
 colors              = 1-parula(length(subjectNames));
@@ -112,7 +116,7 @@ for p = 1:length(paramNames)
 	subplot(2,5,p);hold on;
     for ii = 1:length(subjectNames)
         idx = chan_idx_R2 & contains(channelsPRF.subject_name, subjectNames{ii}) & chan_idx_area;
-        scatter(channelsPRF.aprf_ecc(idx), params(p,idx), 100, colors(ii,:), 'filled')
+        scatter(channelsPRF.aprf_ecc(idx), d.params(p,idx), 100, colors(ii,:), 'filled')
     end
     xlabel('aPRF eccentricity');
     title(sprintf('%s %s', areaName{:}, paramNames{p}));
