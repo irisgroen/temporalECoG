@@ -19,7 +19,7 @@ d2 = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 posa1 = [0.05  0.75 0.9 0.22];
 posa2 = [0.05  0.50 0.9 0.22];
 posb =  [0.05  0.1 0.18 0.3];
-posc =  [0.3  0.1 0.18 0.3];
+posc =  [0.28  0.1 0.18 0.3];
 posd =  [0.53  0.1 0.18 0.3];
 pose =  [0.77  0.1 0.18 0.3];
 
@@ -32,14 +32,14 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 % Panel A: time courses comparison V1 and V3b
 
-COI = {'ONEPULSE'};
-TOI = [-0.1 0.8];
-AOI = {'V1', 'V3b'};
+conditionsOfInterest = {'CRF'};
+timepointsOfInterest = [-0.1 1.2];
+areasOfInterest      = {'V1', 'V3b'};
 
-stim_idx  = contains(stim_info.name, COI);
-t_idx     = d1.t>TOI(1) & d1.t<=TOI(2);
-chan_idx1 = find(strcmp(d1.channels.name, AOI{1}));
-chan_idx2 = find(strcmp(d1.channels.name, AOI{2}));
+stim_idx  = contains(stim_info.name, conditionsOfInterest);
+t_idx     = d1.t>timepointsOfInterest(1) & d1.t<=timepointsOfInterest(2);
+chan_idx1 = find(strcmp(d1.channels.name, areasOfInterest{1}));
+chan_idx2 = find(strcmp(d1.channels.name, areasOfInterest{2}));
 
 % Top: Data
 
@@ -64,7 +64,7 @@ ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
 ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
-legend(AOI, 'location', 'northeast');
+legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
 % Bottom: Model
@@ -82,7 +82,7 @@ hd = plot(c1(:), 'r-', 'linewidth', 2);
 hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.duration(stim_idx)*1000);
+set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.ISI(stim_idx)*1000);
 set(gca, 'ytick', [0 1]);
 box off,  axis tight
 
@@ -90,77 +90,96 @@ ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
 xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
-legend(AOI, 'location', 'northeast');
+legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
-% Panel B: model predictions for different areas superimposed
-COI = {'ONEPULSE-6'};
-TOI = [-0.1 1];
-stim_idx  = contains(stim_info.name, COI);
-t_idx     = d1.t>TOI(1) & d1.t<=TOI(2);
+%% Panel B:recovery for different areas superimposed
+[~, tspred1,w] = tde_computeISIrecovery(d1.data,d1.t,d1.stim_info,d1.srate,0.5, [], 'max');
+[~, tspred2] = tde_computeISIrecovery(d1.pred,d1.t,d1.stim_info,d1.srate,0.5, [], 'max');
+COI = 8;
+
 cmap1      = brewermap(height(d1.channels)+2, '*Greys');
 cmap1      = cmap1(1:height(d1.channels),:);
 cmap2      = brewermap(height(d1.channels)+2, '*OrRd');
 cmap2      = cmap2(1:height(d1.channels),:);
 
-subplot('position', posb); hold on
-x = d1.t(t_idx);
+t0 = d1.t(find(d1.t>0,1));
+x = t0:(1/d1.srate):w;
+x = floor(x*1000)/1000; 
+s_off = find(x>0.133,1);
+s = zeros(size(tspred1,1),1);
+s(2:s_off) = 1;
 
-s = stim_ts(t_idx,stim_idx);
+subplot('position', posb); hold on
 hs = plot(x,s, 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hs.Annotation.LegendInformation.IconDisplayStyle = 'off';
 
-%plot(x, squeeze(d1.pred(t_idx,stim_idx,:)), 'LineWidth',2);
-ts1 = squeeze(d1.data(t_idx,stim_idx,:));
-ts1 = ts1./max(ts1);
-%p1 = plot(x, ts1, 'LineWidth',2);
-%set(p1, {'color'}, num2cell(cmap1,2));
-%for ii = 1:size(p1,1), p1(ii).Annotation.LegendInformation.IconDisplayStyle = 'off'; end
-
-ts2 = squeeze(d1.pred(t_idx,stim_idx,:));
-ts2 = ts2./max(ts2);
+ts2 = squeeze(tspred2(:,COI,:));
 p2 = plot(x, ts2, 'LineWidth',2);
 set(p2, {'color'}, num2cell(cmap2,2));
 
 xlabel('Time (s)'); ylabel('Response (normalized)');
 legend(d1.channels.name);
-xlim([TOI(1)-0.1*TOI(1) TOI(2)+0.1*TOI(2)]); 
-ylim([0 1.1]);
+xlim([-0.1 w+0.10]); 
+%ylim([0 1.1]);
 %set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 %set(gca, 'ytick', [0 0.1 0.2 0.3]);
 legend('boxoff')
 
+subplot('position', posc); hold on
+hs = plot(x,s, 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hs.Annotation.LegendInformation.IconDisplayStyle = 'off';
 
-% Panel C, D, E: derived parameters summarized across areas
+ts2 = squeeze(tspred2(:,COI,:)./max(tspred1(:,1,:)));
+p2 = plot(x, ts2, 'LineWidth',2);
+set(p2, {'color'}, num2cell(cmap2,2));
+
+xlabel('Time (s)'); ylabel('Response (normalized)');
+xlim([-0.1 w+0.10]); 
+
+subplot('position', posd); hold on
+hs = plot(x,s, 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hs.Annotation.LegendInformation.IconDisplayStyle = 'off';
+
+ts2 = squeeze(tspred2(:,COI,:));
+ts2 = ts2./max(ts2);
+p2 = plot(x, ts2, 'LineWidth',2);
+set(p2, {'color'}, num2cell(cmap2,2));
+
+xlabel('Time (s)'); ylabel('Response (normalized)');
+xlim([-0.1 w+0.10]); 
+
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
+
+%% Panel D, C, E: derived parameters summarized across areas
 [~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample');   
 [m, se] = averageWithinArea(results.derived.params, group_prob, [], 10000);
 
+subplot('position', posb); hold on
+x = 1:height(channels);
+tde_plotPoints(m(4,:)', squeeze(se(4,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.8]);
+set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+set(gca, 'ytick', 0:0.2:0.8);
+ylabel('Time to recover 50% (s)');
+xlabel('Visual area');
+
 subplot('position', posc); hold on
 x = 1:height(channels);
-tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0)
-xlim([0 max(x)+1]); ylim([0 0.3]);
+tde_plotPoints(m(5,:)', squeeze(se(4,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.8]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-set(gca, 'ytick', [0 0.1 0.2 0.3]);
-
-ylabel('Time to peak (s)');
+set(gca, 'ytick', 0:0.2:0.8);
+ylabel('Time to recover 80% (s)');
 xlabel('Visual area');
 
 subplot('position', posd); hold on
 x = 1:height(channels);
-tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0)
-xlim([0 max(x)+1]); ylim([0 0.2]);
+tde_plotPoints(m(6,:)', squeeze(se(4,:,:)), x, 'errbar', 0)
+xlim([0 max(x)+1]); ylim([0 0.8]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-set(gca, 'ytick', [0 0.1 0.2]);
-ylabel('Fwhm (s)');
-xlabel('Visual area');
-
-subplot('position', pose); hold on
-x = 1:height(channels);
-tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0)
-xlim([0 max(x)+1]); ylim([0 0.6]);
-set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-set(gca, 'ytick', 0:0.2:0.6);
-ylabel('Ratio sustained/transient');
+set(gca, 'ytick', 0:0.2:0.8);
+ylabel('Time to recover 100 %(s)');
 xlabel('Visual area');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
