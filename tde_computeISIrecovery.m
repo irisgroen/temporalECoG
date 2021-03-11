@@ -111,10 +111,11 @@ for kk = 1:nDatasets
 
     % Compute recovery
     ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed); % in percentage
-    ts(:,1,kk) = pulse1_mn(t_idx1);
+    ts = [];
     for ii = 1:size(pulse2_sub,2)
-        ts(:,ii+1,kk) = pulse2_sub(t_idx2(:,ii),ii);
+        ts(:,ii,kk) = pulse2_sub(t_idx2(:,ii),ii);
     end
+    ts(:,ii+1,kk) = pulse1_mn(t_idx1);
     
     % Plot recovery
    %figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
