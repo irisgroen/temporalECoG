@@ -182,7 +182,7 @@ m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
 tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
 
-% Plot preduction
+% Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
 tde_plotPoints(m, se, x2, 'ci', 0, [], 50);
