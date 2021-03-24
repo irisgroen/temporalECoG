@@ -6,7 +6,7 @@ reComputeFlag = false;
 
 % Select epochs and channels, average trials within stimulus condition
 options = [];
-options.doplots = false;
+options.doplots = true;
 [data_selection, channels_selection, t, srate, options] = tde_selectData(data_full, options);
 
 % Generate stimulus timecourses
@@ -20,18 +20,22 @@ options.normalize_data = false;  % boolean
 % Plot average response per stimulus for selected data
 tde_plotData(data, channels, t, options);
 
-%% 2. Model fitting
+% 2. Model fitting
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([10]); 
+%modelfun = modelfuns([7 8 9]); 
+%modelfun = modelfuns([1 2 3 4]); 
+%modelfun = modelfuns([9 10 11 12 13]); 
+%modelfun = modelfuns([14 15 16 7 8]); 
+modelfun = modelfuns([13]);
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 
-LOADFITS = 1; % instead of fitting, load an existing saved model fit
+LOADFITS = 0; % instead of fitting, load an existing saved model fit
 saveStr = [];%'sixROIs';
 
 if LOADFITS  
@@ -42,7 +46,7 @@ else
     [params, pred] = tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options);
 end
 
-%% 3. Model evaluation
+% 3. Model evaluation
 
 % Compute R2 and derived parameters
 objFunction = modelfun;
@@ -62,40 +66,23 @@ saveDir = fullfile(analysisRootPath, 'figures');
 % Plot multiple model predictions (superimposed)
 tde_plotDataAndFits(results, data, channels, stim_ts, stim_info, t, saveDir, {'ONEPULSE', 'TWOPULSE', 'CRF'})
 
-%% HACK to plot areas superimposed
-tmp = results(1);
-for ii = 5%2:9
-    tmp.pred(:,:,1) = data2fit(:,:,ii);
-    tde_plotDataAndFits(tmp, data, channels, stim_ts, stim_info, t, [],{'ONEPULSE'})
-end
-set(gcf, 'Position', [121         622        1800         363]);
-
-tmp = results(1);
-for ii = 5%2:9
-    tmp.pred(:,:,1) = tmp.pred(:,:,ii);
-    tde_plotDataAndFits(tmp, results(1).pred, channels2fit, stim_ts, stim_info, t, [], {'ONEPULSE'})
-end
-set(gcf, 'Position', [121         622        1800         363]);
-
 %% 5. Plot derived and fitted parameters
 
-%saveDir = [];
-
 % model parameters
-saveDir = fullfile(analysisRootPath, 'figures', 'modelparams');
-tde_plotParams(results, channels, []);%close;
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
+tde_plotParams(results, channels, saveDir);%close;
 
 % model predictions (derived)
-saveDir = fullfile(analysisRootPath, 'figures', 'modelpredictions');
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelpredictions');
 tde_plotDerivedPredictions(results,channels,2,1, saveDir);
 
 %% UNDER DEVELOPMENT
 
 % data params 
 %close all;
-tde_plotDerivedParamsData(data,channels,t,stim_info, [],0);
+tde_plotDerivedParamsData(pred{1},channels,t,stim_info, [],0);
+tde_plotDerivedParamsData(data,channels,t,stim_info, {'V1', 'V2', 'V3'},0);
 
-%tde_plotDerivedParamsData(pred{5},channels,t,stim_info, {'V1', 'V2', 'V3'}, 0)
 %tde_computeDerivedParamsData(data,channels,t,stim_info);
 
 tde_plotDerivedParamsModel(params{1},modelfun{1}, channels,t,{'V1'});
