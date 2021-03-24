@@ -33,6 +33,7 @@ for kk = 1:nModels
     derivedPrm   = nan(3,nDatasets);
     derivedPredS = nan(2000,nDatasets);
     derivedPredT = nan(500,nDatasets);
+    pred_names   = [];
     
     % Loop over channels or channel averages
     for ii = 1:nDatasets

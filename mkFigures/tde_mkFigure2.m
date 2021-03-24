@@ -21,8 +21,8 @@ set(gcf,'position',get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]
 posa = [0.1 0.55 0.35 0.3];
-posb = [0.1 0.1 0.8 0.25];
-posc = [0.55 0.5 0.35 0.45];
+posb = [0.55 0.5 0.35 0.45];
+posc = [0.1 0.1 0.8 0.25];
 
 %% Panel A: example of compressive temporal summation 
 
@@ -71,48 +71,11 @@ xlabel('Stimulus duration (ms)'); ylabel('Neural response');
 legend({'Stimulus', 'Neural response', 'Linear prediction'}, 'location', 'northwest');
 legend('boxoff')
 
-%% Panel B: data and fits
-conditionsOfInterest = {'ONEPULSE'};
-timepointsOfInterest = [-0.1 0.8];
-
-stim_idx = contains(stim_info.name, conditionsOfInterest);
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-
-s = stim_ts(t_idx,stim_idx);
-d = data(t_idx,stim_idx);
-d_se_l = data_se(t_idx,stim_idx,1);
-d_se_u = data_se(t_idx,stim_idx,2);
-p = pred(t_idx,stim_idx);
-p_se_l = pred_se(t_idx,stim_idx,1);
-p_se_u = pred_se(t_idx,stim_idx,2);
-maxresp = max(d(:,1)); % scale stimulus to max of first condition
-
-subplot('position', posb); hold on
-
-hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
-hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
-hd = plot(d(:), 'k-', 'linewidth', 2);
-hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
-hp = plot(p(:), 'r-', 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', []);
-box off,  axis tight
-
-ylim([-2 25]);
-xlim([-20 length(s(:)) + 20]);
-
-xlabel('Time'); ylabel('Change in power (x-fold)');
-legend({'Neural response', 'DN prediction'}, 'location', 'northwest');
-legend('boxoff');
-
-%% Panel C: temporal summation across electrodes
+%% Panel B: temporal summation across electrodes
 
 % Find stimulus index
 stim_idx = find(contains(stim_info.name, 'ONEPULSE'));
-x = stim_info.duration(stim_idx); % in ms
+x = stim_info.duration(stim_idx)*1000; % in ms
 
 % Generate new stimuli based on params
 nStim = 50;
@@ -123,10 +86,10 @@ x2 = stim_info2.duration(stim_idx2); % in ms
 
 % Predict model responses for new stimuli
 srate = D.channels.sampling_frequency(1);
-pred = nan([size(stim2(:,stim_idx2)) height(D.channels)]);
+pred2 = nan([size(stim2(:,stim_idx2)) height(D.channels)]);
 for ii = 1:size(D.params,2)
     prm = D.params(:,ii);
-   	[~, pred(:,:,ii)] = D.objFunction(prm, [], stim2(:,stim_idx2), srate);      
+   	[~, pred2(:,:,ii)] = D.objFunction(prm, [], stim2(:,stim_idx2), srate);      
 end
 
 % Determine time index over which to compute summary statistics
@@ -135,14 +98,14 @@ t_idx = t>0 & t<1;
 % Concatenate data and prediction (in order to make sure probabilistic
 % assignment of electrodes to areas is done the same way for both).
 d = D.data(t_idx,stim_idx,:);
-d = cat(2,d,pred(t_idx, :,:));
+d = cat(2,d,pred2(t_idx, :,:));
 
 % Compute sum across stim_on window
 m_conc = squeeze(sum(d,1)); 
 [m_conc, se_conc] = averageWithinArea(m_conc, group_prob, [], 1000);
 
 % Plot
-subplot('position', posc); hold on
+subplot('position', posb); hold on
 
 % Plot linear prediction 
 h0 = line([0 x(end)], [0 1], 'linestyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -170,6 +133,43 @@ axis tight
 xlim([0 550]);
 ylim([0 1.3]);
 axis square
+
+%% Panel C: data and fits
+conditionsOfInterest = {'ONEPULSE'};
+timepointsOfInterest = [-0.1 0.8];
+
+stim_idx = contains(stim_info.name, conditionsOfInterest);
+t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
+
+s = stim_ts(t_idx,stim_idx);
+d = data(t_idx,stim_idx);
+d_se_l = data_se(t_idx,stim_idx,1);
+d_se_u = data_se(t_idx,stim_idx,2);
+p = pred(t_idx,stim_idx);
+p_se_l = pred_se(t_idx,stim_idx,1);
+p_se_u = pred_se(t_idx,stim_idx,2);
+maxresp = max(d(:,1)); % scale stimulus to max of first condition
+
+subplot('position', posc); hold on
+
+hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
+hd = plot(d(:), 'k-', 'linewidth', 2);
+hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
+hp = plot(p(:), 'r-', 'linewidth', 2);
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', stim_info.duration(stim_idx)*1000, 'xticklabelrotation', 45);
+box off,  axis tight
+
+ylim([-2 25]);
+xlim([-20 length(s(:)) + 20]);
+
+xlabel('Stimulus duration(ms)'); ylabel('Change in power (x-fold)');
+legend({'Neural response', 'DN prediction'}, 'location', 'northwest');
+legend('boxoff');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
 

@@ -35,44 +35,58 @@ cmap1    = brewermap(nStim+2, 'Greys');
 cmap1    = cmap1(3:end,:);
 cmap2    = brewermap(nStim+2, 'OrRd');
 cmap2    = cmap2(3:end,:);
-xmax = 100;
+ymax = 100;
 
 % Plot
-subplot(2,3,1); hold on
+subplot(2,4,1); hold on
 p1 = plot(data(t_idx,stim_idx),'LineWidth', 2);
 set(p1, {'color'}, num2cell(cmap1,2));
 
 % Format axes
 axis tight
-set(gca, 'xlim', [0 xmax], 'ylim', [-2 22]);
+set(gca, 'xlim', [0 ymax], 'ylim', [-2 22]);
 xlabel('Time (ms)');
 ylabel('Change in power (xfold)');
 
-subplot(2,3,2); hold on
+subplot(2,4,2); hold on
 p2 = plot(pred(t_idx,stim_idx),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
 
 % Format axes
 axis tight
-set(gca, 'xlim', [0 xmax], 'ylim', [-2 22]);
+set(gca, 'xlim', [0 ymax], 'ylim', [-2 22]);
 xlabel('Time (ms)');
 ylabel('Change in power (xfold)');
 
-timepointsOfInterest = [0 1];
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-cond = 3;
 
-subplot(2,3,3); hold on
+cond = 4;
+
+subplot(2,4,3); hold on
 hs = plot(t,stim(:,stim_idx(cond)), 'color', [0.7 0.7 0.7], 'linewidth', 1);
 plot(t,numrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', 'b');
 plot(t,demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', 'c');
-%plot(numrsp(t_idx,stim_idx(cond))./demrsp(t_idx,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
+%plot(t,numrsp(:,stim_idx(cond))./demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+legend({'Numerator', 'Denominator', 'Prediction'}, 'location', 'northeast'); legend boxoff
 
-legend({'Numerator', 'Denominator'}, 'location', 'northeast'); legend boxoff
-set(gca, 'xlim', [-0.15 0.6], 'ylim', [0 0.4]);
+set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 0.6]);
 xlabel('Time (ms)');
 ylabel('Model output (a.u.)');
+
+cond = 1;
+
+subplot(2,4,4); hold on
+hs = plot(t,stim(:,stim_idx(cond)), 'color', [0.7 0.7 0.7], 'linewidth', 1);
+plot(t,numrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', 'b');
+plot(t,demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', 'c');
+%plot(t,numrsp(:,stim_idx(cond))./demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 0.2]);
+xlabel('Time (ms)');
+ylabel('Model output (a.u.)');
+
+
   
 %% Bottom row: adaptation
 w = 0.3;
@@ -86,48 +100,62 @@ cmap1    = brewermap(nStim+2, 'Greys');
 cmap1    = cmap1(3:end,:);
 cmap2    = brewermap(nStim+2, 'OrRd');
 cmap2    = cmap2(3:end,:);
-xmax     = 100;
+ymax     = 100;
 
 % Plot
-subplot(2,3,4); hold on
+subplot(2,4,5); hold on
 p1 = plot(data2(:,1:end-1),'LineWidth', 2);
 set(p1, {'color'}, num2cell(cmap1,2));
 
 % Format axes
 axis tight
-set(gca, 'xlim', [0 xmax], 'ylim', [-2 22]);
+set(gca, 'xlim', [0 ymax], 'ylim', [-2 22]);
 xlabel('Time (ms)');
 ylabel('Change in power (xfold)');
 
 % Plot
-subplot(2,3,5); hold on
+subplot(2,4,6); hold on
 p2 = plot(pred2(:,1:end-1),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
 
 % Format axes
 axis tight
-set(gca, 'xlim', [0 xmax], 'ylim', [-2 22]);
+set(gca, 'xlim', [0 ymax], 'ylim', [-2 22]);
 xlabel('Time (ms)');
 ylabel('Change in power (xfold)');
 
-conditionsOfInterest = {'TWOPULSE-3'};
+conditionsOfInterest = {'TWOPULSE-5'};
 stim_idx = find(contains(D.stim_info.name, conditionsOfInterest));
-timepointsOfInterest = [0 1];
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-
+ 
 % Plot
-subplot(2,3,6); hold on
-cond = 4;
+subplot(2,4,7); hold on
 hs = plot(t,stim(:,stim_idx), 'color', [0.7 0.7 0.7], 'linewidth', 1);
 plot(t,numrsp(:,stim_idx),'LineWidth', 2, 'Color', 'b');
 plot(t,demrsp(:,stim_idx),'LineWidth', 2, 'Color', 'c');
-%plot(t,numrsp(t_idx,stim_idx(cond))./demrsp(t_idx,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
+%plot(t,numrsp(:,stim_idx)./demrsp(:,stim_idx),'LineWidth', 2, 'Color', cmap2(4,:));
 %legend({'numerator', 'denominator'}, 'location', 'northeast'); legend boxoff
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-set(gca, 'xlim', [0.1 0.6], 'ylim', [0 1.1]);
+set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 1]);%([0 5.5]);
 xlabel('Time (ms)');
 ylabel('Model output (a.u.)');
+
+conditionsOfInterest = {'TWOPULSE-2'};
+stim_idx = find(contains(D.stim_info.name, conditionsOfInterest));
+
+% Plot
+subplot(2,4,8); hold on
+hs = plot(t,stim(:,stim_idx), 'color', [0.7 0.7 0.7], 'linewidth', 1);
+plot(t,numrsp(:,stim_idx),'LineWidth', 2, 'Color', 'b');
+plot(t,demrsp(:,stim_idx),'LineWidth', 2, 'Color', 'c');
+%plot(t,numrsp(:,stim_idx)./demrsp(:,stim_idx),'LineWidth', 2, 'Color', cmap2(4,:));
+%legend({'numerator', 'denominator'}, 'location', 'northeast'); legend boxoff
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 1]); %[0 5.5]);
+xlabel('Time (ms)');
+ylabel('Model output (a.u.)');
+
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
 
