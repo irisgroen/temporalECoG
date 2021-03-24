@@ -32,7 +32,7 @@ nSubjects = length(data);
 out = cell(nSubjects,1);
 
 % Loop over subjects
-for ii = 2:nSubjects
+for ii = 1:nSubjects
 
     subject = data{ii}.subject;
 	channels = data{ii}.channels;
@@ -54,7 +54,7 @@ for ii = 2:nSubjects
 %             end
 %             
             data2fit = mean(data{ii}.ts,3);
-            stimulus = {bar_apertures};
+            stimulus = {bar_apertures(:,:,data{ii}.stim_inx)};
             
             %results = analyzePRF_bounds(stimulus, data2fit, tr, opt);
             results = analyzePRFdog(stimulus, data2fit, tr, opt);
