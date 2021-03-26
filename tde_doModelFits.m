@@ -1,4 +1,4 @@
-function [params, pred] = tde_doModelFits(modelfun,stim,data,channels,srate,t,stim_info,options,saveDir,saveStr)
+function tde_doModelFits(modelfun,stim,data,channels,srate,t,stim_info,options,saveDir,saveStr)
 
 % Wrapper around tde_fitModel to run multiple models in a loop 
 
