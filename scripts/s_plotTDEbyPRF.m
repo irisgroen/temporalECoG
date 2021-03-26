@@ -13,7 +13,7 @@ channelsPRF = tde_getPRFparams(d.channels);
 R2thresh         = 30;
 eccfovthresh     = 2;
 eccparafovthresh = 16;
-eccmax           = 20;
+eccmax           = 16;
 
 % select channels
 chan_idx_R2         = channelsPRF.aprf_R2 > R2thresh;
@@ -22,7 +22,7 @@ chan_idx_eccparafov = channelsPRF.aprf_ecc >= eccfovthresh & channelsPRF.aprf_ec
 chan_idx_eccper     = channelsPRF.aprf_ecc >= eccparafovthresh & channelsPRF.aprf_ecc < eccmax;
 
 %% contrast temporal time courses
-%areaNames = {'V1','V2','V3','higher'};
+areaNames = {'V1','V2','V3', 'higher'};
 areaNames = {'V123','higher'};
 fun = @mean;
 numboot = 1000;

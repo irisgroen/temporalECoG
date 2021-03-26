@@ -30,7 +30,7 @@ for kk = 1:nModels
     R2stim       = nan(nStim,nDatasets);
     R2concat     = nan(1,nDatasets);
     R2cond       = nan(length(unique(stimcond)), nDatasets); 
-    derivedPrm   = nan(3,nDatasets);
+    derivedPrm   = nan(4,nDatasets);
     derivedPredS = nan(2000,nDatasets);
     derivedPredT = nan(500,nDatasets);
     pred_names   = [];
@@ -63,10 +63,9 @@ for kk = 1:nModels
             R2cond(jj,ii) = computeR2(DATA,MODEL);
         end
         
-        %fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
+        fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
     
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
-        %fprintf('[%s] Computing derived parameters...\n', mfilename)
         
         if includeDerivedParams
             % Compute parameters and generate a prediction to a sustained stimulus:
@@ -75,11 +74,6 @@ for kk = 1:nModels
             derivedPrm(:,ii) = derived_prm;
             derivedPredS(:,ii) = pred_sustained;
             derivedPredT(:,ii) = pred_transient;
-%             % Concatenate across datasets
-%             for jj = 1:length(derived_prm)
-%                 derivedPrm{jj}(:,ii) = derived_prm{jj};
-%             end
-%             derivedPred(:,ii) = pred_derived;
         end
         
     end
