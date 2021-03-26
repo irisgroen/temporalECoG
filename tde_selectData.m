@@ -33,7 +33,7 @@ if ~isfield(opts,'baseline_time') || isempty(opts.baseline_time)
     opts.baseline_time = [-0.1 0]; % time period across which to compute normalization baseline
 end
 if ~isfield(opts,'epoch_jump_thresh') || isempty(opts.epoch_jump_thresh)
-    opts.epoch_jump_thresh = 500; % max jump in voltage allowed within stim_on period
+    opts.epoch_jump_thresh = 200; % max jump in voltage allowed within stim_on period
 end
 if ~isfield(opts,'epoch_outlier_thresh') || isempty(opts.epoch_outlier_thresh)
     opts.epoch_outlier_thresh = 3; % xfold of the standard deviation of the maximum broadband values within each epoch
@@ -48,7 +48,7 @@ if ~isfield(opts,'elec_mean_thresh') || isempty(opts.elec_mean_thresh)
     opts.elec_mean_thresh = 0; % minimum required mean response during stim_on period in % signal change
 end
 if ~isfield(opts,'elec_splithalf_thresh') || isempty(opts.elec_splithalf_thresh)
-    opts.elec_splithalf_thresh = 0.1; % minimum required R2 between split halves of data
+    opts.elec_splithalf_thresh = 0.2; % minimum required R2 between split halves of data
 end
 if ~isfield(opts,'elec_meanpredict_thresh') || isempty(opts.elec_meanpredict_thresh)
     opts.elec_meanpredict_thresh = 0; % minimum required R2 for prediction by mean (1 - (SSEresidual/SSEtotal)
@@ -153,7 +153,8 @@ for ii = 1:length(data) % Loop over subjects
         
         fprintf('[%s] Removing bad epochs...\n',mfilename);
 
-        [outlier_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs_v, epochs_b, t, opts);
+        [select_idx, max_epochs, outlier_thresh] = ecog_selectEpochs(epochs_v, epochs_b, t, opts);
+        outlier_idx = ~select_idx;
         
         % Plot the included and excluded trials: all channels combined
         if savePlots
@@ -225,9 +226,11 @@ for ii = 1:length(data) % Loop over subjects
         %% STEP 3 Select electrodes   
         fprintf('[%s] Selecting electrodes...\n',mfilename);
 
-        [epochs_selected, channels_selected, select_idx, R2, epochs_split] = ...
-            ecog_selectElectrodes(epochs, channels, events, t, opts);
-
+        [select_idx, R2, epochs_split] = ecog_selectElectrodes(epochs, channels, events, t, opts);
+        channels.noiseceilingR2 = round(R2,2);
+        epochs_selected = epochs(:,:,select_idx);
+        channels_selected = channels(select_idx,:);
+        
         if savePlots    
             
             fprintf('[%s] Plotting electrode selection...\n',mfilename);
