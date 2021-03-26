@@ -4,7 +4,7 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
 %
 % <objFunction> model form
 % <stimuli> stimulus time courses (time x condition)
-% <data> provides the data as a cell vector of voxels x time.  can also be
+% <data> provides the data as a cell vector of time x conditions. can also be
 %   X x Y x Z x time.  the number of time points should match the number of 
 %   time points in <stimulus>.
 % <srate> sample rate of the data
