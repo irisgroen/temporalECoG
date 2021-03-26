@@ -8,14 +8,14 @@ datatype = 'individualelecs';
 
 % Select electrodes and compute averages 
 [~, ~, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample', {'V1'});   
-[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
-[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 10000);
+[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 10000);
 t = D.t;
 stim = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
-figure(1); clf
+figure(2); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]
@@ -157,7 +157,7 @@ tde_plotPoints(m, se, x, 'errbar', 1, [], 50);
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'ci', 1, [], 50);
+tde_plotPoints(m, se, x2, 'ci', 1, [], 50,'r');
 
 % Format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
@@ -185,7 +185,7 @@ tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'ci', 0, [], 50);
+tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 
 % Format axes
 l = get(gca, 'YLim'); ylim([50 l(2)]);
@@ -224,7 +224,7 @@ tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
 % Plot preduction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'ci', 0, [], 50);
+tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 
 % format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';

@@ -1,15 +1,15 @@
 % tde_mkFigure2
 
 % Load data and fits
-modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+modelfun = @DN;
 xvalmode = 0;
 datatype = 'individualelecs';
 [D] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Select electrodes and compute averages 
 [~, ~, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample', {'V1'});   
-[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
-[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 10000);
+[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 10000);
 t = D.t;
 stim_ts = D.stim;
 stim_info = D.stim_info;
@@ -120,7 +120,7 @@ tde_plotPoints(m, se, x, 'errbar', 1,[],50);
 % Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
-tde_plotPoints(m, se, x2, 'ci', 1,[],50);
+tde_plotPoints(m, se, x2, 'ci', 1,[],50, 'r');
 
 % Format axes
 xlim([0 550]);

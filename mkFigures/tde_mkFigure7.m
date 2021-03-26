@@ -1,31 +1,30 @@
 % tde_mkFigure 7
 
-modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+% Load data and fits
+modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-
-datatype = 'electrodeaverages';
-d1 = tde_loadDataForFigure(modelfun, xvalmode, datatype);
-
 datatype = 'individualelecs';
-d2 = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+D = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
-[results] = tde_evaluateModelFit(d2);
+% Compute derived parameters
+[results] = tde_evaluateModelFit(D);
 
-[stim_ts, stim_info] = tde_generateStimulusTimecourses(d1.options.stimnames,d1.t);
+% Select electrodes and compute averages 
+[~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
+[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
+[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+t = D.t;
+stim_ts = D.stim;
+stim_info = D.stim_info;
 
 %% Plot specs
 % Subplot positions: % [left bottom width height]
 
 posa1 = [0.05  0.75 0.9 0.22];
 posa2 = [0.05  0.50 0.9 0.22];
-posb =  [0.05  0.1 0.18 0.3];
-posc =  [0.3  0.1 0.18 0.3];
-posd =  [0.53  0.1 0.18 0.3];
-pose =  [0.77  0.1 0.18 0.3];
-
-% posb =  [0.05  0.1 0.25 0.3];
-% posc =  [0.375 0.1 0.25 0.3];
-% posd =  [0.7   0.1 0.25 0.3];
+posb =  [0.05  0.1 0.25 0.3];
+posc =  [0.375 0.1 0.25 0.3];
+posd =  [0.7   0.1 0.25 0.3];
 
 figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
@@ -37,17 +36,17 @@ TOI = [-0.1 0.8];
 AOI = {'V1', 'V3b'};
 
 stim_idx  = contains(stim_info.name, COI);
-t_idx     = d1.t>TOI(1) & d1.t<=TOI(2);
-chan_idx1 = find(strcmp(d1.channels.name, AOI{1}));
-chan_idx2 = find(strcmp(d1.channels.name, AOI{2}));
+t_idx     = t>TOI(1) & t<=TOI(2);
+chan_idx1 = find(strcmp(channels.name, AOI{1}));
+chan_idx2 = find(strcmp(channels.name, AOI{2}));
 
 % Top: Data
 
 subplot('position', posa1); hold on
 
 s = stim_ts(t_idx,stim_idx);
-c1 = d1.data(t_idx,stim_idx,chan_idx1);
-c2 = d1.data(t_idx,stim_idx,chan_idx2);
+c1 = data(t_idx,stim_idx,chan_idx1);
+c2 = data(t_idx,stim_idx,chan_idx2);
 c1 = c1/max(c1(:,end));
 c2 = c2/max(c2(:,end));
 
@@ -72,8 +71,8 @@ legend('boxoff');
 subplot('position', posa2); hold on
 
 s = stim_ts(t_idx,stim_idx);
-c1 = d1.pred(t_idx,stim_idx,chan_idx1);
-c2 = d1.pred(t_idx,stim_idx,chan_idx2);
+c1 = pred(t_idx,stim_idx,chan_idx1);
+c2 = pred(t_idx,stim_idx,chan_idx2);
 c1 = c1/max(c1(:,end));
 c2 = c2/max(c2(:,end));
 
@@ -93,51 +92,12 @@ xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broa
 legend(AOI, 'location', 'northeast');
 legend('boxoff');
 
-% Panel B: model predictions for different areas superimposed
-COI = {'ONEPULSE-6'};
-TOI = [-0.1 1];
-stim_idx  = contains(stim_info.name, COI);
-t_idx     = d1.t>TOI(1) & d1.t<=TOI(2);
-cmap1      = brewermap(height(d1.channels)+2, '*Greys');
-cmap1      = cmap1(1:height(d1.channels),:);
-cmap2      = brewermap(height(d1.channels)+2, '*OrRd');
-cmap2      = cmap2(1:height(d1.channels),:);
-
-subplot('position', posb); hold on
-x = d1.t(t_idx);
-
-s = stim_ts(t_idx,stim_idx);
-hs = plot(x,s, 'color', [0.7 0.7 0.7], 'linewidth', 1);
-hs.Annotation.LegendInformation.IconDisplayStyle = 'off';
-
-%plot(x, squeeze(d1.pred(t_idx,stim_idx,:)), 'LineWidth',2);
-ts1 = squeeze(d1.data(t_idx,stim_idx,:));
-ts1 = ts1./max(ts1);
-%p1 = plot(x, ts1, 'LineWidth',2);
-%set(p1, {'color'}, num2cell(cmap1,2));
-%for ii = 1:size(p1,1), p1(ii).Annotation.LegendInformation.IconDisplayStyle = 'off'; end
-
-ts2 = squeeze(d1.pred(t_idx,stim_idx,:));
-ts2 = ts2./max(ts2);
-p2 = plot(x, ts2, 'LineWidth',2);
-set(p2, {'color'}, num2cell(cmap2,2));
-
-xlabel('Time (s)'); ylabel('Response (normalized)');
-legend(d1.channels.name);
-xlim([TOI(1)-0.1*TOI(1) TOI(2)+0.1*TOI(2)]); 
-ylim([0 1.1]);
-%set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-%set(gca, 'ytick', [0 0.1 0.2 0.3]);
-legend('boxoff')
-
-
-% Panel C, D, E: derived parameters summarized across areas
-[~, channels, group_prob] = groupElecsByVisualArea(d2.channels, 'probabilisticresample');   
+% Panel B, C, D: derived parameters summarized across areas
 [m, se] = averageWithinArea(results.derived.params, group_prob, [], 10000);
 
-subplot('position', posc); hold on
+subplot('position', posb); hold on
 x = 1:height(channels);
-tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0)
+tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0);
 xlim([0 max(x)+1]); ylim([0 0.3]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 0.1 0.2 0.3]);
@@ -145,18 +105,18 @@ set(gca, 'ytick', [0 0.1 0.2 0.3]);
 ylabel('Time to peak (s)');
 xlabel('Visual area');
 
-subplot('position', posd); hold on
+subplot('position', posc); hold on
 x = 1:height(channels);
-tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0)
+tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0);
 xlim([0 max(x)+1]); ylim([0 0.2]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 0.1 0.2]);
 ylabel('Fwhm (s)');
 xlabel('Visual area');
 
-subplot('position', pose); hold on
+subplot('position', posd); hold on
 x = 1:height(channels);
-tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0)
+tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0);
 xlim([0 max(x)+1]); ylim([0 0.6]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', 0:0.2:0.6);
@@ -171,11 +131,11 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 x = 1:height(channels);
 
-ylabels = {'Time to peak', 'Ratio sustained/transient', 'Fwhm', 'Time to recover'};
+ylabels = {'Time to peak', 'Fwhm', 'Ratio sustained/transient',};
 
 xlabel('Visual area');
 
-subjectNames = unique(d2.channels.subject_name);
+subjectNames = unique(D.channels.subject_name);
 
 cmap = brewermap(length(subjectNames),'Set2');
 %cmap(:,[2 3]) = 0.5;
@@ -191,9 +151,9 @@ for jj = 1:nRows
     for ii = 1:nCols
         
         c = c+1;
-        idx = contains(d2.channels.subject_name, subjectNames{ii});
-        [~, ~, group_prob] = groupElecsByVisualArea(d2.channels(idx,:), 'probabilisticresample');  
-        [m, se] = averageWithinArea(results.derived.params(:,idx), group_prob, [], 1000);
+        idx = contains(D.channels.subject_name, subjectNames{ii});
+        [~, ~, group_prob] = groupElecsByVisualArea(D.channels(idx,:), 'probabilisticresample');  
+        [m, se] = averageWithinArea(results.derived.params(:,idx), group_prob, [], 10000);
         
         subplot(nRows,nCols,c);hold on
 
@@ -205,10 +165,9 @@ for jj = 1:nRows
         %hp.LineWidth = 1;
         xlim([0 max(x)+1]); 
         %ylim([minY(jj)-0.1*minY(jj) maxY(jj)+0.1*maxY(jj)]);
-        if jj == 1, ylim([0 0.4]), end
-        if jj == 2, ylim([0 0.7]), end
+        if jj == 1, ylim([0 0.5]), end
+        if jj == 2, ylim([0 1]), end
         if jj == 3, ylim([0 0.3]), end
-        if jj == 4, ylim([0 1.5]), end
 
         %set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
         if ii > 1, set(gca, 'ytick', []); end
