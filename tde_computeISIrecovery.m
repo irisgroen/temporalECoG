@@ -111,7 +111,6 @@ for kk = 1:nDatasets
 
     % Compute recovery
     ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed); % in percentage
-    ts = [];
     for ii = 1:size(pulse2_sub,2)
         ts(:,ii,kk) = pulse2_sub(t_idx2(:,ii),ii);
     end
