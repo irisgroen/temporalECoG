@@ -1,6 +1,6 @@
 
 % Load data and fits
-modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
 datatype = 'electrodeaverages';
 
