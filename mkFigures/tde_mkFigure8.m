@@ -3,8 +3,9 @@
 % Load data and fits
 modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
+datastr = 'bads';
 datatype = 'individualelecs';
-D = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
 % Compute derived parameters
 [results] = tde_evaluateModelFit(D);
@@ -81,7 +82,7 @@ hd = plot(c1(:), 'r-', 'linewidth', 2);
 hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.ISI(stim_idx)*1000);
+set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.ISI(stim_idx)*1000, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 1]);
 box off,  axis tight
 
@@ -93,18 +94,18 @@ legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
 %% Panel B:recovery for different areas superimposed
-[ISIrecover] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
-[m, se] = averageWithinArea(ISIrecover, group_prob, [], 10000);
-%m = m(2:end,:); se = se(2:end,:,:);
+[ISIrecover_data] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
+[ISIrecover_pred] = tde_computeISIrecovery(D.pred,D.t,D.stim_info,D.srate,0.5, [], 'max');
+
+[m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, [], 10000);
+[m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, [], 10000);
 
 cmap2      = brewermap(height(channels)+2, '*PuBuGn');
 cmap2      = cmap2(1:height(channels),:);
 
-%conditionsOfInterest = {'TWOPULSE'};
-%stim_idx  = contains(stim_info.name, conditionsOfInterest);
 x = stim_info.ISI(stim_idx)*1000; % in ms
-% x = 1:7;%
-chan_ind = 1:5;
+
+chan_ind = 1:height(channels);
 subplot('position', posb); hold on
 
 % Plot linear prediction 
@@ -113,16 +114,17 @@ set(gca, 'xtick', x, 'xticklabelrotation', 45);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 for ii = chan_ind
-    [hp, hc] = tde_plotPoints(m(:,ii), squeeze(se(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
+    [hp, hc] = tde_plotPoints(m_data(:,ii), squeeze(se_data(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
 end
-set(gca, 'ylim', [0 1.5]);
+ylim([0 1.5]);
+xlim([-20 x(end)+20]);
+
 legend(channels.name(chan_ind), 'location', 'southeast');
 legend boxoff
 xlabel('Stimulus interval (ms)');
 ylabel('Recovery ratio');
 
 subplot('position', posc); hold on
-chan_ind = 6:height(channels);
 
 % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -130,11 +132,10 @@ set(gca, 'xtick', x, 'xticklabelrotation', 45);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 for ii = chan_ind
-    [hp, hc] = tde_plotPoints(m(:,ii), squeeze(se(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
+    [hp, hc] = tde_plotPoints(m_pred(:,ii), squeeze(se_pred(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
 end
-set(gca, 'ylim', [0 1.5]);
-legend(channels.name(chan_ind), 'location', 'southeast');
-legend boxoff
+ylim([0 1.5]);
+xlim([-20 x(end)+20]);
 xlabel('Stimulus interval (ms)');
 ylabel('Recovery ratio');
 
@@ -143,7 +144,7 @@ ylabel('Recovery ratio');
 
 subplot('position', posd); hold on
 x = 1:height(channels);
-tde_plotPoints(m', se, x, 'errbar', 0);
+tde_plotPoints(m', se, x, 'errbar', 0, [], 40);
 xlim([0 max(x)+1]); ylim([0 0.8]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', 0:0.2:0.8);

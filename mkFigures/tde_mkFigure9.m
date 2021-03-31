@@ -3,11 +3,12 @@
 % Load data and fits
 modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
+datastr = 'bads';
 datatype = 'individualelecs';
-D = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
 % Compute derived parameters
-%[results] = tde_evaluateModelFit(D);
+[results] = tde_evaluateModelFit(D);
 
 % Select electrodes and compute averages 
 [~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
@@ -62,7 +63,7 @@ box off,  axis tight
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
-ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+ylabel(sprintf('Response \n (normalized)')); 
 legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
@@ -88,72 +89,40 @@ box off,  axis tight
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
-xlabel('Contrast (%)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+xlabel('Contrast (%)'); ylabel(sprintf('Model prediction \n (normalized)')); 
 legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
-%% Panel B:recovery for different areas superimposed
-[ISIrecover,ts,w] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
-[m, se] = averageWithinArea(ISIrecover, group_prob, [], 10000);
-%m = m(2:end,:); se = se(2:end,:,:);
+%% Panel B: c50 summarized across areas
+[m, se] = averageWithinArea(results.derived.params(5,:), group_prob, [], 10000);
 
-cmap2      = brewermap(height(channels)+2, '*PuBuGn');
-cmap2      = cmap2(1:height(channels),:);
-
-%conditionsOfInterest = {'TWOPULSE'};
-%stim_idx  = contains(stim_info.name, conditionsOfInterest);
-x = stim_info.ISI(stim_idx)*1000; % in ms
-% x = 1:7;%
-chan_ind = 1:5;
 subplot('position', posb); hold on
-
-% Plot linear prediction 
-h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
-set(gca, 'xtick', x, 'xticklabelrotation', 45);
-set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-for ii = chan_ind
-    [hp, hc] = tde_plotPoints(m(:,ii), squeeze(se(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
-end
-set(gca, 'ylim', [0 1.5]);
-legend(channels.name(chan_ind), 'location', 'southeast');
-legend boxoff
-xlabel('Stimulus interval (ms)');
-ylabel('Recovery ratio');
-
-subplot('position', posc); hold on
-chan_ind = 6:height(channels);
-
-% Plot linear prediction 
-h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
-set(gca, 'xtick', x, 'xticklabelrotation', 45);
-set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-for ii = chan_ind
-    [hp, hc] = tde_plotPoints(m(:,ii), squeeze(se(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
-end
-set(gca, 'ylim', [0 1.5]);
-legend(channels.name(chan_ind), 'location', 'southeast');
-legend boxoff
-xlabel('Stimulus interval (ms)');
-ylabel('Recovery ratio');
-
-%% Panel D: tisi summarized across areas
-[m, se] = averageWithinArea(results.derived.params(4,:), group_prob, [], 10000);
-
-subplot('position', posd); hold on
 x = 1:height(channels);
-tde_plotPoints(m', se, x, 'errbar', 0);
-xlim([0 max(x)+1]); ylim([0 0.8]);
+tde_plotPoints(m', se, x, 'errbar', 0, [], 40);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-set(gca, 'ytick', 0:0.2:0.8);
-ylabel('Time to recover 95% (s)');
+ylabel('C50 (%)');
 xlabel('Visual area');
 
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
+% Determine time index over which to compute sum
+t_idx = t>0.05 & t<1.0;
 
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+d = D.data(t_idx,stim_idx,:);
+
+% Compute sum across stim_on window
+sumd = squeeze(max(d,[],1)); 
+c50 = [];
+for ii = 1:size(sumd,2)
+    [~,c50(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,sumd(:,ii));
+end
+
+[m, se] = averageWithinArea(c50, group_prob, [], 10000);
+tde_plotPoints(m', se, x, 'errbar', 0, [], 40, 'r');
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
+xlim([0 max(x)+1]); ylim([0 100]);
 
 %% %tmp
 [ISIrecover,ts,w] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');

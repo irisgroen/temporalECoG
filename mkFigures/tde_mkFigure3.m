@@ -20,8 +20,8 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]
 posa = [0.05 0.55 0.4 0.3];
-posb = [0.05 0.05 0.9 0.35];
-posc = [0.55 0.5 0.4 0.45];
+posb = [0.55 0.5 0.4 0.45];
+posc = [0.05 0.05 0.9 0.35];
 
 %% Panel A: example of compressive temporal summation 
 
@@ -59,43 +59,7 @@ xlabel('Stimulus interval (ms)'); ylabel('Neural response');
 legend({'Stimulus', 'Neural response'}, 'location', 'northwest');
 legend('boxoff')
 
-%% Panel B: data and fits
-conditionsOfInterest = {'ONEPULSE-5', 'TWOPULSE'};
-timepointsOfInterest = [-0.1 1];
-
-stim_idx = contains(stim_info.name, conditionsOfInterest);
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-
-s = stim(t_idx,stim_idx);
-d = data(t_idx,stim_idx);
-d_se_l = data_se(t_idx,stim_idx,1);
-d_se_u = data_se(t_idx,stim_idx,2);
-p = pred(t_idx,stim_idx);
-p_se_l = pred_se(t_idx,stim_idx,1);
-p_se_u = pred_se(t_idx,stim_idx,2);
-
-maxresp = max(d(:,1)); % scale stimulus to max of first condition
-
-subplot('position', posb); hold on
-hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
-hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
-hd = plot(d(:), 'k-', 'linewidth', 2);
-hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
-hp = plot(p(:), 'r-', 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', []);
-box off;  
-ylim([-2 30]);
-xlim([-20 length(s(:)) + 20]);
-
-xlabel('Time'); ylabel('Change in broadband (x-fold)'); 
-legend({'Neural response', 'DN model prediction'}, 'location', 'northwest');
-legend('boxoff');
-
-%% Panel C: recovery with adaptation: individual electrodes
+%% Panel B: recovery with adaptation: individual electrodes
 
 % Find stimulus index
 stim_idx = find(contains(stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
@@ -129,7 +93,7 @@ m = cat(1,m,m2);
 [m_conc, se_conc] = averageWithinArea(m, group_prob, [], 1000);
 
 % Plot
-subplot('position', posc); hold on
+subplot('position', posb); hold on
 
 % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -154,3 +118,39 @@ legend({'Linear prediction', 'Neural response', 'DN model prediction'}, 'locatio
 legend('boxoff')
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
+
+%% Panel C: data and fits
+conditionsOfInterest = {'ONEPULSE-5', 'TWOPULSE'};
+timepointsOfInterest = [-0.1 1];
+
+stim_idx = contains(stim_info.name, conditionsOfInterest);
+t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
+
+s = stim(t_idx,stim_idx);
+d = data(t_idx,stim_idx);
+d_se_l = data_se(t_idx,stim_idx,1);
+d_se_u = data_se(t_idx,stim_idx,2);
+p = pred(t_idx,stim_idx);
+p_se_l = pred_se(t_idx,stim_idx,1);
+p_se_u = pred_se(t_idx,stim_idx,2);
+
+maxresp = max(d(:,1)); % scale stimulus to max of first condition
+
+subplot('position', posc); hold on
+hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
+hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
+hd = plot(d(:), 'k-', 'linewidth', 2);
+hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
+hp = plot(p(:), 'r-', 'linewidth', 2);
+set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+
+set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', []);
+box off;  
+ylim([-2 30]);
+xlim([-20 length(s(:)) + 20]);
+
+xlabel('Time'); ylabel('Change in broadband (x-fold)'); 
+legend({'Neural response', 'DN model prediction'}, 'location', 'northwest');
+legend('boxoff');

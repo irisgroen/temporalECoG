@@ -3,8 +3,9 @@
 % Load data and fits
 modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
+datastr = 'bads';
 datatype = 'individualelecs';
-D = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
 % Compute derived parameters
 [results] = tde_evaluateModelFit(D);
@@ -62,7 +63,7 @@ box off,  axis tight
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
-ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+ylabel(sprintf('Response \n (normalized)')); 
 legend(AOI, 'location', 'northeast');
 legend('boxoff');
 
@@ -81,13 +82,14 @@ hd = plot(c1(:), 'r-', 'linewidth', 2);
 hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
-set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.duration(stim_idx)*1000);
+set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.duration(stim_idx)*1000, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 1]);
 box off,  axis tight
 
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
+ylabel(sprintf('Model prediction \n (normalized)')); 
 xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
 legend(AOI, 'location', 'northeast');
 legend('boxoff');
@@ -97,7 +99,7 @@ legend('boxoff');
 
 subplot('position', posb); hold on
 x = 1:height(channels);
-tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0);
+tde_plotPoints(m(1,:)', squeeze(se(1,:,:)), x, 'errbar', 0, [], 40);
 xlim([0 max(x)+1]); ylim([0 0.3]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 0.1 0.2 0.3]);
@@ -107,7 +109,7 @@ xlabel('Visual area');
 
 subplot('position', posc); hold on
 x = 1:height(channels);
-tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0);
+tde_plotPoints(m(3,:)', squeeze(se(3,:,:)), x, 'errbar', 0, [], 40);
 xlim([0 max(x)+1]); ylim([0 0.2]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 0.1 0.2]);
@@ -116,7 +118,7 @@ xlabel('Visual area');
 
 subplot('position', posd); hold on
 x = 1:height(channels);
-tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0);
+tde_plotPoints(m(2,:)', squeeze(se(2,:,:)), x, 'errbar', 0, [], 40);
 xlim([0 max(x)+1]); ylim([0 0.6]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', 0:0.2:0.6);
