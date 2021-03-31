@@ -6,14 +6,14 @@ reComputeFlag = false;
 
 % Select epochs and channels, average trials within stimulus condition
 options = [];
-options.doplots = true;
+options.doplots = false;
 [data_selection, channels_selection, t, srate, options] = tde_selectData(data_full, options);
 
 % Generate stimulus timecourses
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
 
 % Sort and average electrodes
-options.average_elecs = false;
+options.average_elecs = true;
 options.normalize_data = false;  % boolean
 [data, channels, se] = tde_prepareData(data_selection, channels_selection, options);
 
@@ -24,12 +24,12 @@ options.normalize_data = false;  % boolean
 
 % Define model(s)
 modelfuns = tde_modelTypes();
-modelfun = modelfuns([1 13]);
+modelfun = modelfuns([1]);
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'bads';
+options.algorithm = 'fmincon';
 
 % Compute model fit(s); data and fits will be saved to 'results' folder
 tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options);
@@ -37,7 +37,7 @@ tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options)
 %% 3. Model evaluation
 
 % Load data and fits
-modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
+modelfun = @DN;
 xvalmode = 0;
 datatype = 'individualelecs';
 [D] = tde_loadDataForFigure(modelfun, xvalmode, datatype);

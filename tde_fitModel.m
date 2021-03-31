@@ -104,7 +104,6 @@ for ii = 1:nDatasets % loop over channels or channel averages
             case 'bads'
                 % Set optimization options
                 searchopts = optimset('Display',options.display);
-                if isfield(options,'maxiter'), searchopts.MaxFunEvals = options.maxiter;end
                 searchopts.MaxIterations = 10000;
                 searchopts.MaxFunctionEvaluations = 10000;
                 prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
