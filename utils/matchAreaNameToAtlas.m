@@ -12,6 +12,8 @@ elseif strcmpi(areaName, 'V3ab')
     area_idx = contains(atlasLabels, {'V3a', 'V3b'});
 elseif strcmpi(areaName, 'LOTO')
     area_idx = contains(atlasLabels, {'LO1', 'LO2', 'TO1', 'TO2'});
+elseif strcmpi(areaName, 'TO')
+    area_idx = contains(atlasLabels, {'TO1', 'TO2'});
 elseif strcmpi(areaName, 'V123')
     area_idx = contains(atlasLabels, {'V1', 'V2', 'V3'}) & ~contains(atlasLabels, {'V3a', 'V3b'});
 elseif strcmpi(areaName, 'higher')

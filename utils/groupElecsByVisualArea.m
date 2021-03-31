@@ -14,7 +14,7 @@ function [chan_idx, channels, group_prob] = groupElecsByVisualArea(channels, gro
 %                               wang_15_fplbl column in channel table
 %     areaNames:        list of areas to group (cell array of string)
 %                               default: {'V1', 'V2', 'V3', 'V3a','V3b',...
-%                                         'LO1','LO2','TO1','IPS'};
+%                                         'LO1','LO2','TO','IPS'};
 %
 % Output
 %     chan_idx:         for 'fixedassignment':
@@ -41,7 +41,7 @@ if ~exist('groupingMethod', 'var') || isempty(groupingMethod)
 end
 
 if ~exist('areaNames', 'var') || isempty(areaNames)
-    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO1','TO2','IPS'};
+    areaNames = {'V1', 'V2', 'V3', 'V3a', 'V3b','LO1','LO2','TO','IPS'};
 end
 
 chan_idx = [];
