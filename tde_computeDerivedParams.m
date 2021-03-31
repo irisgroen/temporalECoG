@@ -6,8 +6,7 @@ function [derivedPrm, paramNames, pred_sustained, pred_transient, t] = tde_compu
 % - Rdouble = changed in summed response with doubling of duration
 % - t_isi = magnitude or response at asymptote
 
-%paramNames = {'t2pk', 'rAsymp', 'wSize', 'tISI50', 'tISI80', 'tISI100'};
-paramNames = {'t2pk', 'rAsymp', 'wSize'};
+paramNames = {'t2pk', 'rAsymp', 'wSize', 'Tisi', 'c50'};
 derivedPrm = [];
 
 %% Compute derived parameters Time2Peak and Rasymptote
@@ -47,15 +46,15 @@ derivedPrm(3)    = fwhmx;
 
 pred_transient = pred;
 
-% %% Compute derived parameters Tisi (time to achieve full recovery)
+%% Compute derived parameters Tisi (time to achieve full recovery)
 
 T = 2;
-t_on = 100;
+t_on = 134;
 stimLength = round(T*srate);
 stim = zeros(stimLength,1);
 stim(1 : t_on) = 1;
 
-thresh = [0.95];
+thresh = [1];
 
 % compute summed response to first pulse
 [~, pred] = objFunction(prm, [], stim, srate);
@@ -86,8 +85,6 @@ for ii = 1:size(pred2,2)-500
     rsp2(ii) = max(pred2(pulse2_st(ii):pulse2_st(ii)+1000,ii));
 end
 
-%rsp2  = sum(pred2,1);
-
 % compute t_isi
 isi_samples = nan(length(thresh),1);
 for ii = 1:length(thresh)
@@ -105,6 +102,25 @@ end
 
 t_isi = isi_samples./srate;
 derivedPrm(4) = t_isi;
+
+%% Compute derived parameter C50 (contrast to reach 50% output)
+
+% Simulate response to various contrast levels
+t    = 0.001 : 0.001 : 0.5;
+srate = 1/median(diff(t)); % samples per second
+
+stim = nan(length(t),100);
+for ii = 1:100
+    stim(:,ii) = ones(length(t),1)*ii*0.01;
+end
+
+[~, pred] = objFunction(prm, [], stim, srate);
+maxResp = max(pred);
+halfMax = 0.5*maxResp(:,100);
+resp_diff = maxResp-halfMax;
+derivedPrm(5) = find(resp_diff> 0,1);
+
+%% Compute derived parameter Cscale (to what extent predictions match just by scaling)
 
 end
 
