@@ -46,14 +46,10 @@ switch options.algorithm
             plb = options.startprm.plb;
             pub = options.startprm.pub;
         else
-            fprintf('[%s] No plausible bounds specified for bads, switching to fminsearch \n', mfilename);
-            options.algorithm = 'fminsearch';
+            fprintf('[%s] No plausible bounds specified for bads, switching to lsqnonlin \n', mfilename);
+            options.algorithm = 'lsqnonlin';
         end
 end
-
-% Set optimization options
-searchopts = optimset('Display',options.display);
-if isfield(options,'maxiter'), searchopts.MaxFunEvals = options.maxiter;end
 
 %% FIT THE temporal model
 
@@ -106,10 +102,31 @@ for ii = 1:nDatasets % loop over channels or channel averages
         % Search for best-fitting parameters
         switch options.algorithm
             case 'bads'
+                % Set optimization options
+                searchopts = optimset('Display',options.display);
+                if isfield(options,'maxiter'), searchopts.MaxFunEvals = options.maxiter;end
+                searchopts.MaxIterations = 10000;
+                searchopts.MaxFunctionEvaluations = 10000;
                 prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
-            case 'fminsearch'
-                %prm = fminsearchbnd(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
-                prm = fminsearch(@(x) objFunction(x, data2fit, stim2fit, srate), x0, searchopts);
+            case 'lsqnonlin'
+                searchopts.Algorithm = 'levenberg-marquardt';
+                searchopts = optimoptions(@lsqnonlin,'Algorithm','levenberg-marquardt');
+                searchopts.MaxIterations = 10000;
+                searchopts.MaxFunctionEvaluations = 10000;
+                searchopts.Display = options.display;
+                prm = lsqnonlin(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
+            case 'fmincon'
+                searchopts = optimoptions(@fmincon, 'Algorithm', 'sqp');
+                searchopts.MaxIterations = 10000;
+                searchopts.MaxFunctionEvaluations = 10000;
+                searchopts.Display = options.display;
+                problem.objective = @(x) objFunction(x, data2fit, stim2fit, srate);
+                problem.x0 = x0;
+                problem.solver = 'fmincon';
+                problem.lb = lb;
+                problem.ub = ub;
+                problem.options = searchopts;
+                prm = fmincon(problem);
         end
         
         % Save params from full model fit
