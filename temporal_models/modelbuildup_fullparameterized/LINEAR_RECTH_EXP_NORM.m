@@ -48,9 +48,8 @@ irf     = irf_pos - prm.weight.* irf_neg;
 %% COMPUTE THE RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft     = round(prm.shift * srate);
-stimtmp = padarray(stim, [sft, 0], 0, 'pre');
-stim    = stimtmp(1 : size(stim, 1), :);
+t2 = t-prm.shift;
+stim = interp1(t, stim, t2, [], 0);
 
 % COMPUTE THE CONVOLUTION
 linrsp  = conv2(stim, irf, 'full');         % convolve

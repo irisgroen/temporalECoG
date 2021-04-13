@@ -58,7 +58,6 @@ irf_norm = normSum(exp(-t/prm.tau2));
 t2 = t-prm.shift;
 stim = interp1(t, stim, t2, [], 0);
 
-
 % COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
 linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
