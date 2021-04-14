@@ -73,9 +73,8 @@ irf_sustained = normL2(irf_foveal - w*irf_peripheral);
 %% COMPUTE THE NORMALIZATION RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(prm.shift * srate);
-stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
-stim = stimtmp(1 : size(stim, 1), :);
+t2 = t-prm.shift;
+stim = interp1(t, stim, t2, [], 0);
 
 % COMPUTE THE TRANSIENT RESPONSE --------------------------------------
 rsp_transient = conv2(stim, irf_transient, 'full'); % convolve

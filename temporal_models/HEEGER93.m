@@ -49,9 +49,8 @@ K = prm.rmax;                   % Determines maximum response
 %% Compute normalization response
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-sft       = round(prm.shift * srate);
-stimtmp   = padarray(stim, [sft, 0], 0, 'pre');
-stim      = stimtmp(1 : size(stim, 1), :);
+t2 = t-prm.shift;
+stim = interp1(t, stim, t2, [], 0);
 
 % COMPUTE THE NORMALIZATION NUMERATOR ---------------------------------
 linrsp  = conv2(stim, irf, 'full');         % convolve
