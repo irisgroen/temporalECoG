@@ -1,6 +1,6 @@
-function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
+function [params, pred, pnames] = tde_fitModel(objFunction, stim, data, srate, options)
 
-% [params, pred] = tde_fitModel(objFunction, data, stim, srate, options) 
+% [params, pred, pnames] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
 % <objFunction> model form
 % <stimuli> stimulus time courses (time x condition)
@@ -11,7 +11,13 @@ function [params, pred] = tde_fitModel(objFunction, stim, data, srate, options)
 % <options> (optional) is a struct with the following fields:
 %   <startprm>  starting values for and bounds for parameters (if not
 %           provided, defaults are read in from a json file)
-%   <algorithm>  search algorithm, either 'fminsearch' or 'bads' (default)
+%   <algorithm>  search algorithm, options are 
+%     'fmincon' 
+%     'lsqnonlin' 
+%     'bads' (default)
+%     'surrogateopts' 
+%   note that fmincon and lsqnonlin can't use integerconstraints (necessary
+%   when fitting the n going in to the factoral of the IRF, see gammaPDF.m)
 %   <xvalmode> method for cross validation (string), options are
 %     0 : no cross-validation (default)
 %     1 : train on all stimulus conditions but 1, test on the left out 
@@ -38,6 +44,7 @@ end
 x0 = options.startprm.x0;
 lb = options.startprm.lb;
 ub = options.startprm.ub;
+pnames = strsplit(options.startprm.params,',');
 
 % Check if plausible bounds are defined
 switch options.algorithm
@@ -50,6 +57,8 @@ switch options.algorithm
             options.algorithm = 'lsqnonlin';
         end
 end
+
+fprintf('[%s] Algorithm = %s \n', mfilename, options.algorithm);
 
 %% FIT THE temporal model
 
@@ -126,6 +135,15 @@ for ii = 1:nDatasets % loop over channels or channel averages
                 problem.ub = ub;
                 problem.options = searchopts;
                 prm = fmincon(problem);
+            case 'surrogateopt' 
+                searchopts = optimoptions('surrogateopt','PlotFcn',[], "ConstraintTolerance",1e-6);
+                searchopts.MaxFunctionEvaluations = 10000;
+                searchopts.Display = options.display;
+                intcon = contains(pnames, 'n_irf');
+                if any(intcon), intcon_idx = find(intcon); else, intcon_idx = []; end
+                prm = surrogateopt(@(x) objFunction(x, data2fit, stim2fit, srate),lb,ub,intcon_idx,searchopts);       
+            otherwise
+                error('[%s] Fitting algorithm not recognized \n', mfilename);
         end
         
         % Save params from full model fit

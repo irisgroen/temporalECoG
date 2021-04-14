@@ -13,7 +13,7 @@ options.doplots = false;
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
 
 % Sort and average electrodes
-options.average_elecs = true;
+options.average_elecs = false;
 options.normalize_data = false;  % boolean
 [data, channels, se] = tde_prepareData(data_selection, channels_selection, options);
 
@@ -28,8 +28,8 @@ modelfun = modelfuns([1]);
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'fmincon';
+options.display  = 'final';  % 'iter' 'final' 'off'
+options.algorithm = 'lsqnonlin';
 
 % Compute model fit(s); data and fits will be saved to 'results' folder
 tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options);
