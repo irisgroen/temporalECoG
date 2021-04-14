@@ -100,7 +100,7 @@ set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
 subplot('position', posb); hold on
 x = 1:height(channels);
-tde_plotPoints(m', se, x, 'errbar', 0, [], 40);
+tde_plotPoints(m', se, x, 'ci', 0, [], 40, 'r');
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 ylabel('C50 (%)');
 xlabel('Visual area');
@@ -113,50 +113,18 @@ t_idx = t>0.05 & t<1.0;
 d = D.data(t_idx,stim_idx,:);
 
 % Compute sum across stim_on window
-sumd = squeeze(max(d,[],1)); 
-c50 = [];
+sumd = squeeze(max(d,[],1));
+%sumd = squeeze(sum(d,1));
+
+c501 = [];
 for ii = 1:size(sumd,2)
-    [~,c50(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,sumd(:,ii));
+    [~,c501(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,sumd(:,ii),0);
 end
 
-[m, se] = averageWithinArea(c50, group_prob, [], 10000);
-tde_plotPoints(m', se, x, 'errbar', 0, [], 40, 'r');
+[m, se] = averageWithinArea(c501, group_prob, @mean, 10000);
+tde_plotPoints(m', se, x, 'errbar', 0, [], 40, 'k');
+
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
-xlim([0 max(x)+1]); ylim([0 100]);
-
-%% %tmp
-[ISIrecover,ts,w] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
-
-[m, se] = averageWithinArea(ts, group_prob, @mean, 1000);
-
-figure;hold on
-set(gcf, 'position',  get(0, 'screensize'));
-cmap = flipud(brewermap(8,'RdBu'));
-
-for ii = 1:height(channels)
-    subplot(2,6,ii);hold on
-    p = plot(m(:,:,ii), 'LineWidth', 2);
-    title(channels.name(ii));
-    axis tight
-    set(p, {'color'}, num2cell(cmap,2));
-
-end
-
-[ISIrecover,ts,w] = tde_computeISIrecovery(D.pred,D.t,D.stim_info,D.srate,0.5, [], 'max');
-
-
-[m, se] = averageWithinArea(ts, group_prob, @mean, 1000);
-
-figure;hold on
-set(gcf, 'position',  get(0, 'screensize'));
-cmap = flipud(brewermap(8,'RdBu'));
-
-for ii = 1:height(channels)
-    subplot(2,6,ii);hold on
-    p = plot(m(:,:,ii), 'LineWidth', 2);
-    title(channels.name(ii));
-    axis tight
-    set(p, {'color'}, num2cell(cmap,2));
-
-end
+xlim([0 max(x)+1]); ylim([0 60]);
+legend('model', 'data');legend boxoff
     

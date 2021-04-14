@@ -8,7 +8,6 @@ if ~exist('line_style', 'var') || isempty(line_style)
     line_style = 'none';
 end
 
-
 if ~exist('msize', 'var') || isempty(msize)
     msize = 30;
 end
@@ -25,8 +24,10 @@ switch type
         hc = [];
     case 'ci'
         hp = plot(x, m, 'color', color, 'linewidth', 2);
-        hc = ciplot(se(:,1), se(:,2), x, color, 0.25);
-        set(get(get(hc,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        if ~isempty(se)
+            hc = ciplot(se(:,1), se(:,2), x, color, 0.25);
+            set(get(get(hc,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+        end
 end
 
 end
