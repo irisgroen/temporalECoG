@@ -109,14 +109,20 @@ derivedPrm(4) = t_isi;
 t    = 0.001 : 0.001 : 0.5;
 srate = 1/median(diff(t)); % samples per second
 
+% Generate stimuli with different contrast levels
 stim = nan(length(t),100);
 for ii = 1:100
     stim(:,ii) = ones(length(t),1)*ii*0.01;
 end
 
+% Predict responses
 [~, pred] = objFunction(prm, [], stim, srate);
+
+% Find maximum response at each contrast level
 maxResp = max(pred);
+% Find 50% of the maximum at the 100% contrast level
 halfMax = 0.5*maxResp(:,100);
+% Find the contrast level corresponding to 50% of max
 resp_diff = maxResp-halfMax;
 derivedPrm(5) = find(resp_diff> 0,1);
 
