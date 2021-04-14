@@ -1,4 +1,4 @@
-function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric, debug)
+function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric, debug, savefig)
 
 if ~exist('w', 'var') || isempty(w)
     w = 0.3; % window for computing recovery
@@ -13,6 +13,10 @@ if ~exist('metric', 'var') || isempty(metric)
 end
    
 if ~exist('debug', 'var') || isempty(debug)
+    debug = false;
+end
+
+if ~exist('savefig', 'var') || isempty(savefig)
     debug = false;
 end
 
@@ -39,8 +43,9 @@ for kk = 1:nDatasets
     nStim = length(stim_idx);
     pulse1_onset = zeros(nStim,1);
     pulse2_onset = stim_info.ISI(stim_idx) + stimdur;
-    pulse2_onset(1) = w; % ONEPULSE-4 has no second stimulus
-
+    %pulse2_onset(1) = w; % ONEPULSE-4 has no second stimulus
+    pulse2_onset(1) = t(end); % ONEPULSE-4 has no second stimulus
+    
     % Compute response to first stimulus
     pulse1 = D;
     for ii = 1:nStim
@@ -48,11 +53,11 @@ for kk = 1:nDatasets
         pulse1(~t_idx,ii) = nan;
     end
 
-    %pulse1_mn = mean(pulse1,2,'omitnan');
+    pulse1_mn = mean(pulse1,2,'omitnan');
     %pulse1_mn = pulse1(:,1); 
     %pulse1_mn = mean(pulse1(:,2:end),2,'omitnan');
     %pulse1_mn = mean(pulse1(:,3:end),2,'omitnan');
-    pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
+    %pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
     
     % figure;hold on;
     % plot(t,pulse1, 'LineWidth', 1);
@@ -144,7 +149,13 @@ for kk = 1:nDatasets
             plot(t,pulse1_mn, 'r', 'LineWidth', 2);
             title(stimNames{ii});
         end
-
+        
+        if savefig
+            figureName = sprintf('recovery_calculation_%d', kk);
+            figDir = fullfile(analysisRootPath, 'figures', 'ISIrecovery');
+            if ~exist(figDir, 'dir'), mkdir(figDir), end
+            saveas(gcf, fullfile(figDir, figureName), 'png'); close;
+        end
 
         % Debug 2 
 
@@ -184,6 +195,14 @@ for kk = 1:nDatasets
         xlim([0 max(x)+1]);
 
         set(gcf, 'Position', [41         303        1301         502]);
+
+        if savefig
+            figureName = sprintf('recovery_%d', kk);
+            figDir = fullfile(analysisRootPath, 'figures', 'ISIrecovery');
+            if ~exist(figDir, 'dir'), mkdir(figDir), end
+            saveas(gcf, fullfile(figDir, figureName), 'png'); close;
+        end
+
     end
      
 end

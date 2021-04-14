@@ -1,9 +1,8 @@
 function [ISIrecover,ts,w] = tde_computeISIrecovery_sim(data,t,stim_info,srate,w,shift,metric)
-% Computes recovery without using the ONE PULSE conditions for arbitrary
-% TWOPULSE names
+% Computes recovery for arbitrary TWOPULSE conditions
 
 if ~exist('w', 'var') || isempty(w)
-    w = 0.3; % window for computing recover
+    w = 0.3; % window for computing recovery
 end
 
 if ~exist('shift', 'var') || isempty(shift)
@@ -91,37 +90,39 @@ for kk = 1:nDatasets
 
     % Compute recovery
     ISIrecover(:,kk) = (pulse2_summed./pulse1_mn_summed); % in percentage
-    ts(:,1,kk) = pulse1_mn(t_idx1);
     for ii = 1:size(pulse2_sub,2)
-        ts(:,ii+1,kk) = pulse2_to_sum(t_idx2(:,ii),ii);
+        ts(:,ii,kk) = pulse2_to_sum(t_idx2(:,ii),ii);
+    end
+	ts(:,ii+1,kk) = pulse1_mn(t_idx1);
+
+    
+    % Debug:
+
+    % Plot pulse 1 mean + window
+    figure('Position', get(0, 'ScreenSize'));hold on;
+    subplot(round(nStim/2),2,1); hold on;
+    nSamp = size(data,1);
+    tmp = zeros(nSamp,1);
+    tmp(t_idx1) = 10;
+    plot(t,pulse1_mn, 'r','LineWidth', 2); 
+    plot(t,tmp, 'k');
+    title('mean pulse 1');
+
+     % Plot pulse 2 + window
+    for ii = 1:nStim
+        tmp = zeros(nSamp,1);
+        tmp(t_idx2(:,ii)) = 10;
+        subplot(round(nStim/2),2, ii+1); hold on
+        plot(t,pulse2(:,ii),'b', 'LineWidth', 2);
+        plot(t,pulse2_sub(:,ii),'m:', 'LineWidth', 2);
+        plot(t,tmp, 'k');    
+        plot(t,pulse1_mn, 'r', 'LineWidth', 2);
+        title(stim_info.name{ii});
     end
     
-%     % Debug:
-% 
-%     % Plot pulse 1 mean + window
-%     figure('Position', get(0, 'ScreenSize'));hold on;
-%     subplot(round(nStim/2),2,1); hold on;
-%     tmp = zeros(nSamp,1);
-%     tmp(t_idx1) = 10;
-%     plot(t,pulse1_mn, 'r','LineWidth', 2); 
-%     plot(t,tmp, 'k');
-%     title('mean pulse 1');
-% 
-%      % Plot pulse 2 + window
-%     for ii = 1:nStim
-%         tmp = zeros(nSamp,1);
-%         tmp(t_idx2(:,ii)) = 10;
-%         subplot(round(nStim/2),2, ii+1); hold on
-%         plot(t,pulse2(:,ii),'b', 'LineWidth', 2);
-%         plot(t,pulse2_sub(:,ii),'m:', 'LineWidth', 2);
-%         plot(t,tmp, 'k');    
-%         plot(t,pulse1_mn, 'r', 'LineWidth', 2);
-%         title(stimNames{ii});
-%     end
-%     
-%     % Plot recovery
-%     figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
-     
+    % Plot recovery
+    figure;plot(ISIrecover, 'k.-', 'MarkerSize', 50, 'LineWidth', 2);
+    
 end
 
 end
