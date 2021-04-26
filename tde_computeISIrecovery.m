@@ -26,12 +26,15 @@ end
 conditionsOfInterest = {'ONEPULSE-4','ONEPULSE-5','TWOPULSE'};
 stim_idx = find(contains(stim_info.name, conditionsOfInterest));
 stimdur = stim_info.duration(stim_idx(end));
+
 % Make sure the window size matches the sample rate
 w = round(w*srate)*(1/srate);
 
-ISIrecover = [];
-ts = [];
+% Initialized
+ISIrecover = nan(length(stim_idx)-1, nDatasets);
+ts = nan(w*srate,length(stim_idx),nDatasets);
 
+% Loop over datasets computing ISI recovery 
 
 for kk = 1:nDatasets
 
