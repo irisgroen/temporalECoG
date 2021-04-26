@@ -28,8 +28,10 @@ modelfun = modelfuns([1]);
 
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display  = 'final';  % 'iter' 'final' 'off'
-options.algorithm = 'lsqnonlin';
+options.display  = 'off';  % 'iter' 'final' 'off'
+options.algorithm = 'fmincon';
+options.fitaverage = true;
+options.nfits = 100; % if fit average 
 
 % Compute model fit(s); data and fits will be saved to 'results' folder
 tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options);
