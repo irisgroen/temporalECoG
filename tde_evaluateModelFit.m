@@ -30,7 +30,7 @@ for kk = 1:nModels
     R2stim       = nan(nStim,nDatasets);
     R2concat     = nan(1,nDatasets);
     R2cond       = nan(length(unique(stimcond)), nDatasets); 
-    derivedPrm   = nan(5,nDatasets);
+    derivedPrm   = nan(6,nDatasets);
     derivedPredS = nan(2000,nDatasets);
     derivedPredT = nan(500,nDatasets);
     pred_names   = [];
@@ -63,7 +63,7 @@ for kk = 1:nModels
             R2cond(jj,ii) = computeR2(DATA,MODEL);
         end
         
-        fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
+        %fprintf('[%s] R2 for dataset %d = %0.2f \n', mfilename, ii, R2concat(:,ii))
     
         %% COMPUTE MODELBASED DERIVED PARAMETERS 
         
