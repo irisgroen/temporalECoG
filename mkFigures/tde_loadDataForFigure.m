@@ -15,5 +15,8 @@ else
 end
 
 data = load(fullfile(dataPath, dataName));
-   
+
+if ~isfield(data.options, 'fitaverage')
+    data.options.fitaverage = 0;
+end
 end

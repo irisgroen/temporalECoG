@@ -1,24 +1,29 @@
 % tde_mkFigure 8
 
 % Load data and fits
-modelfun = @DN;%@LINEAR_RECTF_EXP_NORM_DELAY;
+modelfun = @DN;%;LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-datastr = 'bads';
+datastr = 'fitaverage100';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
-% Compute derived parameters
-%[results] = tde_evaluateModelFit(D);
-
+%%
 % Select electrodes and compute averages 
-[~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
-[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
-[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+if D.options.fitaverage
+    % this means electrodes were averaged within area and fitted multiple times
+    [data, data_se, channels] = averageMultipleFits(D.data, D.channels, @mean);
+    [pred, pred_se] = averageMultipleFits(D.pred, D.channels, @mean);
+else
+    % this means we have just one fit to all individual electrodes 
+    [~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
+    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
+    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+end
 t = D.t;
 stim_ts = D.stim;
 stim_info = D.stim_info;
 
-%% Plot specs
+% Plot specs
 % Subplot positions: % [left bottom width height]
 
 posa1 = [0.05  0.75 0.9 0.22];
@@ -34,7 +39,7 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 conditionsOfInterest = {'ONEPULSE-4', 'TWOPULSE'};
 timepointsOfInterest = [-0.1 1.2];
-areasOfInterest      = {'V1', 'V3b'};
+areasOfInterest      = {'V1', 'V3a'};
 
 stim_idx  = contains(stim_info.name, conditionsOfInterest);
 t_idx     = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
@@ -93,19 +98,21 @@ xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broa
 legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
-%% Panel B:recovery for different areas superimposed
+%% Panel B:recovery for different areas superimposed: data
 [ISIrecover_data] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
-[ISIrecover_pred] = tde_computeISIrecovery(D.pred,D.t,D.stim_info,D.srate,0.5, [], 'max');
 
-[m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, [], 10000);
-[m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, [], 10000);
+if D.options.fitaverage
+    [m_data, se_data, channels] = averageMultipleFits(ISIrecover_data, D.channels, @median);
+else
+    [m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, [], 1000);
+end
 
-cmap2      = brewermap(height(channels)+2, '*PuBuGn');
-cmap2      = cmap2(1:height(channels),:);
+cmap      = brewermap(height(channels)+2, '*PuBuGn');
+cmap      = cmap(1:height(channels),:);
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-chan_ind = 1:5;%height(channels);
+chan_ind = [5 4 3 2 1];%height(channels):-1:1;
 subplot('position', posb); hold on
 
 % Plot linear prediction 
@@ -114,10 +121,9 @@ set(gca, 'xtick', x, 'xticklabelrotation', 45);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
 for ii = chan_ind
-    tde_plotPoints(m_data(:,ii), [], x, 'ci', 0, [],[],cmap2(ii,:));
-    %tde_plotPoints(m_pred(:,ii), [], x, 'ci', 0, [],[],cmap2(ii,:));
+    tde_plotPoints(m_data(:,ii), se_data(:,ii,:), x, 'ci', 0, [],[],cmap(ii,:));
 end
-ylim([0 1.5]);
+ylim([0 1.1]);
 xlim([-20 x(end)+20]);
 
 legend(channels.name(chan_ind), 'location', 'southeast');
@@ -125,36 +131,10 @@ legend boxoff
 xlabel('Stimulus interval (ms)');
 ylabel('Recovery ratio');
 
-% subplot('position', posc); hold on
-% 
-% % Plot linear prediction 
-% h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
-% set(gca, 'xtick', x, 'xticklabelrotation', 45);
-% set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-% 
-% for ii = chan_ind
-%     tde_plotPoints(m_pred(:,ii), [], x, 'ci', 0, [],[],cmap2(ii,:));
-%     %tde_plotPoints(m_pred(:,ii), squeeze(se_pred(:,ii,:)), x, 'ci', 0, [],[],cmap2(ii,:));
-% end
-% ylim([0 1.5]);
-% xlim([-20 x(end)+20]);
-% xlabel('Stimulus interval (ms)');
-% ylabel('Recovery ratio');
-
-%% Panel D: tisi summarized across areas
-% [m, se] = averageWithinArea(results.derived.params(4,:), group_prob, [], 10000);
-% 
-% subplot('position', posd); hold on
-% x = 1:height(channels);
-% tde_plotPoints(m', se, x, 'errbar', 0, [], 40, 'r');
-% xlim([0 max(x)+1]); ylim([0 0.8]);
-% set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-% set(gca, 'ytick', 0:0.2:0.8);
-% ylabel('Time to recover 95% (s)');
-% xlabel('Visual area');
+%% Panel C: recovery for multiple areas superimposed: model
 
 % Generate new stimuli based on params
-t = 0/D.srate:1/D.srate:5;
+t = 0/D.srate:1/D.srate:3;
 w = 0.5;
 
 % ISI
@@ -190,28 +170,16 @@ duration = ones(nStim,1)*0.133;
 stim_info2 = table(name, duration, ISI);
 
 % Compute recovery per electrode
-[m2, ts2] = tde_computeISIrecovery(pred2,t,stim_info2,D.srate,w,[], 'max');
-m2 = round(m2,3);
-tISI = [];
-for ii = 1:height(D.channels)
-    inx = find(m2(:,ii)>0.85,1);
-    tISI(ii) = ISIs(inx);
-end    
+[ISIrecover_pred] = tde_computeISIrecovery(pred2,t,stim_info2,D.srate,w,[], 'max');
 
-[m, se] = averageWithinArea(tISI, group_prob, [], 10000);
+if D.options.fitaverage
+    [m_pred, se_pred, channels] = averageMultipleFits(ISIrecover_pred, D.channels, @median);
+else
+    [m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, [], 1000);
+end
 
-subplot('position', posd); hold on
-x = 1:height(channels);
-tde_plotPoints(m', se, x, 'errbar', 0, [], 40, 'r');
-xlim([0 max(x)+1]); ylim([0 0.6]);
-set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-set(gca, 'ytick', 0:0.2:0.6);
-ylabel('Time to recover 85% (s)');
-xlabel('Visual area');
-
-[m, se] = averageWithinArea(m2, group_prob, [], 10000);
-%x = 0:1/D.srate:(size(m,1)-1)*(1/D.srate);
-x = ISIs*1000; % in ms
+cmap      = brewermap(height(channels)+2, '*YlOrRd');
+cmap      = cmap(1:height(channels),:);
 
 subplot('position', posc); hold on
 
@@ -221,54 +189,86 @@ set(gca, 'xtick', x, 'xticklabelrotation', 45);
 set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
  
 for ii = chan_ind
-    %tde_plotPoints(m(:,ii), squeeze(se(:,ii,:)),x, 'ci', 0, [],[],cmap2(ii,:));
-    tde_plotPoints(m(:,ii),[],x, 'ci', 0, [],[],cmap2(ii,:));
+    tde_plotPoints(m_pred(:,ii), squeeze(se_pred(:,ii,:)),ISIs*1000, 'ci', 0, [],[],cmap(ii,:));
 end
+ylim([0 1.5]);
+xlim([-20 x(end)+20]);
 %legend(channels.name); legend boxoff
 %legend(channels.name(chan_ind,:));
 
-ylim([0 1.5]);
+ylim([0 1.1]);
 xlim([-20 600]);
 set(gca, 'xtick', stim_info.ISI(stim_idx)*1000); % in ms
 xlabel('Stimulus interval (ms)');
 ylabel('Recovery ratio');
+legend(channels.name(chan_ind), 'location', 'southeast');
+legend boxoff
+
+%% Panel D: tisi summarized across areas for both data and model
+
+thresh = 0.90; % threshold for recovery
+
+x = stim_info.ISI(stim_idx)*1000; % in ms
+
+% Data
+formula_to_fit = 'a * x ^ b + c';
+sp = [1 1 1]; lb = [0 0 0]; ub = [1 1 1]; f = cell(1,height(D.channels));
+for ii = 1:height(D.channels)
+	y = ISIrecover_data(:,ii);
+	f{ii} = fit(x, y, formula_to_fit, 'StartPoint', sp, 'Lower', lb, 'Upper', ub);
+end
+
+x1 = 0:max(x)/1000:max(x)*4; 
+y1 = nan(length(x1), height(D.channels));
+for ii = 1:height(D.channels)
+    f1 = f{ii};
+    y1(:,ii) = f1(x1);
+end
+
+tISI_data = nan(1,height(D.channels));
+for ii = 1:height(D.channels)
+    inx = find(y1(:,ii)>thresh,1);
+    if isempty(inx)
+        inx = length(x1);
+    end
+    tISI_data(ii) = x1(inx);
+end
+
+if D.options.fitaverage
+    [m_data, se_data, channels] = averageMultipleFits(tISI_data, D.channels, @median);
+else
+    [m_data, se_data] = averageWithinArea(tISI_data, group_prob, [], 1000);
+end
+
+% Model
+ISIrecover_pred = round(ISIrecover_pred,3);
+tISI_pred = nan(1,height(D.channels));
+for ii = 1:height(D.channels)
+    inx = find(ISIrecover_pred(:,ii)>thresh,1);
+    tISI_pred(ii) = ISIs(inx);
+end    
+
+if D.options.fitaverage
+    [m_pred, se_pred, channels] = averageMultipleFits(tISI_pred, D.channels, @median);
+else
+    [m_pred, se_pred] = averageWithinArea(tISI_pred, group_prob, [], 1000);
+end
+
+subplot('position', posd); hold on
+x = 1:height(channels);
+tde_plotPoints(m_pred', se_pred, x, 'ci', 0, [], 40, 'r');
+tde_plotPoints((m_data/1000)',se_data/1000, x, 'errbar', 0, [], 40, 'k');
+
+xlim([0 max(x)+1]); ylim([0 1]);
+set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
+set(gca, 'ytick', 0:0.2:1);
+ylabel(sprintf('Time to recover %d percent (s)', thresh*100));
+xlabel('Visual area');
+
+legend('model', 'data')
+legend boxoff
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
 
-% %% %tmp
-% [ISIrecover,ts,w] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
-% 
-% [m, se] = averageWithinArea(ts, group_prob, @mean, 1000);
-% 
-% figure;hold on
-% set(gcf, 'position',  get(0, 'screensize'));
-% cmap = flipud(brewermap(8,'RdBu'));
-% 
-% for ii = 1:height(channels)
-%     subplot(2,6,ii);hold on
-%     p = plot(m(:,:,ii), 'LineWidth', 2);
-%     title(channels.name(ii));
-%     axis tight
-%     set(p, {'color'}, num2cell(cmap,2));
-% 
-% end
-% 
-% [ISIrecover,ts,w] = tde_computeISIrecovery(D.pred,D.t,D.stim_info,D.srate,0.5, [], 'max');
-% 
-% 
-% [m, se] = averageWithinArea(ts, group_prob, @mean, 1000);
-% 
-% figure;hold on
-% set(gcf, 'position',  get(0, 'screensize'));
-% cmap = flipud(brewermap(8,'RdBu'));
-% 
-% for ii = 1:height(channels)
-%     subplot(2,6,ii);hold on
-%     p = plot(m(:,:,ii), 'LineWidth', 2);
-%     title(channels.name(ii));
-%     axis tight
-%     set(p, {'color'}, num2cell(cmap,2));
-% 
-% end
     

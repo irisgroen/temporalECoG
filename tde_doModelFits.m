@@ -10,6 +10,9 @@ function tde_doModelFits(modelfun,stim,data,channels,srate,t,stim_info,options,s
 % Save options
 if ~exist('saveStr', 'var'), saveStr = []; end
 if ~exist('saveDir', 'var'), saveDir = fullfile(analysisRootPath, 'results'); end
+if ~isfield(options,'fitaverage') || isempty(options.fitaverage)
+    options.fitaverage = false;
+end
 
 % Some formatting
 if ~iscell(modelfun), modelfun = {modelfun}; end 
@@ -26,7 +29,40 @@ for ii = 1:size(modelfun,2)
     
     % FIT MODEL
     objFunction = modelfun{ii};
-    [params, pred] = tde_fitModel(objFunction, stim, data, srate, options);
+    
+    if options.fitaverage
+        if ~isfield(options,'nfits') || isempty(options.nfits)
+            options.nfits = 10;
+        end
+        fprintf('[%s] Warning: options.fitaverage is %d; results will be formatted as cells of length %d \n', mfilename, options.fitaverage, options.nfits);
+        
+        % Initialize
+        params = [];
+        pred = [];
+        data_concat = [];
+        channels_concat = [];
+         
+        % Fit multiple times to average
+        for jj = 1:options.nfits
+            fprintf('[%s] Starting fit on average %d of %d \n', mfilename, jj, options.nfits);
+           
+            [~, channels_av, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', options.areanames);
+            fun = @mean;
+            numboot = 1000; % no bootstrapping, just one assignment
+            [data_av] = averageWithinArea(data, group_prob, fun, numboot);
+            [params_av, pred_av] = tde_fitModel(objFunction, stim, data_av, srate, options);
+            
+            params = cat(2,params, params_av);
+            pred = cat(3,pred,pred_av);
+            data_concat = cat(3,data_concat,data_av);
+            channels_concat = vertcat(channels_concat, channels_av);
+        end
+        data = data_concat;
+        channels = channels_concat;
+    else
+        % Fit once 
+        [params, pred] = tde_fitModel(objFunction, stim, data, srate, options);
+    end
     
     % SAVE RESULTS
     if ~isempty(saveDir)

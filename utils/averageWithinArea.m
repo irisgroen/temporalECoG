@@ -43,37 +43,43 @@ end
 [~, nElecs] = size(data);
 m_boot = nan(size(data,1), nAreas, numboot); 
 
-fprintf('[%s] Computing %s using %d bootstraps...\n', mfilename, func2str(fun), numboot);
-% each boot, sample all channels at once
-for ii = 1:numboot
-    elec_idx = randsample(1:nElecs,nElecs,1);
-    sampled_data = data(:,elec_idx);
-    % assign to area probabilistically
-    elec_area = assign_to_area(group_prob(elec_idx,:)); 
-    % do summary per area - store result
-    for jj = 1:nAreas
-        m_boot(:,jj,ii) = fun(sampled_data(:,elec_area == jj),2);
+if numboot > 1
+    fprintf('[%s] Computing %s using %d bootstraps...\n', mfilename, func2str(fun), numboot);
+
+    % each boot, sample all channels at once
+    for ii = 1:numboot
+        elec_idx = randsample(1:nElecs,nElecs,1);
+        sampled_data = data(:,elec_idx);
+        % assign to area probabilistically
+        elec_area = assignElecToAreaProb(group_prob(elec_idx,:)); 
+        % do summary per area - store result
+        for jj = 1:nAreas
+            m_boot(:,jj,ii) = fun(sampled_data(:,elec_area == jj),2);
+        end
+    end
+
+    % take mean of bootstrapped distribution and compute confidence intervals
+    m = mean(m_boot,3, 'omitnan');
+    se = squeeze(prctile(m_boot,[15.87 84.13],3));
+else
+    fprintf('[%s] Computing %s using all electrodes assigned once\n', mfilename, func2str(fun));
+    % if not bootstrapping, just use all electrodes and assign once
+	elec_area = assignElecToAreaProb(group_prob); 
+    m = nan(size(data,1), nAreas);
+    while any(isnan(m(:)))
+        for jj = 1:nAreas
+            m(:,jj) = fun(data(:,elec_area == jj),2, 'omitnan');
+            se = [];
+        end
     end
 end
-
-% take mean of bootstrapped distribution and compute confidence intervals
-m = mean(m_boot,3, 'omitnan');
-se = squeeze(prctile(m_boot,[15.87 84.13],3));
 
 % reshape back to original shape
 if multiDimData
     m = reshape(m, [dataSz(1) dataSz(2) nAreas]); 
-    se = reshape(se, [dataSz(1) dataSz(2) 2 nAreas]);
+    if ~isempty(se)
+        se = reshape(se, [dataSz(1) dataSz(2) 2 nAreas]);
+    end
 end
 
-end
-
-function elec_area = assign_to_area(group_prob)
-    % sample a random number between 0 and 1 
-    p = rand(size(group_prob,1),1); % * ones(1,size(gp,2));
-    % compute cumulative sum
-    a = cumsum(group_prob,2) > p;
-    sa = sum(a,2) < 1;
-    [~,elec_area] = max(a,[],2);
-    elec_area(sa) = nan;
 end
