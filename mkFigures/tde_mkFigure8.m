@@ -7,7 +7,8 @@ datastr = 'fitaverage100';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
-%%
+%% Panel A: Example time courses for ISI stimuli
+
 % Select electrodes and compute averages 
 if D.options.fitaverage
     % this means electrodes were averaged within area and fitted multiple times
@@ -48,7 +49,7 @@ chan_idx2 = find(strcmp(channels.name, areasOfInterest{2}));
 
 % Top: Data
 
-subplot('position', posa1); hold on
+subplot('position', posa1);cla; hold on
 
 s = stim_ts(t_idx,stim_idx);
 c1 = data(t_idx,stim_idx,chan_idx1);
@@ -74,7 +75,7 @@ legend('boxoff');
 
 % Bottom: Model
 
-subplot('position', posa2); hold on
+subplot('position', posa2); cla; hold on
 
 s = stim_ts(t_idx,stim_idx);
 c1 = pred(t_idx,stim_idx,chan_idx1);
@@ -112,8 +113,8 @@ cmap      = cmap(1:height(channels),:);
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-chan_ind = [5 4 3 2 1];%height(channels):-1:1;
-subplot('position', posb); hold on
+chan_ind = [6 5 4 3 2 1];%height(channels):-1:1;
+subplot('position', posb); cla; hold on
 
 % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -134,7 +135,7 @@ ylabel('Recovery ratio');
 %% Panel C: recovery for multiple areas superimposed: model
 
 % Generate new stimuli based on params
-t = 0/D.srate:1/D.srate:3;
+t = 0/D.srate:1/D.srate:2;
 w = 0.5;
 
 % ISI
@@ -181,7 +182,7 @@ end
 cmap      = brewermap(height(channels)+2, '*YlOrRd');
 cmap      = cmap(1:height(channels),:);
 
-subplot('position', posc); hold on
+subplot('position', posc); cla; hold on
 
 % % Plot linear prediction 
 h0 = line([x(1) x(end)], [1 1], 'LineStyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -191,13 +192,8 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 for ii = chan_ind
     tde_plotPoints(m_pred(:,ii), squeeze(se_pred(:,ii,:)),ISIs*1000, 'ci', 0, [],[],cmap(ii,:));
 end
-ylim([0 1.5]);
-xlim([-20 x(end)+20]);
-%legend(channels.name); legend boxoff
-%legend(channels.name(chan_ind,:));
-
 ylim([0 1.1]);
-xlim([-20 600]);
+xlim([-20 x(end)+20]);
 set(gca, 'xtick', stim_info.ISI(stim_idx)*1000); % in ms
 xlabel('Stimulus interval (ms)');
 ylabel('Recovery ratio');
@@ -206,11 +202,15 @@ legend boxoff
 
 %% Panel D: tisi summarized across areas for both data and model
 
-thresh = 0.90; % threshold for recovery
+% Set a threshold to measure recovery at (%)
+thresh = 0.90; 
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-% Data
+% DATA
+
+% Fit a line to the recovery of the data points to obtain an estimate of
+% the recovery over time
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1]; lb = [0 0 0]; ub = [1 1 1]; f = cell(1,height(D.channels));
 for ii = 1:height(D.channels)
@@ -218,6 +218,7 @@ for ii = 1:height(D.channels)
 	f{ii} = fit(x, y, formula_to_fit, 'StartPoint', sp, 'Lower', lb, 'Upper', ub);
 end
 
+% Generate the prediction based on the fitted line
 x1 = 0:max(x)/1000:max(x)*4; 
 y1 = nan(length(x1), height(D.channels));
 for ii = 1:height(D.channels)
@@ -225,6 +226,8 @@ for ii = 1:height(D.channels)
     y1(:,ii) = f1(x1);
 end
 
+% Find the ISI at which the lines crosses the threshold; this is tISI
+% derived from the data
 tISI_data = nan(1,height(D.channels));
 for ii = 1:height(D.channels)
     inx = find(y1(:,ii)>thresh,1);
@@ -234,27 +237,36 @@ for ii = 1:height(D.channels)
     tISI_data(ii) = x1(inx);
 end
 
+% Average across electrodes or fits
 if D.options.fitaverage
     [m_data, se_data, channels] = averageMultipleFits(tISI_data, D.channels, @median);
 else
     [m_data, se_data] = averageWithinArea(tISI_data, group_prob, [], 1000);
 end
 
-% Model
+% MDODEL
+
+% Find the ISI at which the predicted recovery from the model crosses the
+% threshold; this is tISI derived from the model
 ISIrecover_pred = round(ISIrecover_pred,3);
 tISI_pred = nan(1,height(D.channels));
 for ii = 1:height(D.channels)
     inx = find(ISIrecover_pred(:,ii)>thresh,1);
+    if isempty(inx)
+        inx = size(ISIrecover_pred,1);
+    end
     tISI_pred(ii) = ISIs(inx);
 end    
 
+% Average across electrodes or fits
 if D.options.fitaverage
     [m_pred, se_pred, channels] = averageMultipleFits(tISI_pred, D.channels, @median);
 else
     [m_pred, se_pred] = averageWithinArea(tISI_pred, group_prob, [], 1000);
 end
 
-subplot('position', posd); hold on
+% Plot
+subplot('position', posd); cla; hold on
 x = 1:height(channels);
 tde_plotPoints(m_pred', se_pred, x, 'ci', 0, [], 40, 'r');
 tde_plotPoints((m_data/1000)',se_data/1000, x, 'errbar', 0, [], 40, 'k');

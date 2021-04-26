@@ -96,7 +96,7 @@ legend('boxoff');
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
 %% Panel B: c50 summarized across areas
-[m, se] = averageWithinArea(results.derived.params(5,:), group_prob, [], 10000);
+[m, se] = averageWithinArea(results.derived.params(4,:), group_prob, [], 10000);
 
 subplot('position', posb); hold on
 x = 1:height(channels);

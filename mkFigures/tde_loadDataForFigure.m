@@ -14,7 +14,13 @@ else
     dataName = sprintf('%s_xvalmode%d_%s_%s', func2str(modelfun), xvalmode, dataType, dataStr);
 end
 
-data = load(fullfile(dataPath, dataName));
+dataName = fullfile(dataPath, sprintf('%s.mat', dataName));
+
+if exist(dataName, 'file')
+    data = load(dataName);
+else
+    error('Could not locate datafile')
+end
 
 if ~isfield(data.options, 'fitaverage')
     data.options.fitaverage = 0;
