@@ -3,7 +3,7 @@
 % Load data and fits
 modelfun = @DN;%;LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-datastr = 'bads';
+datastr = 'fitaverage100bads';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
@@ -41,7 +41,7 @@ set(gcf, 'position',  get(0, 'screensize'));
 
 conditionsOfInterest = {'CRF'};
 timepointsOfInterest = [-0.1 1.2];
-areasOfInterest      = {'V1', 'V3b'};
+areasOfInterest      = {'V1', 'TO'};
 
 stim_idx  = contains(stim_info.name, conditionsOfInterest);
 t_idx     = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
@@ -120,6 +120,7 @@ sumd = squeeze(max(d,[],1));
 %sumd = squeeze(sum(d,1));
 
 c50_data = nan(1,height(D.channels));
+fprintf('[%s] Fitting Naka Rushton functions to each dataset...\n',mfilename);
 for ii = 1:height(D.channels)
     [~,c50_data(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,sumd(:,ii),0);
 end
@@ -156,6 +157,7 @@ legend('model', 'data', 'Location','NorthWest');legend boxoff
 
 % Data
 cScale_data = nan(2,height(D.channels));
+fprintf('[%s] Regressing low and high contrast conditions for each dataset...\n',mfilename);
 for ii = 1:height(D.channels)
     X = d(:,1,ii); % 6.25% contrast
     y = d(:,5,ii); % 100% contrast

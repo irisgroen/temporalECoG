@@ -3,7 +3,7 @@
 % Load data and fits
 modelfun = @DN;%;LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-datastr = 'fitaverage100';
+datastr = 'fitaverage100bads';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
@@ -113,7 +113,7 @@ cmap      = cmap(1:height(channels),:);
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-chan_ind = [6 5 4 3 2 1];%height(channels):-1:1;
+chan_ind = [5 4 1];%height(channels):-1:1;
 subplot('position', posb); cla; hold on
 
 % Plot linear prediction 
@@ -209,7 +209,7 @@ x = stim_info.ISI(stim_idx)*1000; % in ms
 
 % DATA
 
-% Fit a line to the recovery of the data points to obtain an estimate of
+% Fit an exponential to the recovery of the data points to obtain an estimate of
 % the recovery over time
 formula_to_fit = 'a * x ^ b + c';
 sp = [1 1 1]; lb = [0 0 0]; ub = [1 1 1]; f = cell(1,height(D.channels));
@@ -244,7 +244,7 @@ else
     [m_data, se_data] = averageWithinArea(tISI_data, group_prob, [], 1000);
 end
 
-% MDODEL
+% MODEL
 
 % Find the ISI at which the predicted recovery from the model crosses the
 % threshold; this is tISI derived from the model
@@ -277,7 +277,7 @@ set(gca, 'ytick', 0:0.2:1);
 ylabel(sprintf('Time to recover %d percent (s)', thresh*100));
 xlabel('Visual area');
 
-legend('model', 'data')
+legend('model', 'data', 'Location', 'NorthWest')
 legend boxoff
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)

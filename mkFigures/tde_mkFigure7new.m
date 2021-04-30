@@ -3,7 +3,7 @@
 % Load data and fits
 modelfun = @DN;%;LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-datastr = 'fitaverage100';
+datastr = 'fitaverage100bads';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 

@@ -4,7 +4,8 @@
 modelfun = @DN;
 xvalmode = 0;
 datatype = 'individualelecs';
-[D] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+datastr = 'bads';
+[D] = tde_loadDataForFigure(modelfun, xvalmode, datatype,datastr);
 
 % Select electrodes and compute averages 
 [~, ~, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample', {'V1'});   

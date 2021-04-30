@@ -1,7 +1,7 @@
 %% 1: Load the ECoG data 
 
 % Load or (re)compute the processed data
-reComputeFlag = false; 
+reComputeFlag = true; 
 [data_full] = tde_getData(reComputeFlag);
 
 % Select epochs and channels, average trials within stimulus condition
@@ -13,7 +13,7 @@ options.doplots = false;
 [stim_ts, stim_info] = tde_generateStimulusTimecourses(options.stimnames,t);
 
 % Sort and average electrodes
-options.average_elecs = false;
+options.average_elecs = true;
 options.normalize_data = false;  % boolean
 [data, channels, se] = tde_prepareData(data_selection, channels_selection, options);
 
@@ -29,9 +29,10 @@ modelfun = modelfuns([1]);
 % Define options
 options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'fmincon';
+options.algorithm = 'bads';
 options.fitaverage = true;
-options.nfits = 100; % if fit average 
+options.nfits = 1000; % if fit average 
+options.areanames = {'V1','V2','V3','V3a','V3b','LO1','LO2','TO','IPS'}; % remove hV4 and combine TO1 and TO2
 
 % Compute model fit(s); data and fits will be saved to 'results' folder
 tde_doModelFits(modelfun, stim_ts, data, channels, srate, t, stim_info, options);

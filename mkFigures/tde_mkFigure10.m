@@ -3,7 +3,8 @@
 modelfun = @DN;
 xvalmode = 0;
 datatype = 'individualelecs';
-[d] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
+datastr = 'bads';
+[d] = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
 %%
 channelsPRF = tde_getPRFparams(d.channels);
@@ -12,57 +13,48 @@ channelsPRF = tde_getPRFparams(d.channels);
 % define cut offs
 R2thresh         = 30;
 eccfovthresh     = 2;
-eccparafovthresh = 8;
-%eccmax           = 16;
+eccperithresh    = 8;
 
 % select channels
-chan_idx_R2         = channelsPRF.aprf_R2 > R2thresh;
-chan_idx_eccfov     = channelsPRF.aprf_ecc < eccfovthresh;
-chan_idx_eccparafov = channelsPRF.aprf_ecc >= eccfovthresh & channelsPRF.aprf_ecc < eccparafovthresh;
-%chan_idx_eccper     = channelsPRF.aprf_ecc >= eccparafovthresh & channelsPRF.aprf_ecc < eccmax;
+chan_idx_R2   = channelsPRF.aprf_R2 > R2thresh;
+chan_idx_fov  = channelsPRF.aprf_ecc < eccfovthresh;
+chan_idx_peri = channelsPRF.aprf_ecc >= eccfovthresh & channelsPRF.aprf_ecc < eccperithresh;
 
 %% contrast temporal time courses
-areaNames = {'V1','V2','V3', 'higher'};
-%areaNames = {'V123','higher'};
+%areaNames = {'V1','V2','V3', 'higher'};
+areaNames = {'V123','higher'};
 fun = @mean;
 numboot = 1000;
 
 [~, ~, group_prob] = groupElecsByVisualArea(d.channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov; %&~contains(channelsPRF.subject_name, 'som708'); 
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov; %&~contains(channelsPRF.subject_name, 'som708'); 
-%per_idx      = chan_idx_R2 & chan_idx_eccper;% &~contains(channelsPRF.subject_name, 'som708');
+fov_idx      = chan_idx_R2 & chan_idx_fov; %&~contains(channelsPRF.subject_name, 'som708'); 
+peri_idx  = chan_idx_R2 & chan_idx_peri; %&~contains(channelsPRF.subject_name, 'som708'); 
 
 % average the electrodes
-[tmpdata_fov] = averageWithinArea(d.data(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
-[tmpdata_parafov] = averageWithinArea(d.data(:,:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
-%[tmpdata_per] = averageWithinArea(d.data(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
+[data_fov] = averageWithinArea(d.data(:,:,fov_idx), group_prob(fov_idx,:), fun, numboot);
+[data_peri] = averageWithinArea(d.data(:,:,peri_idx), group_prob(peri_idx,:), fun, numboot);
 
 % plot
 figure; hold on
 
 for ii = 1:length(areaNames)
     subplot(length(areaNames),1,ii);hold on
-    toplot = flatten(tmpdata_fov(:,:,ii));
+    toplot = flatten(data_fov(:,:,ii));
     plot(smooth(toplot/norm(toplot,2),20),'k', 'LineWidth',2); 
-    toplot = flatten(tmpdata_parafov(:,:,ii));
+    toplot = flatten(data_peri(:,:,ii));
     plot(smooth(toplot/norm(toplot,2),20),'r', 'LineWidth',2); 
-    %toplot = flatten(tmpdata_per(:,:,ii));
-	%plot(smooth(toplot/norm(toplot,2),20),'b', 'LineWidth',2); 
-
+   
     set(gca, 'XTick',1:size(d.data,1):size(d.data,2)*size(d.data,1), 'XTickLabel', []);
     axis tight
 
     l1 = sprintf('foveal (<%0.1f degrees, n = %d)', eccfovthresh, length(find(group_prob(fov_idx,ii)>0)));
-    l2 = sprintf('peripheral (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccparafovthresh, length(find(group_prob(parafov_idx,ii)>0)));
-    %l3 = sprintf('peripheral (>%d degrees, <%d degrees, n = %d)', eccparafovthresh, eccmax, length(find(group_prob(per_idx,ii)>0)));
+    l2 = sprintf('peripheral (>%0.1f degrees, <%d degrees, n = %d)', eccfovthresh, eccperithresh, length(find(group_prob(peri_idx,ii)>0)));
     legend({l1,l2}, 'Location', 'NorthWest');
-    %legend({l1,l2,l3}, 'Location', 'NorthWest');
     title(sprintf('%s (PRF R2 > %d)', areaNames{ii}, R2thresh));
 end
 set(gcf, 'Position', get(0,'screensize'));
-%set(gcf, 'Position', [1         436        1440         369]);
 
 %% model params
 
@@ -78,13 +70,13 @@ numboot = 10000;
 [~, ~, group_prob] = groupElecsByVisualArea(d.channels, 'probabilisticresample', areaNames );   
 
 % combine criteria
-fov_idx      = chan_idx_R2 & chan_idx_eccfov;
-parafov_idx  = chan_idx_R2 & chan_idx_eccparafov;
+fov_idx      = chan_idx_R2 & chan_idx_fov;
+peri_idx  = chan_idx_R2 & chan_idx_peri;
 per_idx      = chan_idx_R2 & chan_idx_eccper;
 
 % average the electrodes
 [d_fov, se_fov] = averageWithinArea(d.params(:,fov_idx), group_prob(fov_idx,:), fun, numboot);
-[d_pfov, se_pfov] = averageWithinArea(d.params(:,parafov_idx), group_prob(parafov_idx,:), fun, numboot);
+[d_pfov, se_pfov] = averageWithinArea(d.params(:,peri_idx), group_prob(peri_idx,:), fun, numboot);
 %[d_per, se_per] = averageWithinArea(params(:,:,per_idx), group_prob(per_idx,:), fun, numboot);
 
 % plot
