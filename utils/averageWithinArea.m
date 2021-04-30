@@ -64,9 +64,9 @@ if numboot > 1
 else
     fprintf('[%s] Computing %s using all electrodes assigned once\n', mfilename, func2str(fun));
     % if not bootstrapping, just use all electrodes and assign once
-	elec_area = assignElecToAreaProb(group_prob); 
     m = nan(size(data,1), nAreas);
     while any(isnan(m(:)))
+        elec_area = assignElecToAreaProb(group_prob); 
         for jj = 1:nAreas
             m(:,jj) = fun(data(:,elec_area == jj),2, 'omitnan');
             se = [];
