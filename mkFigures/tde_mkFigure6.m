@@ -1,7 +1,7 @@
 % tde_mkFigure 6
 
 modelfuns = {@LINEAR,@LINEAR_RECTF,@LINEAR_RECTF_EXP,@LINEAR_RECTF_EXP_NORM,@LINEAR_RECTF_EXP_NORM_DELAY,...
-    @DN, @TTC,@TTCSTIG17}; %@HEEGER93, @TTCSTIG19
+    @DN, @TTC,@TTCSTIG17, @TTCSTIG19}; %@HEEGER93
 
 xvalmode = 1;
 datatype = 'individualelecs';
@@ -15,8 +15,8 @@ end
 %% Plot specs
 
 % Subplot positions: % [left bottom width height]
-posa = [0.05 0.55 0.95 0.4];
-posb = [0.05 0.10 0.908 0.4];
+posa = [0.05 0.55 0.92 0.4];
+posb = [0.05 0.10 0.92 0.4];
 
 figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
@@ -29,15 +29,15 @@ for ii = 1:size(R2,1)
 end
 
 [~, channels, group_prob] = groupElecsByVisualArea(d(1).channels, 'probabilisticresample');   
-[m, se] = averageWithinArea(R2, group_prob, [], 10000);
+[m, se] = averageWithinArea(R2, group_prob, [], 1000);
 
-subplot('position', posa); hold on
+subplot('position', posa);  cla; hold on
 x = 1:height(channels);
 cmap = flipud(brewermap(size(R2,1),'RdBu'));
 tde_plotBars(m,se,x,cmap);
 
-l = {'linear', '+ rectification', '+ exponentiation', '+ normalization', '+ delay'};
-legend(l, 'location', 'northeastoutside');
+l = {'DN linear', '+ rectification', '+ exponentiation', '+ normalization', '+ delay'};
+legend(l, 'location', 'northeast');
 legend('boxoff')
 set(gca, 'xtick', 1:height(channels), 'xticklabel', channels.name)
 set(gca, 'ylim', [0 1], 'xlim', [0 size(m,2)+1]);
@@ -46,28 +46,28 @@ ylabel('cross-validated R^{2}', 'Interpreter','tex');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',20)
 
-% Panel B: cross-validated R2 for other models vs DN in all areas
-R2 = nan(4,height(d(1).channels));
-%modelind = [5 6 7 10 9 8];
-modelind = [5 6 8 7];
+%% Panel B: cross-validated R2 for other models vs DN in all areas
+
+modelind = [5 6 9 8 7];
+R2 = nan(length(modelind),height(d(1).channels));
 
 for ii = 1:size(R2,1)
     R2(ii,:) = results(modelind(ii)).R2.concat_all;
 end
 
 [~, channels, group_prob] = groupElecsByVisualArea(d(1).channels, 'probabilisticresample');   
-[m, se] = averageWithinArea(R2, group_prob, [], 10000);
+[m, se] = averageWithinArea(R2, group_prob, [], 1000);
 
-subplot('position', posb); hold on
+subplot('position', posb); cla; hold on
 x = 1:height(channels);
 cmap = brewermap(size(R2,1),'RdYlGn');
 tde_plotBars(m,se,x,cmap);
 
 %l = {'LINEAR_RECTF_EXP_NORM_DELAY', 'DN (Zhou 2019)', 'TTC (Horiguchi)', 'TTC (Stigliani 2017)', 'A + S (Stigliani 2019)'};
 %l = {'current', 'DN', 'Heeger93', 'TTC 2019', 'TTC 2017', 'TTC'};
-l = {'current', 'DN', 'TTC 2017', 'TTC'};
+l = {'DN (l+r+e+n+d)', 'DN (Zhou19)', 'A+S (Stig19)','TTC (Stig17)', 'TTC (Hori09)'};
 
-legend(l, 'location', 'northeastoutside');
+legend(l, 'location', 'northeast');
 legend('boxoff')
 set(gca, 'xtick', 1:height(channels), 'xticklabel', channels.name)
 set(gca, 'ylim', [0 1], 'xlim', [0 size(m,2)+1]);

@@ -3,7 +3,7 @@
 % Load data and fits
 modelfun = @DN;%;LINEAR_RECTF_EXP_NORM_DELAY;
 xvalmode = 0;
-datastr = 'fitaverage100bads';
+datastr = 'fitaverage1000bads';
 datatype = 'individualelecs';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
@@ -33,14 +33,14 @@ posb =  [0.05  0.1 0.25 0.3];
 posc =  [0.375 0.1 0.25 0.3];
 posd =  [0.7   0.1 0.25 0.3];
 
-figure(1); clf
+%figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Panel A: time courses comparison V1 and V3b
 
 conditionsOfInterest = {'ONEPULSE-4', 'TWOPULSE'};
 timepointsOfInterest = [-0.1 1.2];
-areasOfInterest      = {'V1', 'V3a'};
+areasOfInterest      = {'V1', 'V3b'};
 
 stim_idx  = contains(stim_info.name, conditionsOfInterest);
 t_idx     = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
@@ -69,7 +69,7 @@ box off,  axis tight
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
-ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+ylabel(sprintf('Neural response \n (normalized)')); 
 legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
 
@@ -95,6 +95,7 @@ box off,  axis tight
 ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
+ylabel(sprintf('Model prediction \n (normalized)')); 
 xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
 legend(areasOfInterest, 'location', 'northeast');
 legend('boxoff');
@@ -113,7 +114,7 @@ cmap      = cmap(1:height(channels),:);
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-chan_ind = [5 4 1];%height(channels):-1:1;
+chan_ind = [5 4 3 2 1];%height(channels):-1:1;
 subplot('position', posb); cla; hold on
 
 % Plot linear prediction 
