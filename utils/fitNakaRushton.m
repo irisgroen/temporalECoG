@@ -9,24 +9,34 @@ rMid = ((max(r)-min(r))/2) + min(r);
 [~,rMidIndex] = min(abs(r-rMid));
 initC50 = c(rMidIndex(1));
 
-formula_to_fit = 'rmax * ((x.^n)./((x.^n)+c50.^n))+o';
 
 % set starting points and bounds:
 % c50 n offset rmax
 sp = [initC50 2 min(r) rMid];
-lb = [0 1 -inf min(r)];
-ub = [max(c) 5 min(r) r(end)];
+lb = [0 1 -inf -inf];
+ub = [max(c) 5 min(r) max(r)];
 
-f = fit(c, r, formula_to_fit,  'StartPoint', sp, 'Lower', lb, 'Upper', ub);
+% formula_to_fit = 'rmax * ((x.^n)./((x.^n)+c50.^n))+o';
+% f = fit(c, r, formula_to_fit,  'StartPoint', sp, 'Lower', lb, 'Upper', ub);
+% c50 = f.c50;
+% rmax = f.rmax;
+% n = f.n;
+% offset = f.o;
 
-c50 = f.c50;
-rmax = f.rmax;
-n = f.n;
-offset = f.o;
-
+searchopts = optimoptions(@lsqcurvefit,'Algorithm','levenberg-marquardt', 'Display', 'off');
+fun = @(x,c)x(4)* ((c.^x(2))./((c.^x(2))+x(1).^x(2)))+x(3);
+x = lsqcurvefit(fun,sp,c,r,lb,ub,searchopts);
+ 
+c50 = x(1);
+n = x(2);
+offset = x(3);
+rmax = x(4);
+f = fun;
 if makePlot
-    x1 = 0:max(c)/1000:max(c)*2;
-    y1 = f(x1);
+    %x1 = 0:max(c)/1000:max(c)*2;
+    %y1 = f(x1);
+    c1 = 0:max(c)/1000:max(c)*2;
+    y1 = fun(x,c1);
     figure;hold on
     plot(c,r, x1, y1);%pause(1);%close;
     line([c50 c50], [0 rmax],'LineStyle', ':', 'Color', 'k');
