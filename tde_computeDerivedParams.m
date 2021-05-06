@@ -70,16 +70,18 @@ resp_diff = maxResp-halfMax;
 derivedPrm(4) = find(resp_diff> 0,1);
 
 %% Compute derived parameter Cscale (to what extent predictions match just by scaling)
-X = pred(:,7); % 7% contrast
+X = pred(:,6); % 6% contrast
 y = pred(:,100); % 100% contrast
-stats = regstats(y,X);
+mdl = fitlm(X,y,'Intercept',false);
+
+derivedPrm(5) = sum(mdl.Residuals.Standardized); % mdl.Residuals returns a table of the raw, Pearson, Studentized, and standardized residual values for the model.
+derivedPrm(6) = mdl.Rsquared.Ordinary;
 
 % % debug
-% figure;plot(t,X,t,y,t,stats.r)
+% tmp = mdl.Residuals.Raw;
+% figure;plot(t,X,t,y,t,tmp)
 % legend('low','high','resid')
-% title(stats.mse);
-derivedPrm(5) = stats.mse;
-derivedPrm(6) = stats.rsquare;
+% title(mdl.Rsquared.Ordinary);
 
 end
 
