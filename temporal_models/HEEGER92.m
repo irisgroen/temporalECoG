@@ -56,8 +56,8 @@ linrsp  = conv2(stim, irf, 'full');         % convolve
 linrsp  = linrsp(1:numtimepts,:);           % cut
 
 % See Heeger 1993, eq A9
-if (prm.alpha > 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp)))
-    warning('alpha too big: %4.3f vs %4.3f. Oscillations might arise.\n', prm.alpha, 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp)))
+if (prm.alpha > 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp(:))))
+    warning('alpha too big: %4.3f vs %4.3f. Oscillations might arise.\n', prm.alpha, 2*prm.sigma.^2 / (prm.sigma.^2 + max(linrsp(:))))
 end
 
 
