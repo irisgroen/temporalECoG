@@ -7,6 +7,8 @@ datatype = 'individualelecs';
 datastr = 'fitaverage1000bads';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
+% Note: last panel takes long time to plot
+
 %% Panel A: Example time courses for ISI stimuli
 
 % Select electrodes and compute averages 
@@ -16,9 +18,10 @@ if D.options.fitaverage
     [pred, pred_se] = averageMultipleFits(D.pred, D.channels, @mean);
 else
     % this means we have just one fit to all individual electrodes 
+    numboot = 10000;
     [~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
-    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
-    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, numboot);
+    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, numboot);
 end
 t = D.t;
 stim_ts = D.stim;
@@ -33,7 +36,7 @@ posb =  [0.05  0.1 0.25 0.3];
 posc =  [0.375 0.1 0.25 0.3];
 posd =  [0.7   0.1 0.25 0.3];
 
-%figure(1); clf
+figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Panel A: time courses comparison V1 and V3b
@@ -42,6 +45,7 @@ conditionsOfInterest = {'ONEPULSE-4', 'TWOPULSE'};
 timepointsOfInterest = [-0.1 1.2];
 areasOfInterest      = {'V1', 'V3b'};
 
+% Get timecourses
 stim_idx  = contains(stim_info.name, conditionsOfInterest);
 t_idx     = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 chan_idx1 = find(strcmp(channels.name, areasOfInterest{1}));
@@ -57,11 +61,13 @@ c2 = data(t_idx,stim_idx,chan_idx2);
 c1 = c1/max(c1(:,end));
 c2 = c2/max(c2(:,end));
 
+% Plot
 hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hd = plot(c1(:), 'k-', 'linewidth', 2);
 hp = plot(c2(:), 'Color', ones(1,3)*0.5, 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
+% Format axes
 set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel',[]);
 set(gca, 'ytick', [0 1]);
 box off,  axis tight
@@ -77,17 +83,20 @@ legend('boxoff');
 
 subplot('position', posa2); cla; hold on
 
+% Get timecourses
 s = stim_ts(t_idx,stim_idx);
 c1 = pred(t_idx,stim_idx,chan_idx1);
 c2 = pred(t_idx,stim_idx,chan_idx2);
 c1 = c1/max(c1(:,end));
 c2 = c2/max(c2(:,end));
 
+% Plot
 hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hd = plot(c1(:), 'r-', 'linewidth', 2);
 hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
+% Format axes
 set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.ISI(stim_idx)*1000, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 1]);
 box off,  axis tight
@@ -106,7 +115,7 @@ legend('boxoff');
 if D.options.fitaverage
     [m_data, se_data, channels] = averageMultipleFits(ISIrecover_data, D.channels, @median);
 else
-    [m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, [], 1000);
+    [m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, @median, numboot);
 end
 
 cmap      = brewermap(height(channels)+2, '*PuBuGn');
@@ -114,7 +123,7 @@ cmap      = cmap(1:height(channels),:);
 
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
-chan_ind = [5 4 3 2 1];%height(channels):-1:1;
+chan_ind = [5 4 3 2 1]; %height(channels):-1:1;
 subplot('position', posb); cla; hold on
 
 % Plot linear prediction 
@@ -125,6 +134,8 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 for ii = chan_ind
     tde_plotPoints(m_data(:,ii), se_data(:,ii,:), x, 'ci', 0, [],[],cmap(ii,:));
 end
+
+% Format axes
 ylim([0 1.1]);
 xlim([-20 x(end)+20]);
 
@@ -143,13 +154,13 @@ w = 0.5;
 pulse1_toff = 0.133;
 ISIs = 0:(1/D.srate)*5:max(t)-pulse1_toff*2-w;
 stimISI = zeros(length(t),length(ISIs)+1);
-% generate first pulse
+% Generate first pulse
 pulse1_on = t>0 & t<=pulse1_toff;
 
-% generate a ONEPULSE condition 
+% Generate a ONEPULSE condition 
 stimISI(pulse1_on,:) = 1;
 
-% generate second pulse
+% Generate second pulse
 for ii = 1:length(ISIs)
     this_ISI = ISIs(ii);%ii/nStim * 0.533;
     pulse2_ton = pulse1_toff + this_ISI;
@@ -177,12 +188,13 @@ stim_info2 = table(name, duration, ISI);
 if D.options.fitaverage
     [m_pred, se_pred, channels] = averageMultipleFits(ISIrecover_pred, D.channels, @median);
 else
-    [m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, [], 1000);
+    [m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, @median, numboot);
 end
 
 cmap      = brewermap(height(channels)+2, '*YlOrRd');
 cmap      = cmap(1:height(channels),:);
 
+% Plot
 subplot('position', posc); cla; hold on
 
 % % Plot linear prediction 
@@ -193,6 +205,8 @@ set(get(get(h0,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 for ii = chan_ind
     tde_plotPoints(m_pred(:,ii), squeeze(se_pred(:,ii,:)),ISIs*1000, 'ci', 0, [],[],cmap(ii,:));
 end
+
+% Format axes
 ylim([0 1.1]);
 xlim([-20 x(end)+20]);
 set(gca, 'xtick', stim_info.ISI(stim_idx)*1000); % in ms
@@ -242,7 +256,7 @@ end
 if D.options.fitaverage
     [m_data, se_data, channels] = averageMultipleFits(tISI_data, D.channels, @median);
 else
-    [m_data, se_data] = averageWithinArea(tISI_data, group_prob, [], 1000);
+    [m_data, se_data] = averageWithinArea(tISI_data, group_prob, @median, numboot);
 end
 
 % MODEL
@@ -263,7 +277,7 @@ end
 if D.options.fitaverage
     [m_pred, se_pred, channels] = averageMultipleFits(tISI_pred, D.channels, @median);
 else
-    [m_pred, se_pred] = averageWithinArea(tISI_pred, group_prob, [], 1000);
+    [m_pred, se_pred] = averageWithinArea(tISI_pred, group_prob, @median, numboot);
 end
 
 % Plot
@@ -272,6 +286,7 @@ x = 1:height(channels);
 tde_plotPoints(m_pred', se_pred, x, 'ci', 0, [], 40, 'r');
 tde_plotPoints((m_data/1000)',se_data/1000, x, 'errbar', 0, [], 40, 'k');
 
+% Format axes
 xlim([0 max(x)+1]); ylim([0 1]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', 0:0.2:1);
@@ -281,7 +296,7 @@ xlabel('Visual area');
 legend('model', 'data', 'Location', 'NorthWest')
 legend boxoff
 
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
 
 
     

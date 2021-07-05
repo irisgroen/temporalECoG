@@ -241,6 +241,6 @@ ylabel('R2 regression');
 xlabel('Visual area');
 
 
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
 
 

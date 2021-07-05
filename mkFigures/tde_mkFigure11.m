@@ -1,6 +1,6 @@
 % tde_mkFigure11
 
-% individual electrodes and DN model fits
+% Individual electrodes and DN model fits
 modelfun = @DN;
 xvalmode = 1;
 datatype = 'individualelecs';
@@ -41,7 +41,7 @@ chan_idx_peri = channelsPRF.aprf_ecc > eccfovthresh & channelsPRF.aprf_ecc <= ec
 
 areaNames = {'V123','higher'};
 fun = @mean;
-numboot = 1000;
+numboot = 10000;
 
 % combine criteria
 fov_idx      = chan_idx_R2 & chan_idx_fov; 
@@ -82,7 +82,7 @@ end
 derivedNames = results.derived.names;
 param_idx = [1 3 2];
 fun = @median;
-numboot = 1000;
+numboot = 10000;
 
 % Select electrodes and compute averages 
 [d_fov, se_fov] = averageWithinArea(results.derived.params(param_idx,fov_idx), group_prob(fov_idx,:), fun, numboot);
@@ -107,7 +107,7 @@ for ii = 1:length(param_idx)
     if contains(derivedNames{param_idx(ii)}, 'rAsymp'), ylim([0 0.5]); ylabel('Ratio sustained/transient'); end
 end 
 
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
 
 %% OLD %%
 % 

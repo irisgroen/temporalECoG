@@ -12,14 +12,15 @@ D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
 % Select electrodes and compute averages 
 if D.options.fitaverage
-    % this means electrodes were averaged within area and fitted multiple times
+    % This means electrodes were averaged within area and fitted multiple times
     [data, data_se, channels] = averageMultipleFits(D.data, D.channels, @mean);
     [pred, pred_se] = averageMultipleFits(D.pred, D.channels, @mean);
 else
-    % this means we have just one fit to all individual electrodes 
+    % This means we have just one fit to each of the individual electrodes 
+    numboot = 10000;
     [~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
-    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, 1000);
-    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 1000);
+    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, numboot);
+    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, numboot);
 end
 t = D.t;
 stim_ts = D.stim;
@@ -97,7 +98,7 @@ ylim([-0.2 1.5]);
 xlim([-20 length(s(:)) + 20]);
 
 ylabel(sprintf('Model prediction \n (normalized)')); 
-xlabel('Stimulus duration (ms)'); %ylabel('Response (normalized)'); %title('Broadband responses to increasing durations'); 
+xlabel('Stimulus duration (ms)'); 
 legend(AOI, 'location', 'northeast');
 legend('boxoff');
 
@@ -109,14 +110,14 @@ legend('boxoff');
 if D.options.fitaverage
     [m_data, se_data, channels] = averageMultipleFits(derivedPrm, D.channels, @mean);
 else
-    [m_data, se_data] = averageWithinArea(derivedPrm, group_prob, [], 1000);
+    [m_data, se_data] = averageWithinArea(derivedPrm, group_prob, [], numboot);
 end
 
 % Model
 if D.options.fitaverage
     [m_model, se_model, channels] = averageMultipleFits(results.derived.params, D.channels, @mean);
 else
-    [m_model, se_model] = averageWithinArea(results.derived.params, group_prob, [], 1000);
+    [m_model, se_model] = averageWithinArea(results.derived.params, group_prob, [], numboot);
 end
 
 subplot('position', posb); cla; hold on
@@ -151,7 +152,7 @@ set(gca, 'ytick', 0:0.2:1);
 ylabel('Ratio sustained/transient');
 xlabel('Visual area');
 
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
 
 % %% Extended data: individual subjects
 % figure(2); clf
