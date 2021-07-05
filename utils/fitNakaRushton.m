@@ -32,6 +32,7 @@ n = x(2);
 offset = x(3);
 rmax = x(4);
 f = fun;
+
 if makePlot
     %x1 = 0:max(c)/1000:max(c)*2;
     %y1 = f(x1);
