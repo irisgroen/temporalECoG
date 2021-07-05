@@ -1,22 +1,22 @@
 %tde_mkFigure 4
 
 % Load data and fits
-modelfun = @LINEAR_RECTF_EXP_NORM_DELAY;
-xvalmode = 0;
+modelfun = @DN;
+xvalmode = 1;
 datatype = 'individualelecs';
-datastr  = 'bads';
-[D] = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
+[D] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Select electrodes and compute averages 
+numboot = 10000;
 [~, ~, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample', {'V1'});   
-[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 10000);
-[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 10000);
+[data, data_se] = averageWithinArea(D.data, group_prob, @mean, numboot);
+[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, numboot);
 t = D.t;
 stim = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
-figure(2); clf
+figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]
@@ -54,7 +54,7 @@ for ii = length(x):-1:1
 end
 
 % Plot
-subplot('position', posa1); hold on
+subplot('position', posa1); cla; hold on
 colors = gray(length(conditionsOfInterest)+1); colors = colors(1:end-1,:);
 ecog_plotMultipleTimeCourses(t(t_idx)*1000, fliplr(d), [], colors);
 set(gca, 'xtick', [0 300]);
@@ -90,13 +90,13 @@ p_se_u = pred_se(t_idx,stim_idx,2);
 
 maxresp = max(d(:)); % scale stimulus to max 
 
-subplot('position', posb); hold on
+% Plot
+subplot('position', posb); cla; hold on
 hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
 hd = plot(d(:), 'k-', 'linewidth', 2);
 hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
 hp = plot(p(:), 'r-', 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
@@ -106,8 +106,8 @@ box off,  axis tight
 set(gca, 'ylim', [-2 20]);
 set(gca, 'xlim', [-20 length(s(:)) + 20]);
 
-xlabel('Stimulus contrast (%)'); ylabel('Change in power (x-fold)'); 
-legend({'Neural data', 'DN prediction'}, 'location', 'northwest');
+xlabel('Contrast (%)'); ylabel('Change in power (x-fold)'); 
+legend({'Stimulus','Neural response', 'DN prediction'}, 'location', 'northwest');
 legend('boxoff');
 
 %% Panel C: contrast dynamics quantified across electrodes
@@ -140,10 +140,12 @@ d = cat(2,d,pred(t_idx, :,:));
 
 % Compute sum across stim_on window
 m_conc = squeeze(sum(d,1)); 
-[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, [], 1000);
+[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, @median, numboot);
+
+% Plot
 
 % 1. Contrast response function
-subplot('position', posc1); hold on
+subplot('position', posc1); cla; hold on
 
 % Plot linear prediction 
 h0 = line([0 x(end)], [0 1], 'LineStyle', '--', 'LineWidth', 2, 'Color', [0.7 0.7 0.7]);
@@ -164,15 +166,14 @@ tde_plotPoints(m, se, x2, 'ci', 1, [], 50,'r');
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 xlabel('Contrast (%)'); ylabel('Summed broadband power (0-1s)'); 
-%title('Contrast response function', 'fontsize', 18); 
 
 % 2. Peak latency
-subplot('position', posc2); hold on
+subplot('position', posc2); cla; hold on
 
 % Compute peak across trial window
 [~,I] = max(d,[],1);
 T = t(t_idx);
-[m_conc, se_conc] = averageWithinArea(squeeze(T(I)), group_prob,  [], 1000);
+[m_conc, se_conc] = averageWithinArea(squeeze(T(I)), group_prob,  @median, numboot);
 
 m_conc = m_conc * 1000; % convert to ms
 se_conc = se_conc * 1000;
@@ -192,11 +193,10 @@ tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 l = get(gca, 'YLim'); ylim([50 l(2)]);
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
-
 xlabel('Contrast (%)'); ylabel('Peak latency (ms)'); 
 
 % 3. Ratio of sustained to  transient
-subplot('position', posc3); hold on
+subplot('position', posc3); cla; hold on
 T = D.t(t_idx);
 
 % Smooth time courses to get better estimates of max and offset response levels
@@ -214,7 +214,7 @@ t_off = (T == 0.5); % offset timepoint
 O = d(t_off,:,:); % value at offset
 R = squeeze(M./O); % divide value at offset with value of peak
 
-[m_conc, se_conc] = averageWithinArea(R, group_prob,  [], 1000);
+[m_conc, se_conc] = averageWithinArea(R, group_prob, @median, numboot);
 
 % Plot data
 nStim = length(stim_idx);
@@ -227,7 +227,7 @@ m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
 tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 
-% format axes
+% Format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 set(gca, 'ylim', [0 10]);
