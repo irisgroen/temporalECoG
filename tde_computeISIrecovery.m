@@ -1,5 +1,8 @@
 function [ISIrecover, ts, w] = tde_computeISIrecovery(data,t,stim_info,srate,w,shift,metric, debug, savefig)
 
+% data = time x events x channels
+% note that onepulse4 condition will be added to ts output
+
 if ~exist('w', 'var') || isempty(w)
     w = 0.3; % window for computing recovery
 end
@@ -30,7 +33,7 @@ stimdur = stim_info.duration(stim_idx(end));
 % Make sure the window size matches the sample rate
 w = round(w*srate)*(1/srate);
 
-% Initialized
+% Initialize
 ISIrecover = nan(length(stim_idx)-1, nDatasets);
 ts = nan(w*srate,length(stim_idx),nDatasets);
 
@@ -46,7 +49,6 @@ for kk = 1:nDatasets
     nStim = length(stim_idx);
     pulse1_onset = zeros(nStim,1);
     pulse2_onset = stim_info.ISI(stim_idx) + stimdur;
-    %pulse2_onset(1) = w; % ONEPULSE-4 has no second stimulus
     pulse2_onset(1) = t(end); % ONEPULSE-4 has no second stimulus
     
     % Compute response to first stimulus
@@ -57,11 +59,8 @@ for kk = 1:nDatasets
     end
 
     pulse1_mn = mean(pulse1,2,'omitnan');
-    %pulse1_mn = pulse1(:,1); 
-    %pulse1_mn = mean(pulse1(:,2:end),2,'omitnan');
-    %pulse1_mn = mean(pulse1(:,3:end),2,'omitnan');
-    %pulse1_mn = mean(pulse1(:,[end-1 end]),2,'omitnan');
     
+    % % debug
     % figure;hold on;
     % plot(t,pulse1, 'LineWidth', 1);
     % plot(t,pulse1_mn, 'k', 'LineWidth', 2);
@@ -97,14 +96,14 @@ for kk = 1:nDatasets
             error('unknown metric, choose sum or max')
     end
     
-    % Compute the sum over each second pulse 
+    % Compute the sum/max over each second pulse 
     t_idx2 = [];
     for ii = 1:nStim
         t_idx2(:,ii) = t > pulse2_onset(ii) + shift & t <= pulse2_onset(ii) + w + shift;
     end
     t_idx2 = logical(t_idx2);
 
-    % Sum pulse 2
+    % Sum/Max pulse 2
     pulse2_to_sum = pulse2_sub;
     pulse2_to_sum(~t_idx2) = 0;
     switch metric
