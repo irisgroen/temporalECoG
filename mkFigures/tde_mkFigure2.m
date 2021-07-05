@@ -2,21 +2,21 @@
 
 % Load data and fits
 modelfun = @DN;
-xvalmode = 0;
+xvalmode = 1;
 datatype = 'individualelecs';
 [D] = tde_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Select electrodes and compute averages 
+numboot = 10000;
 [~, ~, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample', {'V1'});   
-[data, data_se] = averageWithinArea(D.data, group_prob, @mean, 10000);
-[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, 10000);
+[data, data_se] = averageWithinArea(D.data, group_prob, @mean, numboot);
+[pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, numboot);
 t = D.t;
 stim_ts = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
 figure(1); clf
-%set(gcf,'renderer','Painters');
 set(gcf,'position',get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]
@@ -48,7 +48,7 @@ d_sum = sum([d_shift d(:,1)],2);
 d_copy = d;
 d_copy(:,1) = nan;
 d_copy(:,2) = d_sum;
-maxresp = max(d(:,1)); % scale stimulus to max of lowest duration
+maxresp = max(d(:,1)); % Scale stimulus to max of lowest duration
 
 % For plotting purposes, add a little space after the first stimulus
 dummy = nan(40,2);
@@ -57,7 +57,7 @@ d = cat(1, d, dummy);
 d_copy = cat(1, d_copy, dummy);
 
 % Plot
-subplot('position', posa); hold on
+subplot('position', posa); cla; hold on
 plot(s(:), 'color', [0.5 0.5 0.5], 'lineWidth', 1);
 plot((d(:)./maxresp), 'k', 'lineWidth', 2);
 plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
@@ -65,7 +65,7 @@ plot((d_copy(:)./maxresp), 'k:', 'lineWidth', 2);
 % Set axes
 set(gca, 'xtick',1:size(d,1):length(find(stim_idx))*size(d,1), 'ytick', []);
 set(gca, 'xticklabel', stim_info.duration(stim_idx)); box off
-xlabel('Stimulus duration (ms)'); ylabel('Neural response');
+xlabel('Stimulus duration (ms)'); ylabel('Response magnitude');
 
 % Add legend
 legend({'Stimulus', 'Neural response', 'Linear prediction'}, 'location', 'northwest');
@@ -102,10 +102,10 @@ d = cat(2,d,pred2(t_idx, :,:));
 
 % Compute sum across stim_on window
 m_conc = squeeze(sum(d,1)); 
-[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, [], 1000);
+[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, @median, numboot);
 
 % Plot
-subplot('position', posb); hold on
+subplot('position', posb);cla; hold on
 
 % Plot linear prediction 
 h0 = line([0 x(end)], [0 1], 'linestyle', ':', 'LineWidth', 2, 'color', [0 0 0]);
@@ -135,12 +135,15 @@ ylim([0 1.3]);
 axis square
 
 %% Panel C: data and fits
+
+% Select stimuli and time-points of interest
 conditionsOfInterest = {'ONEPULSE'};
 timepointsOfInterest = [-0.1 0.8];
 
 stim_idx = contains(stim_info.name, conditionsOfInterest);
 t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 
+% Generate time courses and predictions
 s = stim_ts(t_idx,stim_idx);
 d = data(t_idx,stim_idx);
 d_se_l = data_se(t_idx,stim_idx,1);
@@ -148,19 +151,20 @@ d_se_u = data_se(t_idx,stim_idx,2);
 p = pred(t_idx,stim_idx);
 p_se_l = pred_se(t_idx,stim_idx,1);
 p_se_u = pred_se(t_idx,stim_idx,2);
-maxresp = max(d(:,1)); % scale stimulus to max of first condition
+maxresp = max(d(:,1)); % Scale stimulus to max of first condition
 
-subplot('position', posc); hold on
+% Plot
+subplot('position', posc); cla; hold on
 
 hs = plot(s(:)*maxresp, 'color', [0.7 0.7 0.7], 'linewidth', 1);
 hcid = ciplot(d_se_l(:), d_se_u(:), [], 'k', 0.25);
 hd = plot(d(:), 'k-', 'linewidth', 2);
 hcip = ciplot(p_se_l(:), p_se_u(:), [], 'r', 0.25);
 hp = plot(p(:), 'r-', 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 set(get(get(hcid,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 set(get(get(hcip,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
+% Format axes
 set(gca, 'xtick',1:size(d,1):size(d,2)*size(d,1), 'xticklabel', stim_info.duration(stim_idx)*1000, 'xticklabelrotation', 45);
 box off,  axis tight
 
@@ -168,7 +172,7 @@ ylim([-2 25]);
 xlim([-20 length(s(:)) + 20]);
 
 xlabel('Stimulus duration(ms)'); ylabel('Change in power (x-fold)');
-legend({'Neural response', 'DN prediction'}, 'location', 'northwest');
+legend({'Stimulus', 'Neural response', 'DN prediction'}, 'location', 'northwest');
 legend('boxoff');
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
