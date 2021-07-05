@@ -1,6 +1,6 @@
 function [err, pred, numrsp, demrsp] = LINEAR_RECTF_EXP_NORM_DELAY(param, data, stim, srate)
 %
-% function [err, pred] = LINEAR_RECTH_EXP_NORM_DELAY(param, data, stim, srate)
+% function [err, pred, numrsp, demrsp] = LINEAR_RECTH_EXP_NORM_DELAY(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 9 fields.
 %          1. tau1 -- time to peak for positive IRF (seconds)

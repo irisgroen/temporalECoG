@@ -1,6 +1,6 @@
-function [err, pred] = DN(param, data, stim, srate)
+function [err, pred, numrsp, demrsp] = DN(param, data, stim, srate)
 %
-% function [err, pred] = DN(param, data, stim, srate)
+% function [err, pred, numrsp, demrsp] = DN(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
 % params : 7 fields.
 %          1. tau1 -- time to peak for positive IRF (seconds)
@@ -22,6 +22,8 @@ function [err, pred] = DN(param, data, stim, srate)
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
 % pred: predicted time series
+% numrsp: numerator time course
+% demrsp: denominator time course
 
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
@@ -52,9 +54,6 @@ irf_norm = normSum(exp(-t/prm.tau2));
 %% COMPUTE THE NORMALIZATION RESPONSE
 
 % ADD SHIFT TO THE STIMULUS -------------------------------------------
-%sft     = round(prm.shift * srate);
-%stimtmp = padarray(stim, [sft, 0], 0, 'pre');
-%stim    = stimtmp(1 : size(stim, 1), :);
 t2 = t-prm.shift;
 stim = interp1(t, stim, t2, [], 0);
 
