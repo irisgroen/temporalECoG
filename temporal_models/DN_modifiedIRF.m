@@ -27,7 +27,8 @@ function [err, pred, numrsp, demrsp] = DN_modifiedIRF(param, data, stim, srate)
 %
 % NOTE: the only difference with DN.m is that here the IRF for the
 % numerator is also normalized to summed to 1, after the positive and
-% negative IRF are combined (which are themselves each normalized to 1).
+% negative IRF are combined (which are themselves each normalized to 1),
+% and that the denominator and numerator are provided as output variables.
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);

@@ -1,4 +1,4 @@
-function [err, pred, numrsp, demrsp] = DN(param, data, stim, srate)
+function [err, pred] = DN(param, data, stim, srate)
 %
 % function [err, pred, numrsp, demrsp] = DN(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
@@ -22,9 +22,6 @@ function [err, pred, numrsp, demrsp] = DN(param, data, stim, srate)
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
 % pred: predicted time series
-% numrsp: numerator time course
-% demrsp: denominator time course
-
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);

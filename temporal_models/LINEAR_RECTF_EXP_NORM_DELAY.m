@@ -1,4 +1,4 @@
-function [err, pred, numrsp, demrsp] = LINEAR_RECTF_EXP_NORM_DELAY(param, data, stim, srate)
+function [err, pred] = LINEAR_RECTF_EXP_NORM_DELAY(param, data, stim, srate)
 %
 % function [err, pred, numrsp, demrsp] = LINEAR_RECTH_EXP_NORM_DELAY(param, data, stim, srate)
 % INPUTS  -----------------------------------------------------------------
@@ -23,8 +23,6 @@ function [err, pred, numrsp, demrsp] = LINEAR_RECTF_EXP_NORM_DELAY(param, data, 
 % OUTPUTS -----------------------------------------------------------------
 % err:  sum of squared error
 % pred: predicted time series
-% numrsp: numerator time course
-% demrsp: denominator time course
 
 %% PRE-DEFINED /EXTRACTED VARIABLES
 numtimepts  = size(stim,1);
