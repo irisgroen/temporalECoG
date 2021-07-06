@@ -167,7 +167,7 @@ ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 xlabel('Contrast (%)'); ylabel('Summed broadband power (0-1s)'); 
 
-% 2. Peak latency
+% 2. Time to peak
 subplot('position', posc2); cla; hold on
 
 % Compute peak across trial window
@@ -193,7 +193,7 @@ tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 l = get(gca, 'YLim'); ylim([50 l(2)]);
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
-xlabel('Contrast (%)'); ylabel('Peak latency (ms)'); 
+xlabel('Contrast (%)'); ylabel('Time-to-peak (ms)'); 
 
 % 3. Ratio of sustained to  transient
 subplot('position', posc3); cla; hold on
