@@ -15,7 +15,7 @@ pred = D.pred(:,:,1); %V1
 stim = D.stim;
 srate = D.srate;
 
-[~,~, numrsp,demrsp] = DN(param, data, stim, srate);
+[~,~, numrsp,demrsp] = DN_modifiedIRF(param, data, stim, srate);
 
 % Prepare figure
 figure(1); clf
@@ -34,7 +34,7 @@ t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 cmap2    = brewermap(nStim+2, 'OrRd');
 cmap2    = cmap2(3:end,:);
 
-conditionsOfInterest = {'CRF-4'};
+conditionsOfInterest = {'CRF-5'};
 cond_idx = find(contains(D.stim_info.name(stim_idx), conditionsOfInterest));
 
 subplot(2,2,1); cla; hold on
@@ -43,12 +43,12 @@ plot(t,numrsp(:,stim_idx(cond_idx)),'LineWidth', 2, 'Color', cmap2(cond_idx,:));
 plot(t,demrsp(:,stim_idx(cond_idx)),'LineWidth', 2, 'Color', cmap2(cond_idx,:), 'LineStyle', '--');
 %plot(t,numrsp(:,stim_idx(cond))./demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-legend({'Numerator', 'Denominator'}, 'location', 'northeast'); legend boxoff
+legend({'Numerator', 'Denominator'}, 'location', 'best'); legend boxoff
 
-set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 0.6]);
+set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 1.1]);
 ylabel('Model output (a.u.)');
 
-conditionsOfInterest = {'CRF-2'};
+conditionsOfInterest = {'CRF-1'};
 cond_idx = find(contains(D.stim_info.name(stim_idx), conditionsOfInterest));
 
 subplot(2,2,3); cla; hold on
