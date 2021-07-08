@@ -43,7 +43,7 @@ plot(t,numrsp(:,stim_idx(cond_idx)),'LineWidth', 2, 'Color', cmap2(cond_idx,:));
 plot(t,demrsp(:,stim_idx(cond_idx)),'LineWidth', 2, 'Color', cmap2(cond_idx,:), 'LineStyle', '--');
 %plot(t,numrsp(:,stim_idx(cond))./demrsp(:,stim_idx(cond)),'LineWidth', 2, 'Color', cmap2(4,:));
 set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-legend({'Numerator', 'Denominator'}, 'location', 'best'); legend boxoff
+legend({'Numerator', 'Denominator'}, 'location', 'northwest'); legend boxoff
 
 set(gca, 'xlim', [-0.1 0.65], 'ylim', [0 1.1]);
 ylabel('Model output (a.u.)');
