@@ -7,7 +7,7 @@ datatype = 'individualelecs';
 datastr = 'fitaverage1000bads';
 D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
-% Note: last panel takes long time to plot
+% Note: last panel takes long time to plot!!
 
 %% Panel A: Example time courses for ISI stimuli
 
@@ -113,7 +113,7 @@ legend('boxoff');
 [ISIrecover_data] = tde_computeISIrecovery(D.data,D.t,D.stim_info,D.srate,0.5, [], 'max');
 
 if D.options.fitaverage
-    [m_data, se_data, channels] = averageMultipleFits(ISIrecover_data, D.channels, @median);
+    [m_data, se_data, channels] = averageMultipleFits(ISIrecover_data, D.channels, @mean);
 else
     [m_data, se_data] = averageWithinArea(ISIrecover_data, group_prob, @median, numboot);
 end
@@ -186,7 +186,7 @@ stim_info2 = table(name, duration, ISI);
 [ISIrecover_pred] = tde_computeISIrecovery(pred2,t,stim_info2,D.srate,w,[], 'max');
 
 if D.options.fitaverage
-    [m_pred, se_pred, channels] = averageMultipleFits(ISIrecover_pred, D.channels, @median);
+    [m_pred, se_pred, channels] = averageMultipleFits(ISIrecover_pred, D.channels, @mean);
 else
     [m_pred, se_pred] = averageWithinArea(ISIrecover_pred, group_prob, @median, numboot);
 end
@@ -223,6 +223,7 @@ thresh = 0.90;
 x = stim_info.ISI(stim_idx)*1000; % in ms
 
 % DATA
+fprintf('[%s] Computing tISI for data...\n',mfilename);
 
 % Fit an exponential to the recovery of the data points to obtain an estimate of
 % the recovery over time
@@ -254,12 +255,13 @@ end
 
 % Average across electrodes or fits
 if D.options.fitaverage
-    [m_data, se_data, channels] = averageMultipleFits(tISI_data, D.channels, @median);
+    [m_data, se_data, channels] = averageMultipleFits(tISI_data, D.channels, @mean);
 else
     [m_data, se_data] = averageWithinArea(tISI_data, group_prob, @median, numboot);
 end
 
 % MODEL
+fprintf('[%s] Computing tISI for model...\n',mfilename);
 
 % Find the ISI at which the predicted recovery from the model crosses the
 % threshold; this is tISI derived from the model
@@ -275,7 +277,7 @@ end
 
 % Average across electrodes or fits
 if D.options.fitaverage
-    [m_pred, se_pred, channels] = averageMultipleFits(tISI_pred, D.channels, @median);
+    [m_pred, se_pred, channels] = averageMultipleFits(tISI_pred, D.channels, @mean);
 else
     [m_pred, se_pred] = averageWithinArea(tISI_pred, group_prob, @median, numboot);
 end
@@ -287,7 +289,7 @@ tde_plotPoints(m_pred', se_pred, x, 'ci', 0, [], 40, 'r');
 tde_plotPoints((m_data/1000)',se_data/1000, x, 'errbar', 0, [], 40, 'k');
 
 % Format axes
-xlim([0 max(x)+1]); ylim([0 1]);
+xlim([0 max(x)+1]); ylim([0 0.8]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', 0:0.2:1);
 ylabel(sprintf('Time to recover %d percent (s)', thresh*100));
