@@ -195,14 +195,15 @@ ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
 xlabel('Contrast (%)'); ylabel('Time-to-peak (ms)'); 
 
-% 3. Ratio of sustained to  transient
+% 3. Ratio of sustained to transient
 subplot('position', posc3); cla; hold on
 T = D.t(t_idx);
 
 % Smooth time courses to get better estimates of max and offset response levels
+% Apply same amount of smoothing to both data and model predictions
 for ii = 1:size(d,2)
     for jj = 1:size(d,3)
-        d(:,ii,jj) = smooth(d(:,ii,jj),40);
+        d(:,ii,jj) = smooth(d(:,ii,jj),150);
     end
 end
 
@@ -212,7 +213,7 @@ end
 [M] = max(d,[],1); % value at peak
 t_off = (T == 0.5); % offset timepoint
 O = d(t_off,:,:); % value at offset
-R = squeeze(M./O); % divide value at offset with value of peak
+R = squeeze(O./M); % divide value at offset with value at peak
 
 [m_conc, se_conc] = averageWithinArea(R, group_prob, @median, numboot);
 
@@ -222,7 +223,7 @@ m = m_conc(1:nStim);
 se = se_conc(1:nStim,:);
 tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
 
-% Plot preduction
+% Plot prediction
 m = m_conc(nStim+1:end);
 se = se_conc(nStim+1:end,:);
 tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
@@ -230,7 +231,7 @@ tde_plotPoints(m, se, x2, 'ci', 0, [], 50, 'r');
 % Format axes
 ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
 set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
-set(gca, 'ylim', [0 10]);
-xlabel('Contrast (%)'); ylabel('Ratio offset - peak'); 
+set(gca, 'ylim', [0 1]);
+xlabel('Contrast (%)'); ylabel('Ratio offset/peak'); 
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
