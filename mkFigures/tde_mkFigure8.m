@@ -110,21 +110,21 @@ legend('boxoff');
 if D.options.fitaverage
     [m_data, se_data, channels] = averageMultipleFits(derivedPrm, D.channels, @mean);
 else
-    [m_data, se_data] = averageWithinArea(derivedPrm, group_prob, [], numboot);
+    [m_data, se_data] = averageWithinArea(derivedPrm, group_prob, @median, numboot);
 end
 
 % Model
 if D.options.fitaverage
     [m_model, se_model, channels] = averageMultipleFits(results.derived.params, D.channels, @mean);
 else
-    [m_model, se_model] = averageWithinArea(results.derived.params, group_prob, [], numboot);
+    [m_model, se_model] = averageWithinArea(results.derived.params, group_prob, @median, numboot);
 end
 
 subplot('position', posb); cla; hold on
 x = 1:height(channels);
 tde_plotPoints(m_model(1,:)', squeeze(se_model(1,:,:)), x, 'ci', 0, [], 40, 'r');
 tde_plotPoints(m_data(1,:)', squeeze(se_data(1,:,:)), x, 'errbar', 0, [], 40);
-xlim([0 max(x)+1]); ylim([0 0.4]);
+xlim([0 max(x)+1]); ylim([0 0.3]);
 set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
 set(gca, 'ytick', [0 0.1 0.2 0.3 0.4]);
 ylabel('Time to peak (s)');
