@@ -15,3 +15,5 @@ https://github.com/WinawerLab/ECoG_utils
 
 Some of the data (e.g. retinotopic atlases) were computed using code located in:
 https://github.com/BAIRR01/BAIRanalysis
+
+Please contact Iris Groen (i.i.a.groen@uva.nl) for questions.
