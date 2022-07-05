@@ -4,7 +4,6 @@
 % 2022 Iris Groen
 
 % Load data and fits
-
 modelfun = @DN;
 xvalmode = 0;
 datatype = 'individualelecs';
@@ -20,7 +19,7 @@ stim_ts = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
-figure(4); clf
+figure(1); clf
 set(gcf,'position',get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]

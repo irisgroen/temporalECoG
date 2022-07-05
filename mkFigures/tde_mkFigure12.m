@@ -1,5 +1,5 @@
-% Figure 8-1:
-% Temporal summation windows for individual participants.
+% Figure 12 :
+% Temporal summation windows vary across individual participants
 %
 % 2022 Iris Groen
 

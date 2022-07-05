@@ -1,4 +1,4 @@
-% Figure3: 
+% Figure 3 : 
 % Adaptation of neuronal responses to stimulus repetition in human V1.
 %
 % 2022 Iris Groen
@@ -19,7 +19,7 @@ stim = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
-figure(2); clf
+figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]

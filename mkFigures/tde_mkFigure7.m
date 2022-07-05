@@ -1,4 +1,4 @@
-% Figure7 : 
+% Figure 7 : 
 % Delayed normalization explains multiple temporal dynamics in multiple visual areas
 %
 % 2022 Iris Groen

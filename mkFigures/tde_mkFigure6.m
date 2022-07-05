@@ -1,4 +1,4 @@
-% Figure5: 
+% Figure 6 : 
 % How the DN model predicts similar effects of low-contrast and repetition.
 %
 % 2022 Iris Groen

@@ -1,11 +1,11 @@
-% Figure 1-1 and Figure 1-2: 
+% Figure 1-1 :
 % Individual patient electrode coverages on brain mesh
 %
 % This script will generate one or more separate figures for each patient,
 % showing different views of the implanted hemisphere(s)
 %
 % WARNING: running this script all at once with create a lot of figures (27
-% in total). It is advisable to run cell-by-cell for each patient in turn.
+% in total). It is advised to run cell-by-cell for each patient in turn.
 %
 % 2022 Iris Groen
 

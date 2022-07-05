@@ -19,7 +19,7 @@ stim = D.stim;
 stim_info = D.stim_info;
 
 % Prepare figure
-figure(3); clf
+figure(1); clf
 set(gcf, 'position',  get(0, 'screensize'));
 
 % Subplot positions: % [left bottom width height]

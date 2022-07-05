@@ -1,4 +1,4 @@
-% Figure5: 
+% Figure 5 : 
 % Comparison of contrast and repetition effects in ECoG data and DN model predictions.
 %
 % 2022 Iris Groen

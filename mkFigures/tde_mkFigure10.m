@@ -1,335 +1,418 @@
-% Figure 10:
-% Opposite effects of contrast on response amplitude and timing across
-% visual areas.
+% Figure 10 : 
+% Temporal models differ in their ability to predict multiple temporal dynamics
 %
 % 2022 Iris Groen
 
-% Load data and fits
-modelfun = @DN;
-xvalmode = 0;
+modelfuns = {@DN,@HEEGER92,@TTCSTIG19,@TTCSTIG17};
+
+xvalmode = 1;
 datatype = 'individualelecs';
-datastr = 'fitaverage1000bads';
-D = tde_loadDataForFigure(modelfun, xvalmode, datatype, [], datastr);
 
-% Compute derived parameters
-[results] = tde_evaluateModelFit(D);
-
-% Select electrodes and compute averages 
-if D.options.fitaverage
-    % this means electrodes were averaged within area and fitted multiple times
-    [data, data_se, channels] = averageMultipleFits(D.data, D.channels, @mean);
-    [pred, pred_se] = averageMultipleFits(D.pred, D.channels, @mean);
-else
-    % this means we have just one fit to all individual electrodes
-    numboots = 1000;
-    [~, channels, group_prob] = groupElecsByVisualArea(D.channels, 'probabilisticresample');   
-    [data, data_se] = averageWithinArea(D.data, group_prob, @mean, numboots);
-    [pred, pred_se] = averageWithinArea(D.pred, group_prob, @mean, numboots);
+for ii = 1:length(modelfuns)
+    [d(ii)] = tde_loadDataForFigure(modelfuns{ii}, xvalmode, datatype);
 end
+
+[results] = tde_evaluateModelFit(d,0);
+numboot = 10000;
+
+nModels = length(modelfuns);
+cmap = brewermap(nModels,'PuOr');
+cmap(1,:) = [1 0 0];
+
+%% Panel A (here figure 1)
+
+% Subplot positions: % [left bottom width height]
+posa = [0.05 0.10 0.95 0.85];
+
+figure(1); clf; hold on
+set(gcf, 'position',  get(0, 'screensize'));
+
+% Cross-validated R2 for model build up in each area
+modelind = 1:nModels;
+R2 = nan(length(modelind),height(d(1).channels));
+
+for ii = 1:size(R2,1)
+    R2(ii,:) = results(modelind(ii)).R2.concat_all;
+end
+
+[~, channels, group_prob] = groupElecsByVisualArea(d(1).channels, 'probabilisticresample');   
+[m, se] = averageWithinArea(R2, group_prob, [], numboot);
+
+subplot('position', posa);  cla; hold on
+x = 1:height(channels);
+tde_plotBars(m,se,x,cmap);
+
+l = {'DN', 'feedback (Heeger92)', 'A+S (Stigliani19)','TTC (Stigliani17)'};
+legend(l, 'location', 'northeast');
+legend('boxoff')
+set(gca, 'xtick', 1:height(channels), 'xticklabel', channels.name)
+set(gca, 'ylim', [0 1], 'xlim', [0 size(m,2)+1]);
+box off
+ylabel('cross-validated R^{2}', 'Interpreter','tex'); 
+
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
+
+%% panel B (here Figure 2)
+
+plotSE = 1;
+numboot = 10000;
+
+% Subplot positions: % [left bottom width height]
+posa = [0.04 0.58 0.4 0.4];
+posb = [0.5 0.58 0.4 0.4];
+posc = [0.04 0.08 0.4 0.4];
+posd = [0.5 0.08 0.4 0.4];
+
+figure(2); clf; hold on
+set(gcf, 'position',  get(0, 'screensize'));
+
+group_prob = group_prob(:,1); % V1 electrodes
+
+D = d(1);
 t = D.t;
 stim_ts = D.stim;
 stim_info = D.stim_info;
 
-%% Panels A-E (here figure 1)
-% Subplot positions: % [left bottom width height]
+% 1. temporal summation
 
-posa1 = [0.05  0.75 0.9 0.22];
-posa2 = [0.05  0.50 0.9 0.22];
-posb =  [0.05  0.1 0.25 0.3];
-posc =  [0.375 0.1 0.25 0.3];
-posd =  [0.7   0.1 0.25 0.3];
+% Find stimulus index
+stim_idx = find(contains(stim_info.name, 'ONEPULSE'));
+x = stim_info.duration(stim_idx)*1000; % in ms
 
-figure(1); clf
-set(gcf, 'position',  get(0, 'screensize'));
+% Generate new stimuli based on params
+nStimNew = 50;
+[stim2, stim_info2] = tde_simulateNewStimuli(t,nStimNew);
+stim_info2.duration = stim_info2.duration*1000; % convert to ms
+stim_idx2 = find(contains(stim_info2.name, 'ONEPULSE'));
+x2 = stim_info2.duration(stim_idx2); % in ms
 
-% Panel A: time courses comparison V1 and V3b
-
-conditionsOfInterest = {'CRF'};
-timepointsOfInterest = [-0.1 1.2];
-areasOfInterest      = {'V1', 'V3b'};
-
-stim_idx  = contains(stim_info.name, conditionsOfInterest);
-t_idx     = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-chan_idx1 = find(strcmp(channels.name, areasOfInterest{1}));
-chan_idx2 = find(strcmp(channels.name, areasOfInterest{2}));
-
-% Top: Data
-
-subplot('position', posa1); hold on
-
-s = stim_ts(t_idx,stim_idx);
-c1 = data(t_idx,stim_idx,chan_idx1);
-c2 = data(t_idx,stim_idx,chan_idx2);
-c1 = c1/max(c1(:,end));
-c2 = c2/max(c2(:,end));
-
-hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
-hd = plot(c1(:), 'k-', 'linewidth', 2);
-hp = plot(c2(:), 'Color', ones(1,3)*0.5, 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel',[]);
-set(gca, 'ytick', [0 1]);
-box off,  axis tight
-
-ylim([-0.2 1.5]);
-xlim([-20 length(s(:)) + 20]);
-
-ylabel(sprintf('Neural response \n (normalized)')); 
-legend(areasOfInterest, 'location', 'northeast');
-legend('boxoff');
-
-% Bottom: Model
-
-subplot('position', posa2); hold on
-
-s = stim_ts(t_idx,stim_idx);
-c1 = pred(t_idx,stim_idx,chan_idx1);
-c2 = pred(t_idx,stim_idx,chan_idx2);
-c1 = c1/max(c1(:,end));
-c2 = c2/max(c2(:,end));
-
-hs = plot(s(:), 'color', [0.7 0.7 0.7], 'linewidth', 1);
-hd = plot(c1(:), 'r-', 'linewidth', 2);
-hp = plot(c2(:), 'Color', [1 0.5 0.5], 'linewidth', 2);
-set(get(get(hs,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-
-set(gca, 'xtick',1:size(c1,1):size(c1,2)*size(c1,1), 'xticklabel', stim_info.contrast(stim_idx)*100, 'xticklabelrotation', 45);
-set(gca, 'ytick', [0 1]);
-box off,  axis tight
-
-ylim([-0.2 1.5]);
-xlim([-20 length(s(:)) + 20]);
-
-xlabel('Contrast (%)'); ylabel(sprintf('Model prediction \n (normalized)')); 
-legend(areasOfInterest, 'location', 'northeast');
-legend('boxoff');
-
-set(findall(gcf,'-property','FontSize'),'FontSize',20)
-
-%% Panel B-D: Amplitude differences
-
-% Superimposed normalized time courses
-
-% Select data to plot
-conditionsOfInterest = {'CRF-1','CRF-2', 'CRF-3', 'CRF-4','CRF-5'}; 
-areasOfInterest= {'V2'};
-timepointsOfInterest = [-0.05 0.5];
-smoothFactor = 5;
-
-stim_idx = contains(stim_info.name, conditionsOfInterest);
-chan_idx = strcmp(channels.name, areasOfInterest);
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-
-m = data(t_idx,stim_idx,chan_idx);
-
-for ii = 1:size(m,2), m(:,ii) = smooth(m(:,ii),smoothFactor); end
-
-% Make legend
-x = stim_info.contrast(stim_idx)*100; %  in percent
-l = [];
-for ii = length(x):-1:1
-    if ii == 1,  l{length(x)+1-ii} = sprintf('%-5.2f', x(ii)); end
-    if ii == 2,  l{length(x)+1-ii} = sprintf('%-5.1f', x(ii)); end
-    if ii > 2,   l{length(x)+1-ii} = sprintf('%-5.0f', x(ii)); end
+% Predict model responses for new stimuli
+pred2 = nan([nModels size(stim2(:,stim_idx2)) height(D.channels)]);
+srate = D.channels.sampling_frequency(1);
+for kk = 1:nModels
+    DD = d(kk);
+    for ii = 1:size(DD.params,2)
+        prm = DD.params(:,ii);
+        [~, pred2(kk,:,:,ii)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);      
+    end
 end
 
-subplot('position', posb); cla; hold on
+% Determine time index over which to compute summary statistics
+t_idx = t>0 & t<1;
 
-colors = gray(length(conditionsOfInterest)+1); colors = colors(1:end-1,:);
-ecog_plotMultipleTimeCourses(t(t_idx), fliplr(m), [], colors);
-set(gca, 'xlim', timepointsOfInterest);
-set(gca, 'ylim', [-0.5 16]);
-xlabel('Time (s)'); ylabel('Neural response');
-
-legend(l);
-legend('boxoff')
-
-areasOfInterest = {'TO'};
-chan_idx = strcmp(channels.name, areasOfInterest);
-m = data(t_idx,stim_idx,chan_idx);
-
-for ii = 1:size(m,2), m(:,ii) = smooth(m(:,ii),smoothFactor); end
-
-subplot('position', posc);cla; hold on
-
-ecog_plotMultipleTimeCourses(t(t_idx), fliplr(m), [], colors, [], []);
-set(gca, 'xlim', timepointsOfInterest);
-set(gca, 'ylim', [-0.06 2.2]);
-xlabel('Time (s)'); ylabel('Neural response');
-
-set(findall(gcf,'-property','FontSize'),'FontSize',24)
-
-%% c50
-
-% Data
-
-% Determine time index over which to compute max
-t_idx = t>0.05 & t<1.0;
-
-% Get data
-d = D.data(t_idx,stim_idx,:);
-p = D.pred(t_idx,stim_idx,:);
-
-% Compute max across stim_on window
-maxd = squeeze(max(d,[],1));
-maxp = squeeze(max(p,[],1));
-
-c50_data  = nan(1,height(D.channels));
-c50_model = nan(1,height(D.channels));
-fprintf('[%s] Fitting Naka Rushton function to each dataset...\n',mfilename);
-for ii = 1:height(D.channels)
-    [~,c50_data(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,maxd(:,ii),0);
-    [~,c50_model(ii)] = fitNakaRushton(stim_info.contrast(stim_idx)*100,maxp(:,ii),0);
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+dat = D.data(t_idx,stim_idx,:);
+for kk = 1:nModels
+    dat = cat(2,dat,squeeze(pred2(kk,t_idx, :,:)));
 end
 
-if D.options.fitaverage
-    [m_data, se_data, channels] = averageMultipleFits(c50_data, D.channels, @mean);
-	[m_model, se_model] = averageMultipleFits(c50_model, D.channels, @mean);
-else
-    [m_data, se_data] = averageWithinArea(c50_data, group_prob, @median, numboots);
-    [m_model, se_model] = averageWithinArea(c50_model, group_prob, @median, numboots);
-end
+% Compute sum across stim_on window
+m_conc = squeeze(sum(dat,1)); 
+[m_conc, se_conc] = averageWithinArea(m_conc, group_prob, @median, numboot);
 
 % Plot
-subplot('position', posd); cla; hold on
-x = 1:height(channels);
-tde_plotPoints(m_model', se_model, x, 'ci', 0, [], 40, 'r');
-tde_plotPoints(m_data', se_data, x, 'errbar', 0, [], 40, 'k');
+subplot('position', posa);cla; hold on
 
-set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-ylabel('C50 (% contrast)');
-xlabel('Visual area');
-
-xlim([0 max(x)+1]); ylim([0 50]);
-legend('model', 'data', 'location','northwest');legend boxoff
-
-set(findall(gcf,'-property','FontSize'),'FontSize',24)
-
-%% %% Panel E-F Temporal dynamics differences
-
-figure(2); clf
-set(gcf, 'position',  get(0, 'screensize'));
-
-% Select data to plot
-conditionsOfInterest = {'CRF-1','CRF-2', 'CRF-3', 'CRF-4','CRF-5'}; 
-areasOfInterest= {'V2'};
-timepointsOfInterest = [-0.05 0.5];
-smoothFactor = 5;
-
-stim_idx = contains(stim_info.name, conditionsOfInterest);
-chan_idx = strcmp(channels.name, areasOfInterest);
-t_idx    = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
-
-m = data(t_idx,stim_idx,chan_idx);
-m = m./max(m);
-
-for ii = 1:size(m,2), m(:,ii) = smooth(m(:,ii),smoothFactor); end
-
-% Make legend
-x = stim_info.contrast(stim_idx)*100; %  in percent
-l = [];
-for ii = length(x):-1:1
-    if ii == 1,  l{length(x)+1-ii} = sprintf('%-5.2f', x(ii)); end
-    if ii == 2,  l{length(x)+1-ii} = sprintf('%-5.1f', x(ii)); end
-    if ii > 2,   l{length(x)+1-ii} = sprintf('%-5.0f', x(ii)); end
+% Plot prediction
+nStim = length(stim_idx);
+M = m_conc(nStim+1:end);
+M = reshape(M, [nStimNew nModels]);
+SE = se_conc(nStim+1:end,:);
+SE = reshape(SE, [nStimNew nModels 2]);
+for kk = 1:nModels
+    m = M(:,kk);
+    se = SE(:,kk,:);
+    if plotSE == 1
+        tde_plotPoints(m, se, x2, 'ci', 1,[],50, cmap(kk,:));
+    else
+        tde_plotPoints(m, [], x2, 'ci', 1,[],50, cmap(kk,:));
+    end
 end
 
+% Plot data
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotPoints(m, se, x, 'errbar', 1,[],50);
+
+% Format axes
+ticklabelsX = num2str(x); ticklabelsX(2:5,:) = ' ';
+set(gca, 'xtick', x, 'xticklabel', ticklabelsX);
+xlabel('Stimulus duration (ms)'); ylabel({'Summed broadband', 'power (0-1s)'}); 
+lgd = legend([l {'Neural data'}], 'location', 'none');
+lgd.Position = [0.45 0.65 0.01 0.1];
+%posa = [0.04 0.58 0.4 0.4];
+
+%title ('Temporal summation');
+
+legend('boxoff')
+axis tight
+axis square
+xlim([0 550]);
+ylim([0 1.3]);
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
+
+% 2. Repetition suppression
+
+% Find stimulus index
+stim_idx = find(contains(stim_info.name, {'ONEPULSE-5', 'TWOPULSE'}));
+x = stim_info.ISI(stim_idx)*1000; 
+
+% Compute recovery per electrode
+srate = D.channels.sampling_frequency(1);
+[m,ts] = tde_computeISIrecovery(D.data,D.t,D.stim_info,srate, [], [], 'max');
+
+% Generate new TWOPULSE stimuli based on params
+nStimNew = 50;
+[stim2, stim_info2] = tde_simulateNewStimuli(t,nStimNew);
+stim_idx2 = find(contains(stim_info2.name, 'TWOPULSE'));
+stim2 = stim2(:,stim_idx2);
+stim_info2 = stim_info2(stim_idx2,:);
+x2 = stim_info2.ISI*1000; 
+
+% Add the ONEPULSE-4 condition
+stim_idx1 = find(contains(stim_info.name, 'ONEPULSE-4'));
+stim2 = cat(2,D.stim(:, stim_idx1),stim2);
+stim_info2 = [stim_info(stim_idx1,[1 3:5]); stim_info2];
+
+% Predict model responses for new stimuli
+pred2 = nan([nModels size(stim2) height(D.channels)]);
+srate = D.channels.sampling_frequency(1);
+for kk = 1:nModels
+    DD = d(kk);
+    for ii = 1:size(DD.params,2)
+        prm = DD.params(:,ii);
+        [~, pred2(kk,:,:,ii)] = DD.objFunction(prm, [], stim2, srate); 
+    end
+end
+
+% Compute recovery per electrode
+m2 = []; ts2 = [];
+for kk = 1:nModels
+    [m2(kk,:,:), ts2(kk,:,:,:)] = tde_computeISIrecovery(squeeze(pred2(kk,:,:,:)),t,stim_info2,srate);
+end
+
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+for kk = 1:nModels
+    m = cat(1,m,squeeze(m2(kk,:,:)));
+end
+
+% Compute average parameter values within groups
+[m_conc, se_conc] = averageWithinArea(m, group_prob, @median, numboot);
+
+% Plot
 subplot('position', posb); cla; hold on
 
-colors = gray(length(conditionsOfInterest)+1); colors = colors(1:end-1,:);
-ecog_plotMultipleTimeCourses(t(t_idx), fliplr(m), [], colors);
-set(gca, 'xlim', timepointsOfInterest);
-set(gca, 'ylim', [-0.05 1.05]);
-xlabel('Time (s)'); ylabel('Neural response (normalized)');
-
-legend(l);
-legend('boxoff')
-
-areasOfInterest = {'TO'};
-chan_idx = strcmp(channels.name, areasOfInterest);
-m = data(t_idx,stim_idx,chan_idx);
-m = m./max(m);
-
-for ii = 1:size(m,2), m(:,ii) = smooth(m(:,ii),smoothFactor); end
-
-subplot('position', posc);cla; hold on
-ecog_plotMultipleTimeCourses(t(t_idx), fliplr(m), [], colors, [], []);
-set(gca, 'xlim', timepointsOfInterest);
-set(gca, 'ylim', [-0.05 1.05]);
-xlabel('Time (s)'); ylabel('Neural response (normalized)');
-
-%% Range in time-to-peak
-
-% DATA
-
-% Get data
-d = D.data(:,stim_idx,:);
-d = d./max(d);
-
-% Find time-to-peak
-Id = nan([size(d,2) size(d,3)]);
-for ii = 1:size(d,2)
-    for jj = 1:size(d,3)
-        Id(ii,jj) = find(d(:,ii,jj)==1,1);
+% Plot prediction
+nStim = length(stim_idx);
+M = m_conc(nStim+1:end);
+M = reshape(M, [nStimNew nModels]);
+SE = se_conc(nStim+1:end,:);
+SE = reshape(SE, [nStimNew nModels 2]);
+for kk = 1:nModels
+    m = M(:,kk);
+    se = SE(:,kk,:);
+    if plotSE == 1
+        tde_plotPoints(m, se, x2, 'ci', 0,[],50, cmap(kk,:));
+    else
+        tde_plotPoints(m, [], x2, 'ci', 0,[],50, cmap(kk,:));
     end
 end
-T = repmat(t, [1 size(d,2) size(d,3)]);
-Td = T(Id);
-cov_Td = range(Td);
 
-% Average across areas
-if D.options.fitaverage
-    [T_data, Tse_data, channels] = averageMultipleFits(Td, D.channels, @mean);
-	[covT_data, covTse_data] = averageMultipleFits(cov_Td, D.channels, @mean);
-else
-    [T_data, Tse_data] = averageWithinArea(Td, group_prob, @mean, numboots);
-    [covT_data, covTse_data] = averageWithinArea(cov_Td, group_prob, @mean, numboots);
-end
+% Plot data
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotPoints(m, se, x, 'errbar', 0,[],50);
 
+% Format axes
+ticklabelsX = num2str(x); ticklabelsX(2:6,:) = ' ';
+set(gca, 'xtick', x, 'xticklabel', ticklabelsX);
 
-% MODEL
+ylim([0 1.2]);
+xlim([-20 x(end)+20]);
+xlabel('Stimulus interval (ms)'); ylabel('Ratio second / first stimulus'); 
+axis tight
+axis square
+%title ('Repetition suppression');
 
-% Get predictions
-p = D.pred(:,stim_idx,:);
-p = p./max(p);
+% 3-4 Contrast dynamics
 
-% Find time-to-peak
-Ip = nan([size(p,2) size(p,3)]);
-for ii = 1:size(p,2)
-    for jj = 1:size(p,3)
-        %Ip(ii,jj) = find(p(:,ii,jj)>0.5,1);
-        Ip(ii,jj) = find(p(:,ii,jj)==1,1);
+% Find stimulus index
+stim_idx = find(contains(stim_info.name, 'CRF'));
+x = stim_info.contrast(stim_idx) * 100; 
+
+% Generate new stimuli based on params
+nStimNew = 50;
+[stim2, stim_info2] = tde_simulateNewStimuli(t,nStimNew);
+stim_idx2 = find(contains(stim_info2.name, 'CRF'));
+x2 = stim_info2.contrast(stim_idx2) * 100; 
+
+% Predict model responses for new stimuli
+pred2 = nan([nModels size(stim2(:,stim_idx2)) height(D.channels)]);
+srate = D.channels.sampling_frequency(1);
+for kk = 1:nModels
+    DD = d(kk);
+    for ii = 1:size(DD.params,2)
+        prm = DD.params(:,ii);
+        [~, pred2(kk,:,:,ii)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);      
     end
 end
-T = repmat(t, [1 size(p,2) size(p,3)]);
-Tp = T(Ip);
-cov_Tp = range(Tp); 
 
-% Average across areas
-if D.options.fitaverage
-    [T_pred, Tse_pred, channels] = averageMultipleFits(Tp, D.channels, @mean);
-	[covT_pred, covTse_pred] = averageMultipleFits(cov_Tp, D.channels, @mean);
-else
-    [T_pred, Tse_pred] = averageWithinArea(Tp, group_prob, @median, numboots);
-    [covT_pred, covTse_pred] = averageWithinArea(cov_Tp, group_prob, @median, numboots);
+% Determine time index over which to compute summary statistics
+t_idx = t>0.05 & t<1.0;
+
+% Concatenate data and prediction (in order to make sure probabilistic
+% assignment of electrodes to areas is done the same way for both).
+dat = D.data(t_idx,stim_idx,:);
+for kk = 1:nModels
+    dat = cat(2,dat,squeeze(pred2(kk,t_idx, :,:)));
 end
 
-% Plot range per area
+% 3. Time to peak
+subplot('position', posc); cla; hold on
+
+% Compute peak across trial window
+[~,I] = max(dat,[],1);
+T = t(t_idx);
+[m_conc, se_conc] = averageWithinArea(squeeze(T(I)), group_prob,  @median, numboot);
+
+m_conc = m_conc * 1000; % convert to ms
+se_conc = se_conc * 1000;
+
+
+% Plot prediction
+nStim = length(stim_idx);
+M = m_conc(nStim+1:end);
+M = reshape(M, [nStimNew nModels]);
+SE = se_conc(nStim+1:end,:);
+SE = reshape(SE, [nStimNew nModels 2]);
+for kk = 1:nModels
+    m = M(:,kk);
+    se = SE(:,kk,:);
+    if plotSE == 1
+        tde_plotPoints(m, se, x2, 'ci', 0,[],50, cmap(kk,:));
+    else
+        tde_plotPoints(m, [], x2, 'ci', 0,[],50, cmap(kk,:));
+    end
+end
+
+% Plot data
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
+
+% Format axes
+l = get(gca, 'YLim'); ylim([50 l(2)]);
+ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
+set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
+xlabel('Contrast (%)'); ylabel('Time-to-peak (ms)'); 
+axis tight
+axis square
+%title ('Contrast time-to-peak');
+
+% 4. Ratio sustained/transient
 subplot('position', posd); cla; hold on
+T = D.t(t_idx);
 
-x = 1:height(channels);
-tde_plotPoints(covT_pred', covTse_pred, x, 'ci', 0, [], 40, 'r');
-tde_plotPoints(covT_data', covTse_data, x, 'errbar', 0, [], 40, 'k');
+% Smooth time courses to get better estimates of max and offset response levels
+% Apply same amount of smoothing to both data and model predictions
+dat2 = dat;
+for ii = 1:size(dat,2)
+    for jj = 1:size(dat,3)
+        dat2(:,ii,jj) = smooth(dat(:,ii,jj),150);
+    end
+end
 
-set(gca, 'xtick', x, 'xticklabel', channels.name, 'xticklabelrotation', 45);
-ylabel('Range in time-to-peak (s)');
-xlabel('Visual area');
+[M] = max(dat2,[],1); % value at peak
+t_off = (T == 0.5); % offset timepoint
+O = dat2(t_off,:,:); % value at offset
+R = squeeze(O./M); % divide value at offset with value at peak
 
-xlim([0 max(x)+1]); 
-ylim([0 0.55]);
-legend('model', 'data', 'location','northwest');legend boxoff
+[m_conc, se_conc] = averageWithinArea(R, group_prob, @median, numboot);
+
+% Plot prediction
+nStim = length(stim_idx);
+M = m_conc(nStim+1:end);
+M = reshape(M, [nStimNew nModels]);
+SE = se_conc(nStim+1:end,:);
+SE = reshape(SE, [nStimNew nModels 2]);
+for kk = 1:nModels
+    m = M(:,kk);
+    se = SE(:,kk,:);
+    if plotSE == 1
+        tde_plotPoints(m, se, x2, 'ci', 0,[],50, cmap(kk,:));
+    else
+        tde_plotPoints(m, [], x2, 'ci', 0,[],50, cmap(kk,:));
+    end
+end
+
+% Plot data
+nStim = length(stim_idx);
+m = m_conc(1:nStim);
+se = se_conc(1:nStim,:);
+tde_plotPoints(m, se, x, 'errbar', 0, [], 50);
+
+% Format axes
+ticklabelsX = num2str(x); ticklabelsX(2:4,:) = ' ';
+set(gca, 'xlim', [0 105], 'xtick', x, 'xticklabel', ticklabelsX);
+set(gca, 'ylim', [0 1]);
+xlabel('Contrast (%)'); ylabel('Proportion offset/peak'); 
+%title ('Contrast ratio transient/sustained');
+axis tight
+axis square
 
 set(findall(gcf,'-property','FontSize'),'FontSize',24)
+
+%% panel C (here Figure 3)
+pos = [];
+numboot = 1000;
+
+% Subplot positions: % [left bottom width height]
+pos(1,:) = [0.05 0.7 0.9 0.25];
+pos(2,:) = [0.05 0.35 0.9 0.25];
+pos(3,:) = [0.05 0.05 0.9 0.25];
+
+figure(3); clf; hold on
+set(gcf, 'position',  get(0, 'screensize'));
+
+[~, ~, group_prob] = groupElecsByVisualArea(d(1).channels, 'probabilisticresample', {'V1'});   
+
+conditionsOfInterest = {'ONEPULSE', 'TWOPULSE', 'CRF'}; 
+timepointsOfInterest = [-0.10 1];
+
+% Look up corresponding indices in the data
+stim_idx = [];
+for ii = 1:length(conditionsOfInterest), stim_idx = [stim_idx; find(contains(d(1).stim_info.name, conditionsOfInterest{ii}))]; end
+t_idx    = d(1).t>timepointsOfInterest(1) & d(1).t<=timepointsOfInterest(2);
+modelind = [4 3 2]; 
+
+for ii = 1:length(modelind)
+
+    subplot('position', pos(ii,:)); cla; hold on
+    D = d(modelind(ii));
+
+    stim = D.stim(t_idx,stim_idx);
+    [data, data_se] = averageWithinArea(D.data(t_idx,stim_idx,:), group_prob, @mean, numboot);
+    [pred, pred_se] = averageWithinArea(D.pred(t_idx,stim_idx,:), group_prob, @mean, numboot);
+
+    s = flatten(stim);
+    plot(s,'color', [0.5 0.5 0.5], 'lineWidth', 1); 
+    
+    dat = flatten(data);
+    plot(smooth(dat/max(dat,[],2),15),'k', 'LineWidth',2); 
+    
+    prd = flatten(pred);
+    plot(smooth(prd/max(prd,[],2),15),'Color',cmap(modelind(ii),:), 'LineWidth',2); 
+
+    set(gca, 'XTick',1:length(find(t_idx)):length(stim_idx)*length(find(t_idx)), 'XTickLabel', []);
+    axis tight
+    set(gca, 'YLim', [-0.3 1]);
+    set(gca, 'ytick', [0 1]);
+end
+
+set(findall(gcf,'-property','FontSize'),'FontSize',24)
+%print('-painters','-dsvg','/Users/iiagroen/surfdrive/BAIR/Papers/TemporalDynamicsECoG/mkFigures/revision/ExtendedData_Figure7_3C.svg')
+
 
 
