@@ -3,7 +3,8 @@
 This repository contains Matlab code to reproduce analyses and figures reported in Groen et al., (2022), Temporal dynamics of neural responses in human visual cortex (https://www.biorxiv.org/content/10.1101/2021.08.08.455547).
 
 Paper figures can be reproduced by running the scripts located in mkFigures/. 
-The full pipeline, to extract and process the data can be run using the script tde_run.m
+
+The full pipeline, to extract and process the data for the analyses reported in the paper, can be run using the script tde_run.m
 
 ## Instructions on using the code
 
