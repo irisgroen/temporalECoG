@@ -30,22 +30,21 @@ cmap1    = brewermap(nStim+2, 'Greys');
 cmap1    = cmap1(3:end,:);
 cmap2    = brewermap(nStim+2, 'OrRd');
 cmap2    = cmap2(3:end,:);
-xmax = 100; % in ms
+xmax = 0.200; % in s
 
 % Plot
 subplot(2,2,1); hold on
-p1 = plot(data(t_idx,stim_idx),'LineWidth', 2);
+p1 = plot(t(t_idx),data(t_idx,stim_idx),'LineWidth', 2);
 set(p1, {'color'}, num2cell(cmap1,2));
 
 % Format axes
 axis tight
 set(gca, 'xlim', [0 xmax], 'ylim', [-2 22], 'xticklabel', []);
-xlabel('Time (ms)');
 ylabel('Change in power (x-fold)');
 
 % Plot
 subplot(2,2,3); hold on
-p2 = plot(pred(t_idx,stim_idx),'LineWidth', 2);
+p2 = plot(t(t_idx),pred(t_idx,stim_idx),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
 xlabel('Time (ms)');
 ylabel('Change in power (x-fold)');
@@ -59,6 +58,7 @@ w = 0.3;
 [~, data2] = tde_computeISIrecovery(data,D.t,D.stim_info,D.srate,w);
 [~, pred2] = tde_computeISIrecovery(pred,D.t,D.stim_info,D.srate,w);
 Ts = {'ONEPULSE-5', 'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6','first pulse'};
+t = [0:1/D.srate:w];
 
 % Get colormaps for plotting
 nStim    = size(pred2,2)-1;
@@ -66,11 +66,11 @@ cmap1    = brewermap(nStim+2, 'Greys');
 cmap1    = cmap1(3:end,:);
 cmap2    = brewermap(nStim+2, 'OrRd');
 cmap2    = cmap2(3:end,:);
-xmax     = 100;
+xmax     = 0.2; % in s
 
 % Plot
 subplot(2,2,2); hold on
-p1 = plot(data2(:,1:end-1),'LineWidth', 2);
+p1 = plot(t,data2(:,1:end-1),'LineWidth', 2);
 set(p1, {'color'}, num2cell(cmap1,2));
 
 % Format axes
@@ -79,8 +79,9 @@ set(gca, 'xlim', [0 xmax], 'ylim', [-2 22], 'xticklabel', [], 'yticklabel', []);
 
 % Plot
 subplot(2,2,4); hold on
-p2 = plot(pred2(:,1:end-1),'LineWidth', 2);
+p2 = plot(t,pred2(:,1:end-1),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
+xlabel('Time (ms)');
 
 % Format axes
 axis tight
