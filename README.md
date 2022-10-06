@@ -1,6 +1,6 @@
 # Temporal Dynamics ECoG (TDE) Matlab code repository
 
-This repository contains Matlab code to reproduce analyses and figures reported in Groen et al., (2022), Temporal dynamics of neural responses in human visual cortex (https://www.biorxiv.org/content/10.1101/2021.08.08.455547).
+This repository contains Matlab code to reproduce analyses and figures reported in Piantoni G, Montenegro S, Flinker A, Devore S, Devinsky O, Doyle W, Dugan P, Friedman D, Ramsey N, Petridou N, Winawer JA (2022) Temporal dynamics of neural responses in human visual cortex. The Journal of Neuroscience 42(40):7562-7580  (https://doi.org/10.1523/JNEUROSCI.1812-21.2022).
 
 Paper figures can be reproduced by running the scripts located in mkFigures/. 
 
