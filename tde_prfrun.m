@@ -5,7 +5,7 @@
 %% 1: Load the ECoG PRF data and stimulus description
 
 % Load and epoch the data
-recomputeFlag = true;
+recomputeFlag = false;
 tasks         = {'prf'};
 epochTime     = [0 0.85];
 saveStr       = 'prfdata';

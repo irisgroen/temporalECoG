@@ -152,6 +152,10 @@ for ii = 1:nDatasets % loop over channels or channel averages
         
         % Generate model prediction
         [~, pred(:,pred_inx,ii)] = objFunction(prm, [], stim2predict, srate);      
+        % Note: If xvalmode = 0, pred will be populated once (using the
+        % prms estimated by fitting to all the data). If xvalmodel = 1,
+        % these predictions derived using the full fit will get overwritten
+        % with the prediction for the left-out stim on each jj iteration.
     end
 end
 

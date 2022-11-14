@@ -32,7 +32,7 @@ modelfuns = tde_modelTypes();
 modelfun = modelfuns([1]);
 
 % Define options
-options.xvalmode = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode = 1;      % 0 = none, 1 = stimulus leave-one-out
 options.display  = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.fitaverage = false;

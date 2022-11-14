@@ -46,7 +46,7 @@ ylabel('Change in power (x-fold)');
 subplot(2,2,3); hold on
 p2 = plot(t(t_idx),pred(t_idx,stim_idx),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
-xlabel('Time (ms)');
+xlabel('Time (s)');
 ylabel('Change in power (x-fold)');
 
 % Format axes
@@ -81,7 +81,7 @@ set(gca, 'xlim', [0 xmax], 'ylim', [-2 22], 'xticklabel', [], 'yticklabel', []);
 subplot(2,2,4); hold on
 p2 = plot(t,pred2(:,1:end-1),'LineWidth', 2);
 set(p2, {'color'}, num2cell(cmap2,2));
-xlabel('Time (ms)');
+xlabel('Time (s)');
 
 % Format axes
 axis tight
