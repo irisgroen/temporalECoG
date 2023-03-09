@@ -21,7 +21,7 @@ The code has dependencies to the following toolboxes:
 
 - https://github.com/WinawerLab/ECoG_utils
 - https://github.com/fieldtrip/fieldtrip
-- https://github.com/lacerbi/bads
+- https://github.com/acerbilab/bads
 
 When using the repository, it may be helpful to make use of the ToolboxToolbox which is a Matlab toolbox provided by provided by ToolboxHub to manage code/toolbox dependencies. See https://wikis.nyu.edu/display/winawerlab/ToolboxToolbox for more instructions on how to set it up. The relevant ToolboxToolbox config associated with this Github repository is located here: https://github.com/WinawerLab/ToolboxRegistry/blob/master/configurations/temporalECoG.json
 
